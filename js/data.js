@@ -90,6 +90,7 @@ const CHANTS = [
   {call: ['ক্ষমতা না, জনতা?', 'Khomota na, Jonota?'], resp: ['জনতা জনতা!', 'Jonota jonota!']},
   {call: ['দালালি না রাজপথ?', 'Dalali na Rajpath?'],  resp: ['রাজপথ রাজপথ!', 'Rajpath Rajpath!']},
   {call: ['আপোষ না সংগ্রাম?', 'Aposh na shongram?'],  resp: ['সংগ্রাম সংগ্রাম!', 'Shongram shongram!']},
+  {call: ['কোটা না মেধা?', 'Quota na Medha?'],          resp: ['মেধা মেধা!', 'Medha Medha!']},
 ];
 
 // Fictional breaking-news ticker (Bangla)
