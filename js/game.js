@@ -1,4 +1,4 @@
-// Deshi Andolon (দেশি আন্দোলন): single-player march game. Depends on data.js.
+// Andolon (আন্দোলন): single-player march game. Depends on data.js.
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
 let vw, vh, Z = 1, dpr = 1;
 function resize(){
@@ -16,6 +16,53 @@ const polar = (ang, r) => ({x: Math.cos(ang) * r, y: Math.sin(ang) * r});
 const SKINS = ['#f1c9a5', '#d9a679', '#b97d56', '#8d5a3b'];
 const WHITE = '#f7f7f2', BLUE = '#2f6fd0', BLACK = '#232323';
 const BN_FONT = '"Nirmala UI","Noto Sans Bengali",system-ui';
+
+// Some browsers (notably Safari on iPhone) measure and centre Bangla text wrongly on a canvas, so the text lands off-centre
+// and spills out of its box. To be safe on every device, Bangla text is measured by drawing it once off-screen and
+// scanning for the pixels that were actually painted ("ink"). The result is cached per font and text.
+const BN_RE = /[\u0980-\u09FF]/;
+const inkCache = new Map();
+let inkCv = null;
+function inkBounds(font, text){
+  const key = font + '|' + text, hit = inkCache.get(key);
+  if (hit) return hit;
+  let r = {ok: false, minX: 0, maxX: 0, asc: 0, desc: 0};
+  try {
+    const W = 800, H = 160, OX = 40, BY = 100;
+    if (!inkCv){ inkCv = document.createElement('canvas'); inkCv.width = W; inkCv.height = H; }
+    const g = inkCv.getContext('2d', {willReadFrequently: true});
+    g.clearRect(0, 0, W, H); g.font = font; g.textAlign = 'left'; g.textBaseline = 'alphabetic'; g.fillStyle = '#000';
+    g.fillText(text, OX, BY);
+    const d = g.getImageData(0, 0, W, H).data;
+    let x0 = 1e9, x1 = -1, y0 = 1e9, y1 = -1;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (d[(y * W + x) * 4 + 3] > 40){ if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    if (x1 >= 0) r = {ok: true, minX: x0 - OX, maxX: x1 - OX + 1, asc: BY - y0, desc: y1 - BY + 1};
+  } catch (e) {}
+  inkCache.set(key, r);
+  return r;
+}
+// width of text in the context's current font; uses real ink width for Bangla
+function textW(c, text){
+  if (BN_RE.test(text)){ const b = inkBounds(c.font, String(text)); if (b.ok) return b.maxX - b.minX; }
+  return c.measureText(text).width;
+}
+// every centred or right-aligned Bangla fillText gets positioned from its ink instead of the browser's metrics
+if (typeof CanvasRenderingContext2D !== 'undefined'){
+  const origFill = CanvasRenderingContext2D.prototype.fillText;
+  CanvasRenderingContext2D.prototype.fillText = function(text, x, y, maxW){
+    const al = this.textAlign;
+    if ((al === 'center' || al === 'right' || al === 'end') && BN_RE.test(text)){
+      const b = inkBounds(this.font, String(text));
+      if (b.ok){
+        this.textAlign = 'left';
+        origFill.call(this, text, al === 'center' ? x - (b.minX + b.maxX) / 2 : x - b.maxX, y);
+        this.textAlign = al;
+        return;
+      }
+    }
+    return origFill.call(this, text, x, y);
+  };
+}
 const ZR = [MAP_R, ...RINGS, 0];                       // zone z spans ZR[z+1]..ZR[z]
 const zoneOf = (x, y) => { const d = Math.hypot(x, y); return d > RINGS[0] ? 0 : d > RINGS[1] ? 1 : d > RINGS[2] ? 2 : 3; };
 const spawnIn = (r0, r1) => { const a = rand(0, 6.283), r = Math.sqrt(rand(r0 * r0, r1 * r1)); return polar(a, r); };
@@ -68,6 +115,38 @@ function sfxGrenade(){   // deep boom with a rumbling tail
   o.frequency.setValueAtTime(95, t); o.frequency.exponentialRampToValueAtTime(26, t + 0.9);
   og.gain.setValueAtTime(1.0, t); og.gain.exponentialRampToValueAtTime(0.001, t + 1.0);
   o.connect(og); og.connect(a.destination); o.start(t); o.stop(t + 1.05);
+}
+function sfxWallBreak(){   // concrete cracking and crumbling
+  if (muted) return; const a = ac(); if (!a) return; const t = a.currentTime;
+  const crack = a.createBuffer(1, Math.floor(a.sampleRate * 0.12), a.sampleRate), cd = crack.getChannelData(0);
+  for (let i = 0; i < cd.length; i++) cd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / cd.length, 2);
+  const cs = a.createBufferSource(); cs.buffer = crack; const hp = a.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1500;
+  const cg = a.createGain(); cg.gain.value = 0.7; cs.connect(hp); hp.connect(cg); cg.connect(a.destination); cs.start(t);
+  for (let k = 0; k < 6; k++){   // falling chunks
+    const len = Math.floor(a.sampleRate * 0.14), b = a.createBuffer(1, len, a.sampleRate), d2 = b.getChannelData(0);
+    for (let i = 0; i < len; i++) d2[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.5);
+    const s2 = a.createBufferSource(); s2.buffer = b; const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 250 + Math.random() * 700; bp.Q.value = 0.8;
+    const g2 = a.createGain(); g2.gain.value = 0.55 * (1 - k * 0.12); s2.connect(bp); bp.connect(g2); g2.connect(a.destination); s2.start(t + 0.05 + k * 0.08 + Math.random() * 0.03);
+  }
+  const o = a.createOscillator(), og = a.createGain(); o.type = 'sine';
+  o.frequency.setValueAtTime(85, t); o.frequency.exponentialRampToValueAtTime(30, t + 0.5);
+  og.gain.setValueAtTime(0.9, t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+  o.connect(og); og.connect(a.destination); o.start(t); o.stop(t + 0.65);
+}
+let sirenNode = null;
+function sfxSiren(){   // two-tone police wail that runs for the whole arrest
+  if (muted) return; const a = ac(); if (!a) return; stopSiren(); const t = a.currentTime;
+  const o = a.createOscillator(), g = a.createGain(), lp = a.createBiquadFilter();
+  o.type = 'sawtooth'; lp.type = 'lowpass'; lp.frequency.value = 2200; g.gain.value = 0.13;
+  o.frequency.setValueAtTime(650, t);
+  for (let i = 0; i < 20; i++) o.frequency.linearRampToValueAtTime(i % 2 ? 650 : 1000, t + (i + 1) * 0.45);
+  o.connect(lp); lp.connect(g); g.connect(a.destination); o.start(t); o.stop(t + 9.5);
+  sirenNode = {o, g, a};
+}
+function stopSiren(){
+  if (!sirenNode) return;
+  try { sirenNode.g.gain.cancelScheduledValues(sirenNode.a.currentTime); sirenNode.g.gain.setTargetAtTime(0, sirenNode.a.currentTime, 0.08); sirenNode.o.stop(sirenNode.a.currentTime + 0.4); } catch (e) {}
+  sirenNode = null;
 }
 // Fight effects: sticks always; gunshots and grenade blasts now and then (sound plus a flash on screen)
 let fx = [];
@@ -225,7 +304,7 @@ function nearestHospital(p){ return HOSPITALS.reduce((b, h) => !b || dist(h, p) 
 // ---------- update ----------
 function update(dt){
   game.t += dt; game.msgT -= dt; game.flash = Math.max(0, game.flash - dt);
-  for (let i = fx.length - 1; i >= 0; i--){ fx[i].t += dt; if (fx[i].t > (fx[i].kind === 'boom' ? 1.1 : 0.3)) fx.splice(i, 1); }
+  for (let i = fx.length - 1; i >= 0; i--){ fx[i].t += dt; if (fx[i].t > (fx[i].kind === 'boom' ? 1.1 : fx[i].kind === 'dust' ? 0.9 : 0.3)) fx.splice(i, 1); }
   game.day = Math.min(MAX_DAY, 1 + Math.floor(game.t / DAY_SECONDS));
   for (let i = toasts.length - 1; i >= 0; i--){ toasts[i].t -= dt; if (toasts[i].t <= 0) toasts.splice(i, 1); }
   updateBubbles(dt);
@@ -307,6 +386,9 @@ function update(dt){
     if (near && followers.length < g.need && game.msgT <= 0) say('This police barricade needs ' + g.need + ' people. You have ' + followers.length + '.');
   }
 
+  for (const g of gates) if (g.open >= 1 && !g.broken){   // the barricade just broke: crumble sound and dust (only if it is near you)
+    g.broken = true; if (dist(player, g) < 1200){ sfxWallBreak(); addFx(g.x, g.y, 'dust'); }
+  }
   // morale: drains slowly; Biriyani stalls and hospitals restore it; Mama r Tong er Cha gives a boost
   const inStall = stalls.some(s => dist(s, player) < s.r + 10); let restoring = inStall ? 30 : 0; if (inStall) game.stats.stallT += dt;
   const hosp = HOSPITALS.find(h => dist(h, player) < 62);
@@ -389,6 +471,7 @@ function startArrest(police){
   const dest = Math.random() < 0.3 ? AYNAGHOR : pick(nearestStations(player).slice(0, 3));
   const a = Math.atan2(police.y - player.y, police.x - player.x);
   game.mode = 'arrest';
+  sfxSiren();
   game.arrest = {phase: 0, t: 0, dest};
   game.van = {x: player.x + Math.cos(a) * 520, y: player.y + Math.sin(a) * 520, dir: 1, sx: 0, sy: 0};
   say('The police have caught you!', 2);
@@ -593,9 +676,10 @@ function draw(){
     person(ctx, player.x, player.y, {dress: WHITE, skin: player.skin, hat: 'band', scale: 1.35, moving: player.moving, flag: true});
     // name tag above the head so you can find yourself
     ctx.save(); ctx.translate(player.x, player.y - 36); ctx.scale(zf, zf);   // keeps the tag readable when zoomed out
-    ctx.font = 'bold 13px ' + BN_FONT; const w = ctx.measureText(playerName).width + 14;
-    ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.beginPath(); ctx.roundRect(-w / 2, -20, w, 20, 6); ctx.fill();
-    ctx.fillStyle = '#ffd54f'; ctx.textAlign = 'center'; ctx.fillText(playerName, 0, -5);
+    ctx.font = 'bold 14px ' + BN_FONT; const nb = inkBounds(ctx.font, playerName), w = textW(ctx, playerName) + 18;
+    const ta = Math.max(nb.ok ? nb.asc : 0, 14 * 0.95), td = Math.max(nb.ok ? nb.desc : 0, 14 * 0.35), th = ta + td + 10;
+    ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.beginPath(); ctx.roundRect(-w / 2, -th, w, th, 7); ctx.fill();
+    ctx.fillStyle = '#ffd54f'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(playerName, 0, -(td + 5));
     ctx.restore();
   }]);
   list.sort((a, b) => a[0] - b[0]).forEach(e => e[1]());
@@ -609,6 +693,10 @@ function draw(){
       const a = 1 - e.t / 0.3; ctx.globalAlpha = a; ctx.fillStyle = '#fff6b0'; ctx.beginPath();
       for (let k = 0; k < 8; k++){ const ang = k * Math.PI / 4, rr = k % 2 ? 7 : 16; ctx.lineTo(e.x + Math.cos(ang) * rr, e.y + Math.sin(ang) * rr); }
       ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
+    } else if (e.kind === 'dust'){   // dust cloud from a broken barricade
+      const k = e.t / 0.9; ctx.globalAlpha = Math.max(0, 0.6 * (1 - k)); ctx.fillStyle = '#b9aa8f';
+      for (const [ox, oy, r0] of [[-22, 0, 14], [20, -6, 12], [0, -16, 16]]){ ctx.beginPath(); ctx.arc(e.x + ox, e.y + oy - k * 14, r0 + k * 42, 0, 6.28); ctx.fill(); }
+      ctx.globalAlpha = 1;
     } else {
       const k = e.t / 1.1, rr = 18 + k * 62;
       ctx.globalAlpha = Math.max(0, 0.75 * (1 - k)); ctx.fillStyle = '#ffb347'; ctx.beginPath(); ctx.arc(e.x, e.y, rr, 0, 6.28); ctx.fill();
@@ -617,26 +705,38 @@ function draw(){
     }
   }
 
+  const placed = [];   // screen rectangles of bubbles already drawn, so bubbles do not sit on top of each other
   for (const b of bubbles){
     if (!v(b.who)) continue;
     const bx = b.who.x, by = b.who.y - 38 - (b.who === player ? 36 * zf : 0);
     ctx.save(); ctx.translate(bx, by); ctx.scale(zf, zf);   // from here 1 unit = 1 screen pixel
-    ctx.globalAlpha = Math.min(1, b.t * 2); ctx.textAlign = 'center';
+    ctx.globalAlpha = Math.min(1, b.t * 2); ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
     let fs = 16; ctx.font = '700 ' + fs + 'px ' + BN_FONT;
     const maxW = Math.min(vw - 20, 320);
-    while (ctx.measureText(b.bn).width + 24 > maxW && fs > 11){ fs--; ctx.font = '700 ' + fs + 'px ' + BN_FONT; }
-    const w1 = ctx.measureText(b.bn).width; ctx.font = '11px system-ui'; const w2 = ctx.measureText(b.rom).width;
-    const w = Math.max(w1, w2, 70) + 24, h = 50;   // wide enough for both lines, tall enough for Bangla glyphs
+    while (textW(ctx, b.bn) + 28 > maxW && fs > 11){ fs--; ctx.font = '700 ' + fs + 'px ' + BN_FONT; }
+    const ib = inkBounds(ctx.font, b.bn), w1 = textW(ctx, b.bn);
+    // real glyph height from the painted pixels: Bangla marks reach well above and below the baseline
+    const asc = Math.max(ib.ok ? ib.asc : 0, fs * 0.95), desc = Math.max(ib.ok ? ib.desc : 0, fs * 0.35);
+    ctx.font = '11px system-ui'; const w2 = ctx.measureText(b.rom).width;
+    const w = Math.max(w1, w2, 70) + 28, h = 10 + asc + desc + 6 + 13 + 8, top = 12 - h;
     // keep the whole bubble on screen
     const sx = (bx - cam.x) * Z, sy = (by - cam.y) * Z;
     let dx = 0, dy = 0;
     if (sx - w / 2 < 6) dx = 6 - (sx - w / 2); else if (sx + w / 2 > vw - 6) dx = (vw - 6) - (sx + w / 2);
-    if (sy - 38 < 6) dy = 6 - (sy - 38);
+    if (sy + top < 6) dy = 6 - (sy + top);
+    let moved = dy !== 0;
+    for (let n = 0; n < 5; n++){   // stack upward if another bubble is in the way
+      const rx = sx - w / 2 + dx, ry = sy + top + dy;
+      if (!placed.some(q => rx < q.x + q.w && rx + w > q.x && ry < q.y + q.h && ry + h > q.y)) break;
+      dy -= h + 4; moved = true;
+    }
+    placed.push({x: sx - w / 2 + dx, y: sy + top + dy, w, h});
     ctx.fillStyle = '#fff'; ctx.strokeStyle = '#333'; ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.roundRect(-w / 2 + dx, -38 + dy, w, h, 10); ctx.fill(); ctx.stroke();
-    if (dy === 0){ const tx = Math.max(-w / 2 + dx + 12, Math.min(w / 2 + dx - 12, 0)); ctx.beginPath(); ctx.moveTo(tx - 6, 12); ctx.lineTo(tx, 20); ctx.lineTo(tx + 6, 12); ctx.fillStyle = '#fff'; ctx.fill(); }
-    ctx.font = '700 ' + fs + 'px ' + BN_FONT; ctx.fillStyle = '#0b6b3a'; ctx.fillText(b.bn, dx, -14 + dy);
-    ctx.font = '11px system-ui'; ctx.fillStyle = '#666'; ctx.fillText(b.rom, dx, 6 + dy);
+    ctx.beginPath(); ctx.roundRect(-w / 2 + dx, top + dy, w, h, 10); ctx.fill(); ctx.stroke();
+    if (!moved){ const tx = Math.max(-w / 2 + dx + 12, Math.min(w / 2 + dx - 12, 0)); ctx.beginPath(); ctx.moveTo(tx - 6, 12); ctx.lineTo(tx, 20); ctx.lineTo(tx + 6, 12); ctx.fillStyle = '#fff'; ctx.fill(); }
+    const y1 = top + dy + 10 + asc;   // Bangla baseline, with room above for the marks
+    ctx.font = '700 ' + fs + 'px ' + BN_FONT; ctx.fillStyle = '#0b6b3a'; ctx.fillText(b.bn, dx, y1);   // centred from its ink by the fillText wrapper
+    ctx.font = '11px system-ui'; ctx.fillStyle = '#666'; ctx.fillText(b.rom, dx, y1 + desc + 6 + 10);
     ctx.globalAlpha = 1; ctx.restore();
   }
   ctx.restore();
@@ -701,8 +801,8 @@ function drawHUD(){
   }
   if (game.msgT > 0){
     let mf = 17; ctx.font = 'bold ' + mf + 'px ' + BN_FONT;
-    while (ctx.measureText(game.msg).width + 30 > vw - 16 && mf > 11){ mf -= 1; ctx.font = 'bold ' + mf + 'px ' + BN_FONT; }
-    const w = ctx.measureText(game.msg).width + 30;
+    while (textW(ctx, game.msg) + 30 > vw - 16 && mf > 11){ mf -= 1; ctx.font = 'bold ' + mf + 'px ' + BN_FONT; }
+    const w = textW(ctx, game.msg) + 30;
     ctx.fillStyle = 'rgba(0,0,0,.72)'; ctx.fillRect(vw / 2 - w / 2, vh - 110, w, 34);
     ctx.fillStyle = '#fff'; ctx.fillText(game.msg, vw / 2, vh - 87);
   }
@@ -722,14 +822,14 @@ function drawHUD(){
 // ---------- shareable photo card ----------
 function fitText(g, text, maxW, size, weight, family){
   let s = size; g.font = weight + ' ' + s + 'px ' + family;
-  while (g.measureText(text).width > maxW && s > 14){ s -= 2; g.font = weight + ' ' + s + 'px ' + family; }
+  while (textW(g, text) > maxW && s > 14){ s -= 2; g.font = weight + ' ' + s + 'px ' + family; }
 }
 function renderCard(kind, info){
   const c = document.createElement('canvas'); c.width = 720; c.height = 960; const g = c.getContext('2d');
   const grad = g.createLinearGradient(0, 0, 0, 960); grad.addColorStop(0, kind === 'win' ? '#0b6b3a' : '#2a1414'); grad.addColorStop(1, '#0f2a1c');
   g.fillStyle = grad; g.fillRect(0, 0, 720, 960);
-  g.textAlign = 'center'; g.fillStyle = '#fff'; g.font = 'bold 56px ' + BN_FONT; g.fillText('দেশি আন্দোলন', 360, 84);
-  g.font = '20px system-ui'; g.fillStyle = '#cfe3d6'; g.fillText('DESHI ANDOLON', 360, 116);
+  g.textAlign = 'center'; g.fillStyle = '#fff'; g.font = 'bold 56px ' + BN_FONT; g.fillText('আন্দোলন', 360, 84);
+  g.font = '20px system-ui'; g.fillStyle = '#cfe3d6'; g.fillText('ANDOLON', 360, 116);
 
   // polaroid: photo area on top, text strip below, nothing overlaps
   g.save(); g.translate(360, 480); g.rotate(-0.03);
@@ -765,16 +865,16 @@ function renderCard(kind, info){
   g.fillStyle = '#111'; fitText(g, info.line3, 500, 22, 'bold', 'system-ui'); g.fillText(info.line3, 0, y1 + 170);
   g.restore();
   g.fillStyle = '#cfe3d6'; g.font = '20px system-ui'; g.textAlign = 'center';
-  g.fillText('Fictional game · Play Deshi Andolon' + (location.protocol.startsWith('http') ? ' · ' + location.host : ''), 360, 925);
+  g.fillText('Fictional game · Play Andolon' + (location.protocol.startsWith('http') ? ' · ' + location.host : ''), 360, 925);
   return c;
 }
 async function shareCard(canvas, text){
   const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
-  const file = new File([blob], 'deshi-andolon.png', {type: 'image/png'});
-  if (navigator.canShare && navigator.canShare({files: [file]})){ try { await navigator.share({files: [file], text, title: 'Deshi Andolon'}); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+  const file = new File([blob], 'andolon.png', {type: 'image/png'});
+  if (navigator.canShare && navigator.canShare({files: [file]})){ try { await navigator.share({files: [file], text, title: 'Andolon'}); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
   downloadCard(canvas);
 }
-function downloadCard(canvas){ const a = document.createElement('a'); a.download = 'deshi-andolon.png'; a.href = canvas.toDataURL('image/png'); a.click(); }
+function downloadCard(canvas){ const a = document.createElement('a'); a.download = 'andolon.png'; a.href = canvas.toDataURL('image/png'); a.click(); }
 
 // ---------- player photo (optional, stays in the browser) ----------
 let playerPhoto = null;
@@ -819,6 +919,7 @@ function pickRoast(){
 // ---------- end / menu ----------
 function end(won, info){
   info = info || {};
+  stopSiren();
   game.started = false;
   const outcome = won ? 'win' : info.timeout ? 'timeout' : 'detained', st = game.stats, crowd = followers.length + 1;
   const score = computeScore(won, outcome), rank = rankFor(score);
@@ -842,9 +943,9 @@ function end(won, info){
     '<button id="share">Share card</button><button id="dl" class="alt">Download</button><button id="go">March again</button>' +
     (playerPhoto ? '<button id="nophoto" class="alt">Use default avatar</button>' : '') +
     '<small>Your photo stays on your device. It is only drawn onto this card. Fictional game; characters and events are not real people or incidents.</small>';
-  const text = won ? 'I held the Central Shaheed Minar in Deshi Andolon! ' + rank.en + ', ' + score.toLocaleString('en-US') + ' pts.'
-    : outcome === 'timeout' ? 'Deshi Andolon called me "' + line1 + '". Can you do better?'
-    : 'I was detained at ' + info.station + ' in Deshi Andolon. ' + score.toLocaleString('en-US') + ' pts.';
+  const text = won ? 'I held the Central Shaheed Minar in Andolon! ' + rank.en + ', ' + score.toLocaleString('en-US') + ' pts.'
+    : outcome === 'timeout' ? 'Andolon called me "' + line1 + '". Can you do better?'
+    : 'I was detained at ' + info.station + ' in Andolon. ' + score.toLocaleString('en-US') + ' pts.';
   const refresh = () => { canvas = build(); document.getElementById('cardimg').src = canvas.toDataURL('image/png'); const b = document.getElementById('nophoto'); if (!b && playerPhoto){ const n = document.createElement('button'); n.id = 'nophoto'; n.className = 'alt'; n.textContent = 'Use default avatar'; n.onclick = () => { playerPhoto = null; n.remove(); refresh(); }; document.getElementById('go').after(n); } };
   document.getElementById('photo2').onchange = e => loadPhoto(e.target.files[0], refresh);
   const np = document.getElementById('nophoto'); if (np) np.onclick = () => { playerPhoto = null; np.remove(); refresh(); };
@@ -881,9 +982,16 @@ const touchStop = () => { mouse.x = vw / 2; mouse.y = vh / 2; };
 cv.addEventListener('touchstart', touchPos, {passive: false});
 cv.addEventListener('touchmove', touchPos, {passive: false});
 cv.addEventListener('touchend', touchStop); cv.addEventListener('touchcancel', touchStop);
-let hi = 0; const tk = document.getElementById('tk');
-function tick(){ tk.textContent = HEADLINES[hi++ % HEADLINES.length]; }
-tick(); setInterval(tick, 8000);
+// breaking news: one long line that scrolls by itself (the text is doubled so the loop is seamless)
+const tk = document.getElementById('tk');
+function setupTicker(){
+  const line = HEADLINES.join('   \u25CF   ') + '   \u25CF   ';
+  tk.textContent = line + line;
+  const speed = innerWidth < 700 ? 55 : 80;   // pixels per second
+  tk.style.animationDuration = Math.max(20, (tk.scrollWidth / 2) / speed) + 's';
+}
+setupTicker(); addEventListener('resize', setupTicker);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(setupTicker);
 try { const n = localStorage.getItem('da_name'); if (n){ playerName = n; document.getElementById('pname').value = n; } } catch (e) {}
 mouse.x = innerWidth / 2; mouse.y = innerHeight / 2;
 requestAnimationFrame(frame);

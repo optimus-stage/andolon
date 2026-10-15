@@ -7,7 +7,7 @@ const RINGS = [2300, 1500, 800];       // barricade ring radii (outer to inner)
 const GATE_NEEDS = [6, 14, 25];        // crowd size needed to open each gate
 const GATES_PER_RING = [6, 2, 2];      // number of police barricades on the outer, middle and inner rings
 const HOUSE_COUNT = 110;               // solid houses on the map (kept few on purpose)
-const POLICE_PER_ZONE = [1, 2, 3, 4];  // police from the outer zone to the centre
+const POLICE_PER_ZONE = [4, 6, 3, 4];  // police in each zone, outermost to centre (the two outer rings have more)
 const GATE_HALF = 85;                  // half-width of a gate gap in px
 const GOAL = {x: 0, y: 0, r: 130};
 const NEED_HOLD = 10, NEED_CROWD = 15; // hold the Shaheed Minar for 10s with 15 people
@@ -33,9 +33,9 @@ const TAGS = {
   mass:        {bn: 'জনসমুদ্র',              en: 'Sea of People'},
   laststand:   {bn: 'শেষ লড়াই',            en: 'Last Stand'},
   breaker:     {bn: 'ব্যারিকেড ভাঙনকারী',    en: 'Barricade Breaker'},
-  first:       {bn: 'প্রথম কণ্ঠ',            en: 'First Voice'},
-  mid:         {bn: 'মাঝপথের যোদ্ধা',        en: 'Midway Fighter'},
-  inner:       {bn: 'ভেতরের সীমানা পর্যন্ত', en: 'Made It to the Inner Line'},
+  first:       {bn: 'প্রথম হুংকার',          en: 'First Roar'},
+  mid:         {bn: 'অকুতোভয়',              en: 'Fearless'},
+  inner:       {bn: 'দুর্জয়',                en: 'Indomitable'},
 };
 // Friendly roasts when Day 30 ends without holding the Shaheed Minar
 const ROASTS = {

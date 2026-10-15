@@ -23,3 +23,10 @@ small{color:#666;display:block;margin-top:12px;font-size:14px}
   #ticker{font-size:13px}
 }
 summary{font-size:21px;font-weight:700;color:#0b6b3a;cursor:pointer;margin:10px 0;padding:6px 0}
+/* breaking news: auto-scrolling line */
+#ticker{display:flex;align-items:center;gap:10px}
+#ticker b{flex:none;margin-right:0;position:relative;z-index:1}
+#tkwrap{flex:1;overflow:hidden}
+#tk{display:inline-block;white-space:nowrap;animation:tickerscroll 60s linear infinite;will-change:transform}
+@keyframes tickerscroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){#tk{animation-duration:240s}}
