@@ -1,0 +1,813 @@
+// Deshi Andolon (দেশি আন্দোলন): single-player march game. Depends on data.js and events.js.
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+let vw, vh;
+function resize(){ cv.width = vw = innerWidth; cv.height = vh = innerHeight; }
+addEventListener('resize', resize); resize();
+
+const rand = (a, b) => a + Math.random() * (b - a);
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const wrap = a => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
+const polar = (ang, r) => ({x: Math.cos(ang) * r, y: Math.sin(ang) * r});
+const SKINS = ['#f1c9a5', '#d9a679', '#b97d56', '#8d5a3b'];
+const WHITE = '#f7f7f2', BLUE = '#2f6fd0', BLACK = '#232323';
+const BN_FONT = '"Nirmala UI","Noto Sans Bengali",system-ui';
+const ZR = [MAP_R, ...RINGS, 0];                       // zone z spans ZR[z+1]..ZR[z]
+const zoneOf = (x, y) => { const d = Math.hypot(x, y); return d > RINGS[0] ? 0 : d > RINGS[1] ? 1 : d > RINGS[2] ? 2 : 3; };
+const spawnIn = (r0, r1) => { const a = rand(0, 6.283), r = Math.sqrt(rand(r0 * r0, r1 * r1)); return polar(a, r); };
+
+// ---------- sound (synthesised, no files) ----------
+let audio = null, muted = false;
+function ac(){
+  if (!audio){ try { const A = typeof AudioContext !== 'undefined' ? AudioContext : (typeof webkitAudioContext !== 'undefined' ? webkitAudioContext : null); if (A) audio = new A(); } catch (e) {} }
+  if (audio && audio.state === 'suspended') audio.resume();
+  return audio;
+}
+function sfxWhack(){   // stick hitting: a noise crack plus a low thud
+  if (muted) return; const a = ac(); if (!a) return; const t = a.currentTime;
+  const len = Math.floor(a.sampleRate * 0.14), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+  const src = a.createBufferSource(); src.buffer = buf;
+  const lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1800;
+  const g = a.createGain(); g.gain.value = 0.7; src.connect(lp); lp.connect(g); g.connect(a.destination); src.start(t);
+  const o = a.createOscillator(), og = a.createGain(); o.type = 'sine';
+  o.frequency.setValueAtTime(160, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.18);
+  og.gain.setValueAtTime(0.9, t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+  o.connect(og); og.connect(a.destination); o.start(t); o.stop(t + 0.22);
+}
+function sfxChime(){
+  if (muted) return; const a = ac(); if (!a) return; const t = a.currentTime;
+  [660, 880].forEach((f, i) => { const o = a.createOscillator(), g = a.createGain(); o.type = 'triangle'; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t + i * 0.1); g.gain.exponentialRampToValueAtTime(0.25, t + i * 0.1 + 0.02); g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.1 + 0.25);
+    o.connect(g); g.connect(a.destination); o.start(t + i * 0.1); o.stop(t + i * 0.1 + 0.3); });
+}
+function sfxGunshot(){   // sharp crack plus a short pop
+  if (muted) return; const a = ac(); if (!a) return; const t = a.currentTime;
+  const len = Math.floor(a.sampleRate * 0.2), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.4);
+  const src = a.createBufferSource(); src.buffer = buf;
+  const hp = a.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 900;
+  const g = a.createGain(); g.gain.value = 0.8; src.connect(hp); hp.connect(g); g.connect(a.destination); src.start(t);
+  const o = a.createOscillator(), og = a.createGain(); o.type = 'square';
+  o.frequency.setValueAtTime(240, t); o.frequency.exponentialRampToValueAtTime(60, t + 0.08);
+  og.gain.setValueAtTime(0.35, t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+  o.connect(og); og.connect(a.destination); o.start(t); o.stop(t + 0.12);
+}
+function sfxGrenade(){   // deep boom with a rumbling tail
+  if (muted) return; const a = ac(); if (!a) return; const t = a.currentTime;
+  const len = Math.floor(a.sampleRate * 1.0), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 1.6);
+  const src = a.createBufferSource(); src.buffer = buf;
+  const lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(900, t); lp.frequency.exponentialRampToValueAtTime(120, t + 0.9);
+  const g = a.createGain(); g.gain.value = 1.0; src.connect(lp); lp.connect(g); g.connect(a.destination); src.start(t);
+  const o = a.createOscillator(), og = a.createGain(); o.type = 'sine';
+  o.frequency.setValueAtTime(95, t); o.frequency.exponentialRampToValueAtTime(26, t + 0.9);
+  og.gain.setValueAtTime(1.0, t); og.gain.exponentialRampToValueAtTime(0.001, t + 1.0);
+  o.connect(og); og.connect(a.destination); o.start(t); o.stop(t + 1.05);
+}
+// Fight effects: sticks always; gunshots and grenade blasts now and then (sound plus a flash on screen)
+let fx = [];
+function addFx(x, y, kind){ fx.push({x, y, t: 0, kind}); }
+function fightSfx(x, y){
+  sfxWhack();
+  if (Math.random() < 0.45){ setTimeout(sfxGunshot, 120); addFx(x + rand(-25, 25), y + rand(-25, 10), 'shot'); }
+  if (Math.random() < 0.18){ setTimeout(sfxGrenade, 250); addFx(x + rand(-45, 45), y + rand(-35, 35), 'boom'); }
+}
+addEventListener('keydown', e => { if (e.key === 'm' || e.key === 'M') muted = !muted; });
+
+// ---------- town (houses, mosques, coffee shops): generated once, same every game ----------
+function mulberry(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function distToRiver(x, y){
+  let best = 1e9;
+  for (let i = 0; i < RIVER.length - 1; i++){
+    const [ax, ay] = RIVER[i], [bx, by] = RIVER[i + 1], dx = bx - ax, dy = by - ay;
+    let t = ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy); t = Math.max(0, Math.min(1, t));
+    best = Math.min(best, Math.hypot(x - (ax + dx * t), y - (ay + dy * t)));
+  }
+  return best;
+}
+function blocked(x, y, margin){
+  const d = Math.hypot(x, y);
+  if (d < 190 || d > MAP_R - 90) return true;
+  if (Math.hypot(x - START.x, y - START.y) < 220) return true;
+  for (const r of RINGS.concat([MAP_R - 60])) if (Math.abs(d - r) < 70 + margin) return true;
+  const step = Math.PI / 4; let m = ((Math.atan2(y, x) % step) + step) % step; m = Math.min(m, step - m);
+  if (d * Math.sin(m) < 50 + margin) return true;
+  if (distToRiver(x, y) < 85) return true;
+  if (Math.hypot(x - 130, y + 380) < 140) return true;
+  for (const s of STATIONS.concat([AYNAGHOR], HOSPITALS, NAMED_MOSQUES, NAMED_COFFEE)) if (Math.hypot(x - s.x, y - s.y) < 90) return true;
+  for (const l of LANDMARKS) if (Math.hypot(x - l.x, y - l.y) < 55) return true;
+  return false;
+}
+function genTown(){
+  const rng = mulberry(20240701), houses = [], occ = new Set(), mosques = NAMED_MOSQUES.slice(), coffee = NAMED_COFFEE.slice();
+  for (let i = 0; i < 40000 && houses.length < HOUSE_COUNT; i++){
+    const a = rng() * 6.283, r = Math.sqrt(rng()) * MAP_R, x = Math.cos(a) * r, y = Math.sin(a) * r;
+    if (blocked(x, y, 0)) continue;
+    const key = Math.floor(x / 150) + ',' + Math.floor(y / 150); if (occ.has(key)) continue; occ.add(key);
+    houses.push({x, y, w: 44 + rng() * 30, h: 36 + rng() * 28, c: ['#d8c9a8', '#c9a98f', '#b9b7a0', '#cfd2c4', '#d9b8a5', '#c4b69a'][Math.floor(rng() * 6)]});
+  }
+  while (mosques.length < 15 || coffee.length < 13){
+    const a = rng() * 6.283, r = Math.sqrt(rng()) * (MAP_R - 150), x = Math.cos(a) * r, y = Math.sin(a) * r;
+    if (blocked(x, y, 10)) continue;
+    if (mosques.length < 15 && rng() < 0.5) mosques.push({name: '', x, y}); else if (coffee.length < 13) coffee.push({name: '', x, y});
+  }
+  // every building is solid: nobody walks over them
+  const solids = houses.map(h => ({x: h.x, y: h.y, w: h.w, h: h.h}))
+    .concat(mosques.map(m => ({x: m.x - 24, y: m.y - 14, w: 48, h: 32})))
+    .concat(coffee.map(s => ({x: s.x - 18, y: s.y - 10, w: 36, h: 24})))
+    .concat(HOSPITALS.map(h => ({x: h.x - 30, y: h.y - 22, w: 60, h: 44})));
+  return {houses, mosques, coffee, solids};
+}
+const TOWN = genTown();
+
+// ---------- state ----------
+let gates, neutrals, followers, patrols, rivals, stalls, teas, shutdowns, player, game, chant, bubbles, toasts;
+let mouse = {x: 0, y: 0}, cam = {x: 0, y: 0}, playerName = 'Protester';
+
+function newGame(){
+  gates = []; stalls = []; teas = []; shutdowns = []; bubbles = []; toasts = []; fx = [];
+  RINGS.forEach((r, i) => {
+    const n = GATES_PER_RING[i], base = rand(-Math.PI, Math.PI);
+    for (let k = 0; k < n; k++){ const ang = base + k * 2 * Math.PI / n, p = polar(ang, r); gates.push({r, ring: i, ang, x: p.x, y: p.y, need: GATE_NEEDS[i], open: 0}); }
+  });
+  neutrals = []; followers = []; patrols = []; rivals = [];
+  const counts = [120, 100, 80, 60];   // bystanders per zone (doubled)
+  for (let z = 0; z < 4; z++){
+    const r0 = ZR[z + 1] + 70, r1 = ZR[z] - 70;
+    for (let i = 0; i < counts[z]; i++){ const p = spawnIn(Math.max(r0, 60), r1); neutrals.push(mkNeutral(p.x, p.y)); }
+    for (let i = 0; i < 2; i++){ const p = spawnIn(Math.max(r0, 220), r1); stalls.push({x: p.x, y: p.y, r: 55}); }
+    for (let i = 0; i < (z === 0 ? 2 : 1); i++){ const p = spawnIn(Math.max(r0, 220), r1); teas.push({x: p.x, y: p.y, cd: 0}); }
+    for (let i = 0; i < POLICE_PER_ZONE[z]; i++) patrols.push(mkPatrol(z));   // fewer police in the outer zones
+  }
+  [[2, 3, 150], [3, 4, 110]].forEach(([z, n, delay]) => {
+    const p = spawnIn(ZR[z + 1] + 100, ZR[z] - 100), r = {x: p.x, y: p.y, members: [], delay, moving: false};
+    for (let i = 0; i < n; i++) r.members.push({x: r.x + rand(-30, 30), y: r.y + rand(-30, 30), skin: pick(SKINS)});
+    rivals.push(r);
+  });
+  shutdowns.push({x: -900, y: -1100, r: 300}, {x: 700, y: 900, r: 260});
+  player = {x: START.x, y: START.y, r: 12, morale: 100, injured: false, skin: pick(SKINS), moving: false, hidden: false};
+  game = {ev: null, t: 0, day: 1, hold: 0, rhold: 0, started: true, mode: 'play', msg: '', msgT: 0, viralT: 40 + rand(0, 20), drain: 0, boost: 0, flash: 0, van: null, arrest: null, contested: false};
+  chant = {i: 0, timer: 3, phase: 0};
+  announceDay(1);
+}
+function mkNeutral(x, y){
+  const tones = ['#c9a27a', '#7a9cc9', '#c97a8f', '#8fc97a', '#c9b97a', '#9a7ac9'];
+  return {x, y, vx: 0, vy: 0, wt: 0, cool: 0, skin: pick(SKINS), dress: pick(tones)};
+}
+function mkPatrol(z){
+  const p = {x: 0, y: 0, z, tx: 0, ty: 0, skin: pick(SKINS), moving: true, swing: 0, cool: 0, ftimer: 0};
+  const s = spawnIn(ZR[z + 1] + 70, ZR[z] - 70); p.x = s.x; p.y = s.y; pickWaypoint(p); return p;
+}
+function pickWaypoint(p){ const s = spawnIn(Math.max(ZR[p.z + 1] + 70, 60), ZR[p.z] - 70); p.tx = s.x; p.ty = s.y; }
+function say(m, t){ game.msg = m; game.msgT = t || 3; }
+function announceDay(d){ if (EVENTS[d]) game.ev = {day: d, text: EVENTS[d], t: 4}; }
+
+// ---------- collision ----------
+function resolveRect(o, r, rad){
+  const cx = Math.max(r.x, Math.min(o.x, r.x + r.w)), cy = Math.max(r.y, Math.min(o.y, r.y + r.h));
+  let dx = o.x - cx, dy = o.y - cy, d = Math.hypot(dx, dy);
+  if (d < rad){
+    if (d === 0){ dx = (o.x - (r.x + r.w / 2)) || 0.01; dy = o.y - (r.y + r.h / 2); d = Math.hypot(dx, dy); o.x = r.x + r.w / 2 + dx / d * (Math.max(r.w, r.h) / 2 + rad); o.y = r.y + r.h / 2 + dy / d * (Math.max(r.w, r.h) / 2 + rad); return; }
+    o.x = cx + dx / d * rad; o.y = cy + dy / d * rad;
+  }
+}
+function collide(o, rad){
+  let d = Math.hypot(o.x, o.y) || 0.001;
+  for (let i = 0; i < RINGS.length; i++){
+    const r = RINGS[i], off = d - r;
+    if (Math.abs(off) < rad + 15){
+      const ang = Math.atan2(o.y, o.x);
+      let pass = false;
+      for (const g of gates) if (g.ring === i && g.open >= 1 && Math.abs(wrap(ang - g.ang)) * r < GATE_HALF){ pass = true; break; }
+      if (pass) continue;
+      const target = off >= 0 ? r + rad + 15 : r - rad - 15;
+      o.x = o.x / d * target; o.y = o.y / d * target; d = target;
+    }
+  }
+  for (const s of TOWN.solids){
+    if (Math.abs(o.x - (s.x + s.w / 2)) < s.w / 2 + rad + 1 && Math.abs(o.y - (s.y + s.h / 2)) < s.h / 2 + rad + 1) resolveRect(o, s, rad);
+  }
+  d = Math.hypot(o.x, o.y) || 0.001;
+  if (d > MAP_R - rad){ o.x = o.x / d * (MAP_R - rad); o.y = o.y / d * (MAP_R - rad); }
+}
+function followRing(list, leader, dt){
+  list.forEach((f, i) => {
+    const a = i * 2.4, rr = 22 + 11 * Math.sqrt(i);
+    const fx = leader.x + Math.cos(a) * rr - f.x, fy = leader.y + Math.sin(a) * rr - f.y, fd = Math.hypot(fx, fy);
+    const sp = Math.min(fd * 4, 260);
+    if (fd > 1){ f.x += fx / fd * sp * dt; f.y += fy / fd * sp * dt; }
+    collide(f, 7);
+  });
+}
+function nearestStations(p){ return [...STATIONS].sort((a, b) => dist(a, p) - dist(b, p)); }
+function nearestHospital(p){ return HOSPITALS.reduce((b, h) => !b || dist(h, p) < dist(b, p) ? h : b, null); }
+
+// ---------- update ----------
+function update(dt){
+  game.t += dt; game.msgT -= dt; game.flash = Math.max(0, game.flash - dt);
+  if (game.ev){ game.ev.t -= dt; if (game.ev.t <= 0) game.ev = null; }
+  for (let i = fx.length - 1; i >= 0; i--){ fx[i].t += dt; if (fx[i].t > (fx[i].kind === 'boom' ? 1.1 : 0.3)) fx.splice(i, 1); }
+  const day = Math.min(36, 1 + Math.floor(game.t / DAY_SECONDS));
+  if (day !== game.day){ game.day = day; announceDay(day); }
+  for (let i = toasts.length - 1; i >= 0; i--){ toasts[i].t -= dt; if (toasts[i].t <= 0) toasts.splice(i, 1); }
+  updateBubbles(dt);
+  if (game.mode === 'arrest'){ updateArrest(dt); return; }
+
+  // player
+  game.boost = Math.max(0, game.boost - dt);
+  const mw = {x: mouse.x + cam.x, y: mouse.y + cam.y};
+  const dx = mw.x - player.x, dy = mw.y - player.y, d = Math.hypot(dx, dy);
+  const speed = Math.max(110, 210 - Math.min(followers.length, 40) * 2) * (player.injured ? 0.75 : 1) * (game.boost > 0 ? 1.4 : 1);
+  player.moving = d > 8;
+  if (player.moving){ player.x += dx / d * speed * dt; player.y += dy / d * speed * dt; }
+  collide(player, player.r);
+  followRing(followers, player, dt);
+
+  // neutrals
+  for (let i = neutrals.length - 1; i >= 0; i--){
+    const n = neutrals[i];
+    n.cool -= dt; n.wt -= dt;
+    if (n.wt <= 0){ const a = rand(0, 6.28), s = rand(0, 25); n.vx = Math.cos(a) * s; n.vy = Math.sin(a) * s; n.wt = rand(1, 3); }
+    n.x += n.vx * dt; n.y += n.vy * dt; collide(n, 7);
+    if (n.cool <= 0 && dist(n, player) < 24){ followers.push(n); neutrals.splice(i, 1); }
+  }
+
+  // police: slow, short-range chase, strike with sticks
+  for (const p of patrols){
+    p.swing = Math.max(0, p.swing - dt); p.cool = Math.max(0, p.cool - dt);
+    const near = dist(p, player) < 170;
+    const tx = near ? player.x : p.tx, ty = near ? player.y : p.ty;
+    const ddx = tx - p.x, ddy = ty - p.y, dd = Math.hypot(ddx, ddy);
+    if (!near && dd < 10) pickWaypoint(p);
+    else if (dd > 30){ const s = near ? 100 : 70; p.x += ddx / dd * s * dt; p.y += ddy / dd * s * dt; }
+    collide(p, 14);
+    if (p.cool <= 0){
+      if (dist(p, player) < 42){ strikePlayer(p); if (game.mode === 'arrest') return; }
+      else {
+        const idx = followers.findIndex(f => dist(p, f) < 32);
+        if (idx >= 0) strikeFollower(p, idx);
+      }
+    }
+  }
+
+  // rivals (support the police, never struck by them)
+  for (const r of rivals){
+    r.moving = false;
+    const z = zoneOf(r.x, r.y);
+    let tgt = null, best = 1e9;
+    for (const n of neutrals){ const dd = dist(n, r); if (n.cool <= 0 && dd < best && dd < 600 && zoneOf(n.x, n.y) === z){ best = dd; tgt = n; } }
+    if (!tgt && game.t > r.delay){
+      const dr = Math.hypot(r.x, r.y), ri = RINGS.findIndex(rr => rr < dr - 20);
+      if (ri >= 0){
+        const g = gates.filter(g => g.ring === ri).sort((a, b) => dist(a, r) - dist(b, r))[0];
+        tgt = g.open >= 1 ? polar(g.ang, g.r - 90) : polar(g.ang, g.r + 70);
+      } else tgt = {x: 0, y: 0};
+    }
+    if (tgt){
+      const tdx = tgt.x - r.x, tdy = tgt.y - r.y, td = Math.hypot(tdx, tdy);
+      if (td > 6){ const s = Math.max(40, 70 - r.members.length); r.x += tdx / td * s * dt; r.y += tdy / td * s * dt; r.moving = true; }
+    }
+    collide(r, 12);
+    followRing(r.members, r, dt);
+    for (let i = neutrals.length - 1; i >= 0; i--) if (neutrals[i].cool <= 0 && dist(neutrals[i], r) < 24){ r.members.push({x: neutrals[i].x, y: neutrals[i].y, skin: neutrals[i].skin}); neutrals.splice(i, 1); }
+    for (const g of gates) if (g.open < 1 && dist(r, g) < 130 && r.members.length >= g.need) g.open = Math.min(1, g.open + dt / 3);
+    // clash: when protesters and a rival crowd meet they fight; ties go to the protesters
+    r.fightT = (r.fightT || 0) - dt;
+    if (r.fightT <= 0 && r.members.length && (dist(r, player) < 110 || followers.some(f => dist(f, r) < 55))){ r.fightT = 1.3; clash(r); }
+  }
+
+  // police barricades
+  for (const g of gates){
+    if (g.open >= 1) continue;
+    const near = dist(player, g) < 130;
+    if (near && followers.length >= g.need){ g.open = Math.min(1, g.open + dt / 3); if (g.open >= 1) say('The police barricade gives way. Keep moving!'); }
+    else if (!rivals.some(r => dist(r, g) < 130 && r.members.length >= g.need)) g.open = Math.max(0, g.open - dt * 0.5);
+    if (near && followers.length < g.need && game.msgT <= 0) say('This police barricade needs ' + g.need + ' people. You have ' + followers.length + '.');
+  }
+
+  // morale: drains slowly; Biriyani stalls and hospitals restore it; Mama r Tong er Cha gives a boost
+  let restoring = stalls.some(s => dist(s, player) < s.r + 10) ? 30 : 0;
+  const hosp = HOSPITALS.find(h => dist(h, player) < 62);
+  if (hosp){ restoring = Math.max(restoring, 45); if (player.injured && player.morale > 60){ player.injured = false; sfxChime(); say('Treated at ' + hosp.name + '. You are back on your feet!'); } }
+  if (restoring) player.morale = Math.min(100, player.morale + restoring * dt);
+  else player.morale = Math.max(0, player.morale - (followers.length ? 0.9 : 0) * dt);
+  for (const t of teas){
+    t.cd = Math.max(0, t.cd - dt);
+    if (t.cd <= 0 && dist(t, player) < 34){ t.cd = 45; player.morale = Math.min(100, player.morale + 50); game.boost = 6; sfxChime(); say('মামার টঙের চা! Morale boost and extra speed'); }
+  }
+  if (player.morale <= 0){
+    game.drain += dt;
+    if (game.drain > 2 && followers.length){ game.drain = 0; const f = followers.pop(); f.cool = 4; neutrals.push(f); say('Tired and hungry: someone headed home'); }
+  }
+
+  game.viralT -= dt;
+  if (game.viralT <= 0){
+    game.viralT = 40 + rand(0, 20);
+    let c = 0;
+    for (let i = neutrals.length - 1; i >= 0; i--) if (dist(neutrals[i], player) < 380 && neutrals[i].cool <= 0){ followers.push(neutrals[i]); neutrals.splice(i, 1); c++; }
+    say('A video goes viral. ' + c + ' more people join you!');
+  }
+
+  updateChant(dt);
+
+  // the Shaheed Minar: protesters win ties against rivals
+  const pIn = dist(player, GOAL) < GOAL.r;
+  const rIn = rivals.find(r => dist(r, GOAL) < GOAL.r && r.members.length + 1 >= RIVAL_CROWD);
+  const rivalAhead = rIn && rIn.members.length > followers.length;
+  game.contested = pIn && !!rivalAhead;
+  if (pIn && followers.length + 1 >= NEED_CROWD && !rivalAhead) game.hold += dt; else game.hold = Math.max(0, game.hold - dt);
+  if (rivalAhead && !pIn) game.rhold += dt; else game.rhold = Math.max(0, game.rhold - dt * 0.5);
+  if (game.hold >= NEED_HOLD) end(true);
+  else if (game.rhold >= RIVAL_HOLD) end(false, {rival: true});
+}
+
+// ---------- rival clash ----------
+function clash(r){
+  const pP = followers.length + 1, pR = r.members.length + 1;
+  let dmgP = Math.ceil(0.2 * pR * (pR > pP ? 1 : 0.5)), dmgR = Math.ceil(0.2 * pP * (pP >= pR ? 1 : 0.5));
+  dmgP = Math.min(dmgP, followers.length); dmgR = Math.min(dmgR, r.members.length);
+  for (let i = 0; i < dmgP; i++){ const f = followers.pop(); f.cool = 6; f.vx = rand(-70, 70); f.vy = rand(-70, 70); f.wt = 1; neutrals.push(f); }
+  for (let i = 0; i < dmgR; i++){ const m = r.members.pop(); const n = mkNeutral(m.x, m.y); n.cool = 6; n.vx = rand(-70, 70); n.vy = rand(-70, 70); n.wt = 1; neutrals.push(n); }
+  player.morale = Math.max(0, player.morale - 4);
+  fightSfx((r.x + player.x) / 2, (r.y + player.y) / 2);
+  say('Clash with a rival crowd! You lost ' + dmgP + ', they lost ' + dmgR, 2);
+}
+
+// ---------- police strikes ----------
+function strikePlayer(p){
+  p.swing = 0.35; p.cool = 1.4; fightSfx(player.x, player.y); game.flash = 0.4;
+  if (player.morale <= 25){ startArrest(p); return; }   // too exhausted to get away: detained
+  player.morale -= 25; player.injured = true;
+  const a = Math.atan2(player.y - p.y, player.x - p.x); player.x += Math.cos(a) * 45; player.y += Math.sin(a) * 45; collide(player, player.r);
+  const h = nearestHospital(player);
+  say('Beaten by the police! Find a hospital' + (h ? ' (' + h.name + ')' : '') + ' to recover.', 4);
+}
+function strikeFollower(p, idx){
+  p.swing = 0.35; p.cool = 1.8;
+  const f = followers.splice(idx, 1)[0]; fightSfx(f.x, f.y);
+  if (Math.random() < 0.4){ detainFollower(f); return; }   // taken to a station
+  const a = Math.atan2(f.y - p.y, f.x - p.x);
+  f.cool = 6; f.vx = Math.cos(a) * 80; f.vy = Math.sin(a) * 80; f.wt = 1; neutrals.push(f);
+  say('Police beat back part of your crowd', 2);
+}
+function detainFollower(f){
+  const st = nearestStations(f)[0].name;
+  toasts.push({name: pick(NAMES), station: st, skin: f.skin, t: 4});
+  say('Someone from your crowd was detained at ' + st);
+}
+function startArrest(police){
+  const dest = Math.random() < 0.3 ? AYNAGHOR : pick(nearestStations(player).slice(0, 3));
+  const a = Math.atan2(police.y - player.y, police.x - player.x);
+  game.mode = 'arrest';
+  game.arrest = {phase: 0, t: 0, dest};
+  game.van = {x: player.x + Math.cos(a) * 520, y: player.y + Math.sin(a) * 520, dir: 1, sx: 0, sy: 0};
+  say('The police have caught you!', 2);
+}
+function updateArrest(dt){
+  const A = game.arrest, v = game.van;
+  A.t += dt;
+  if (A.phase === 0){ if (A.t > 0.8){ A.phase = 1; A.t = 0; v.sx = v.x; v.sy = v.y; } }
+  else if (A.phase === 1){
+    const k = Math.min(1, A.t / 1.6); v.x = v.sx + (player.x - v.sx) * k; v.y = v.sy + (player.y - v.sy) * k; v.dir = player.x < v.sx ? -1 : 1;
+    if (k >= 1){
+      A.phase = 2; A.t = 0; player.hidden = true;
+      followers.forEach(f => { f.cool = 5; f.vx = rand(-40, 40); f.vy = rand(-40, 40); neutrals.push(f); }); followers = [];
+      v.sx = v.x; v.sy = v.y; A.dur = Math.max(2, Math.min(4, dist(v, A.dest) / 600)); say('Taken to ' + A.dest.name, 3);
+    }
+  } else {
+    const k = Math.min(1, A.t / A.dur); v.x = v.sx + (A.dest.x - v.sx) * k; v.y = v.sy + (A.dest.y - v.sy) * k; v.dir = A.dest.x < v.sx ? -1 : 1;
+    if (k >= 1) end(false, {station: A.dest.name, aynaghor: A.dest === AYNAGHOR});
+  }
+}
+
+// ---------- chants ----------
+function bubble(who, bn, rom, t){ bubbles.push({who, bn, rom, t}); }
+function updateBubbles(dt){ for (let i = bubbles.length - 1; i >= 0; i--){ bubbles[i].t -= dt; if (bubbles[i].t <= 0) bubbles.splice(i, 1); } }
+function updateChant(dt){
+  if (followers.length < 3){ chant.timer = Math.max(chant.timer, 1); return; }
+  chant.timer -= dt;
+  if (chant.timer > 0) return;
+  const c = CHANTS[chant.i];
+  if (chant.phase === 0){ bubble(player, c.call[0], c.call[1], 2.2); chant.phase = 1; chant.timer = 1.3; }
+  else {
+    [...followers].sort(() => Math.random() - 0.5).slice(0, Math.min(4, followers.length)).forEach(f => bubble(f, c.resp[0], c.resp[1], 2));
+    chant.phase = 0; chant.i = (chant.i + 1) % CHANTS.length; chant.timer = 3;
+  }
+}
+
+// ---------- sprites ----------
+function person(c, x, y, o){
+  const s = o.scale || 1, ph = (x + y) * 0.05, t = (game && game.t) || 0, bob = o.moving ? Math.sin(t * 11 + ph) * 1.6 : 0;
+  c.save(); c.translate(x, y); c.scale(s, s);
+  c.fillStyle = 'rgba(0,0,0,.2)'; c.beginPath(); c.ellipse(0, 9, 8, 3, 0, 0, 6.28); c.fill();
+  const sw = o.moving ? Math.sin(t * 11 + ph) * 3 : 0;
+  c.fillStyle = o.legs || '#2b2b2b'; c.fillRect(-4 + sw, 3, 3, 7); c.fillRect(1 - sw, 3, 3, 7);
+  c.fillStyle = o.dress; c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 1;
+  c.beginPath(); c.roundRect(-6, -7 + bob, 12, 12, 3); c.fill(); c.stroke();
+  c.fillStyle = o.dress; c.fillRect(-8, -6 + bob, 2.5, 8); c.fillRect(5.5, -6 + bob, 2.5, 8);
+  c.fillStyle = o.skin; c.beginPath(); c.arc(0, -12 + bob, 5, 0, 6.28); c.fill();
+  if (o.hat === 'helmet'){
+    c.fillStyle = '#1a1a1a'; c.beginPath(); c.arc(0, -13 + bob, 5.8, Math.PI, 0); c.fill(); c.fillRect(-6, -13 + bob, 12, 2.5);
+    c.fillStyle = 'rgba(180,200,220,.6)'; c.fillRect(-4, -11 + bob, 8, 2);
+  } else if (o.hat === 'cap'){
+    c.fillStyle = '#12306b'; c.beginPath(); c.arc(0, -13 + bob, 5.5, Math.PI, 0); c.fill(); c.fillRect(-1, -13 + bob, 8, 2);
+  } else if (o.hat === 'band'){
+    c.fillStyle = '#c8102e'; c.fillRect(-5, -15 + bob, 10, 2.5);
+  } else { c.fillStyle = '#2a1a10'; c.beginPath(); c.arc(0, -14 + bob, 5, Math.PI, 0); c.fill(); }
+  if (o.flag){  // Bangladesh flag: green field, red disc (only protesters carry it)
+    c.fillStyle = '#6b4a2a'; c.fillRect(7, -26 + bob, 1.6, 22);
+    c.fillStyle = '#0b6b3a'; c.fillRect(8.6, -26 + bob, 11, 8);
+    c.fillStyle = '#c8102e'; c.beginPath(); c.arc(13.6, -22 + bob, 2.6, 0, 6.28); c.fill();
+  }
+  if (o.stick){  // police lathi (stick); swings down when striking
+    const sw2 = o.swing || 0, ang = -0.7 + (sw2 > 0 ? (1 - sw2) * 2.0 : 0);
+    c.save(); c.translate(7, -3 + bob); c.rotate(ang);
+    c.fillStyle = '#8b5a2b'; c.fillRect(0, -1.5, 17, 3); c.fillStyle = '#5a3a1a'; c.fillRect(12, -1.5, 5, 3);
+    c.restore();
+  }
+  c.restore();
+}
+
+function drawVan(c, v){
+  c.save(); c.translate(v.x, v.y); c.scale(v.dir, 1);
+  c.fillStyle = 'rgba(0,0,0,.25)'; c.beginPath(); c.ellipse(0, 20, 38, 7, 0, 0, 6.28); c.fill();
+  c.fillStyle = '#f2f2f2'; c.strokeStyle = '#222'; c.lineWidth = 1.5; c.beginPath(); c.roundRect(-36, -14, 72, 30, 5); c.fill(); c.stroke();
+  c.fillStyle = '#2f6fd0'; c.fillRect(-36, 2, 72, 6);
+  c.fillStyle = '#9fd3f5'; c.fillRect(18, -11, 14, 11);
+  c.fillStyle = '#222'; c.font = 'bold 9px system-ui'; c.textAlign = 'center'; c.fillText('POLICE', -6, 0);
+  c.fillStyle = '#111'; c.beginPath(); c.arc(-22, 16, 6, 0, 6.28); c.arc(22, 16, 6, 0, 6.28); c.fill();
+  const flash = Math.floor((game ? game.t : 0) * 6) % 2;
+  c.fillStyle = flash ? '#e53935' : '#1e88e5'; c.fillRect(-12, -19, 10, 5);
+  c.fillStyle = flash ? '#1e88e5' : '#e53935'; c.fillRect(2, -19, 10, 5);
+  c.restore();
+}
+
+function drawMonument(c){
+  c.fillStyle = 'rgba(200,16,46,.9)'; c.beginPath(); c.arc(0, -52, 62, 0, 6.28); c.fill();
+  c.fillStyle = '#cfc7ae'; c.fillRect(-105, 34, 210, 18); c.fillRect(-88, 20, 176, 16); c.fillRect(-70, 8, 140, 14);
+  const slab = (cx, h, lean, w) => {
+    c.fillStyle = '#f2eee2'; c.strokeStyle = '#8a8470'; c.lineWidth = 1.5;
+    c.beginPath(); c.moveTo(cx - w / 2, 8); c.lineTo(cx - w / 2 + lean, 8 - h); c.lineTo(cx + w / 2 + lean, 8 - h); c.lineTo(cx + w / 2, 8); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle = 'rgba(0,0,0,.12)'; c.beginPath(); c.moveTo(cx + w / 2, 8); c.lineTo(cx + w / 2 + lean, 8 - h); c.lineTo(cx + w / 2 + lean - 5, 8 - h); c.lineTo(cx + w / 2 - 5, 8); c.fill();
+  };
+  slab(-62, 62, 12, 20); slab(-34, 82, 8, 22); slab(0, 112, 0, 26); slab(34, 82, -8, 22); slab(62, 62, -12, 20);
+}
+
+function label(c, text, x, y, font, color){ c.font = font; c.textAlign = 'center'; c.fillStyle = color; c.fillText(text, x, y); }
+function drawMosque(c, m){
+  c.fillStyle = '#e9efe6'; c.strokeStyle = '#6b7f70'; c.lineWidth = 1.5; c.fillRect(m.x - 24, m.y - 14, 48, 32); c.strokeRect(m.x - 24, m.y - 14, 48, 32);
+  c.fillStyle = '#2e8b57'; c.beginPath(); c.arc(m.x, m.y - 14, 15, Math.PI, 0); c.fill();
+  c.fillStyle = '#e9efe6'; c.fillRect(m.x - 31, m.y - 34, 6, 52); c.fillRect(m.x + 25, m.y - 34, 6, 52);
+  c.fillStyle = '#2e8b57'; c.beginPath(); c.arc(m.x - 28, m.y - 34, 4, Math.PI, 0); c.arc(m.x + 28, m.y - 34, 4, Math.PI, 0); c.fill();
+  label(c, m.name || 'Mosque', m.x, m.y + 32, '600 11px system-ui', '#2e5d44');
+}
+function drawCoffee(c, s){
+  c.fillStyle = '#8b5a3c'; c.fillRect(s.x - 18, s.y - 10, 36, 24);
+  for (let i = 0; i < 6; i++){ c.fillStyle = i % 2 ? '#fff' : '#c8102e'; c.fillRect(s.x - 20 + i * 7, s.y - 16, 7, 8); }
+  c.fillStyle = '#fff'; c.beginPath(); c.arc(s.x, s.y + 4, 5, 0, 6.28); c.fill(); c.fillStyle = '#5a3a1a'; c.fillRect(s.x - 3, s.y + 1, 6, 2);
+  label(c, s.name || 'Coffee Shop', s.x, s.y + 28, '600 11px system-ui', '#5a3a1a');
+}
+function drawHospital(c, h){
+  c.fillStyle = '#fff'; c.strokeStyle = '#c8102e'; c.lineWidth = 2; c.fillRect(h.x - 30, h.y - 22, 60, 44); c.strokeRect(h.x - 30, h.y - 22, 60, 44);
+  c.fillStyle = '#c8102e'; c.fillRect(h.x - 4, h.y - 14, 8, 24); c.fillRect(h.x - 12, h.y - 6, 24, 8);
+  c.fillStyle = 'rgba(200,16,46,.12)'; c.beginPath(); c.arc(h.x, h.y, 62, 0, 6.28); c.fill();
+  label(c, h.name, h.x, h.y - 30, 'bold 11px system-ui', '#a00d26');
+}
+function drawBiriyani(c, s){
+  c.fillStyle = 'rgba(255,170,40,.2)'; c.beginPath(); c.arc(s.x, s.y, s.r, 0, 6.28); c.fill();
+  c.fillStyle = '#7a4a1e'; c.beginPath(); c.ellipse(s.x, s.y + 4, 17, 11, 0, 0, 6.28); c.fill();
+  c.fillStyle = '#e8b04a'; c.beginPath(); c.ellipse(s.x, s.y, 17, 9, 0, 0, 6.28); c.fill();
+  c.fillStyle = '#c8102e'; c.fillRect(s.x - 4, s.y - 3, 3, 3); c.fillRect(s.x + 3, s.y, 3, 3); c.fillStyle = '#fff'; c.fillRect(s.x - 8, s.y + 1, 3, 2);
+  label(c, 'বিরিয়ানি', s.x, s.y - 20, 'bold 14px ' + BN_FONT, '#7a4a1e');
+}
+function drawTea(c, t){
+  c.globalAlpha = t.cd > 0 ? 0.45 : 1;
+  c.fillStyle = '#9a6a3a'; c.fillRect(t.x - 15, t.y - 8, 30, 20);
+  c.fillStyle = '#4a7a3a'; c.beginPath(); c.moveTo(t.x - 19, t.y - 8); c.lineTo(t.x, t.y - 22); c.lineTo(t.x + 19, t.y - 8); c.closePath(); c.fill();
+  c.fillStyle = '#fff'; c.fillRect(t.x - 4, t.y - 2, 8, 6); c.fillStyle = '#c8102e'; c.fillRect(t.x - 4, t.y - 2, 8, 2);
+  label(c, 'মামার টঙের চা', t.x, t.y - 28, 'bold 13px ' + BN_FONT, '#3a5a2a');
+  c.globalAlpha = 1;
+}
+
+// ---------- draw ----------
+function draw(){
+  const target = game.mode === 'arrest' && game.van && game.arrest.phase > 0 ? game.van : player;
+  cam.x = target.x - vw / 2; cam.y = target.y - vh / 2;
+  const v = o => o.x > cam.x - 100 && o.x < cam.x + vw + 100 && o.y > cam.y - 100 && o.y < cam.y + vh + 100;
+  ctx.fillStyle = '#0f2a1c'; ctx.fillRect(0, 0, vw, vh);
+  ctx.save(); ctx.translate(-cam.x, -cam.y);
+  ctx.beginPath(); ctx.arc(0, 0, MAP_R, 0, 6.283); ctx.fillStyle = '#e8dfc4'; ctx.fill();
+  ctx.save(); ctx.clip();
+
+  ctx.strokeStyle = '#c9c3ae'; ctx.lineWidth = 54;
+  for (let k = 0; k < 8; k++){ const p = polar(k * Math.PI / 4, MAP_R); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(p.x, p.y); ctx.stroke(); }
+  ctx.lineWidth = 64; for (const r of RINGS.concat([MAP_R - 60])){ ctx.beginPath(); ctx.arc(0, 0, r, 0, 6.283); ctx.stroke(); }
+  ctx.strokeStyle = '#8ec3e6'; ctx.lineWidth = 90; ctx.lineJoin = 'round'; ctx.beginPath();
+  RIVER.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.stroke();
+  label(ctx, 'Buriganga', -600, 1330, 'italic 16px system-ui', '#4b7ea3');
+  ctx.fillStyle = '#8ec3e6'; ctx.beginPath(); ctx.ellipse(130, -380, 110, 50, -0.5, 0, 6.28); ctx.fill();
+
+  // houses
+  for (const h of TOWN.houses) if (h.x > cam.x - 80 && h.x < cam.x + vw + 80 && h.y > cam.y - 80 && h.y < cam.y + vh + 80){
+    ctx.fillStyle = 'rgba(0,0,0,.14)'; ctx.fillRect(h.x + 3, h.y + 3, h.w, h.h);
+    ctx.fillStyle = h.c; ctx.fillRect(h.x, h.y, h.w, h.h);
+    ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(h.x, h.y, h.w, 5);
+  }
+  for (const l of LANDMARKS) label(ctx, l.name, l.x, l.y, '600 14px system-ui', 'rgba(40,40,40,.65)');
+  for (const m of TOWN.mosques) if (v(m)) drawMosque(ctx, m);
+  for (const s of TOWN.coffee) if (v(s)) drawCoffee(ctx, s);
+  for (const h of HOSPITALS) if (v(h)) drawHospital(ctx, h);
+  for (const s of STATIONS.concat([AYNAGHOR])){
+    const ay = s === AYNAGHOR;
+    ctx.fillStyle = ay ? '#3a2a2a' : '#2f6fd0'; ctx.fillRect(s.x - 14, s.y - 10, 28, 20);
+    ctx.fillStyle = '#fff'; ctx.fillRect(s.x - 4, s.y - 2, 8, 12);
+    label(ctx, s.name, s.x, s.y - 16, 'bold 12px system-ui', ay ? '#7a1a1a' : '#12306b');
+  }
+  for (const s of shutdowns){
+    ctx.fillStyle = 'rgba(60,60,90,.28)'; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.28); ctx.fill();
+    ctx.strokeStyle = '#334'; ctx.lineWidth = 2; ctx.setLineDash([10, 8]); ctx.stroke(); ctx.setLineDash([]);
+    label(ctx, 'INTERNET SHUTDOWN', s.x, s.y, 'bold 16px system-ui', '#334');
+  }
+  for (const s of stalls) if (v(s)) drawBiriyani(ctx, s);
+  for (const t of teas) if (v(t)) drawTea(ctx, t);
+  ctx.restore();
+
+  // goal
+  ctx.fillStyle = 'rgba(11,107,58,.18)'; ctx.beginPath(); ctx.arc(0, 0, GOAL.r, 0, 6.28); ctx.fill();
+  ctx.strokeStyle = '#0b6b3a'; ctx.lineWidth = 4; ctx.stroke();
+  drawMonument(ctx);
+  label(ctx, 'কেন্দ্রীয় শহীদ মিনার', 0, -GOAL.r - 12, 'bold 20px ' + BN_FONT, '#0b6b3a');
+
+  // police barricade rings
+  RINGS.forEach((r, i) => {
+    const gs = gates.filter(g => g.ring === i).sort((a, b) => a.ang - b.ang), half = GATE_HALF / r;
+    ctx.strokeStyle = '#6c6c6c'; ctx.lineWidth = 30;
+    gs.forEach((g, k) => { const nx = gs[(k + 1) % gs.length], end = k + 1 < gs.length ? nx.ang : nx.ang + 2 * Math.PI; ctx.beginPath(); ctx.arc(0, 0, r, g.ang + half, end - half); ctx.stroke(); });
+    for (const g of gs){
+      ctx.globalAlpha = 1 - g.open * 0.85; ctx.strokeStyle = '#b5532a'; ctx.beginPath(); ctx.arc(0, 0, r, g.ang - half, g.ang + half); ctx.stroke(); ctx.globalAlpha = 1;
+      const lp = polar(g.ang, r + 32); label(ctx, g.open >= 1 ? 'OPEN' : 'POLICE BARRICADE: ' + g.need + ' people', lp.x, lp.y, 'bold 14px system-ui', '#111');
+    }
+  });
+
+  // people (depth-sorted)
+  const list = [];
+  for (const n of neutrals) if (v(n)) list.push([n.y, () => person(ctx, n.x, n.y, {dress: n.dress, skin: n.skin, moving: Math.abs(n.vx) + Math.abs(n.vy) > 4})]);
+  followers.forEach((f, i) => { if (v(f)) list.push([f.y, () => person(ctx, f.x, f.y, {dress: WHITE, skin: f.skin, moving: player.moving, flag: i % 6 === 0, hat: i % 4 === 0 ? 'band' : null})]); });
+  for (const r of rivals){
+    r.members.forEach(m => { if (v(m)) list.push([m.y, () => person(ctx, m.x, m.y, {dress: BLACK, skin: m.skin, hat: 'helmet', moving: r.moving})]); });
+    list.push([r.y, () => { person(ctx, r.x, r.y, {dress: BLACK, skin: SKINS[1], hat: 'helmet', scale: 1.25, moving: r.moving}); label(ctx, 'RIVAL ' + (r.members.length + 1), r.x, r.y - 28, 'bold 11px system-ui', '#111'); }]);
+  }
+  if (!player.hidden) list.push([player.y, () => {
+    person(ctx, player.x, player.y, {dress: WHITE, skin: player.skin, hat: 'band', scale: 1.35, moving: player.moving, flag: true});
+    // name tag above the head so you can find yourself
+    ctx.font = 'bold 13px ' + BN_FONT; const w = ctx.measureText(playerName).width + 14;
+    ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.beginPath(); ctx.roundRect(player.x - w / 2, player.y - 56, w, 20, 6); ctx.fill();
+    ctx.fillStyle = '#ffd54f'; ctx.textAlign = 'center'; ctx.fillText(playerName, player.x, player.y - 41);
+  }]);
+  list.sort((a, b) => a[0] - b[0]).forEach(e => e[1]());
+  for (const p of patrols) if (v(p)){   // police: blue, stick, no flag
+    ctx.strokeStyle = 'rgba(47,111,208,.7)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p.x, p.y, 26, 0, 6.28); ctx.stroke();
+    person(ctx, p.x, p.y, {dress: BLUE, skin: p.skin, hat: 'cap', legs: '#14284f', scale: 1.3, moving: true, stick: true, swing: p.swing / 0.35});
+  }
+  if (game.van) drawVan(ctx, game.van);
+  for (const e of fx){   // gunshot flashes and grenade blasts (smoke and light, nothing graphic)
+    if (e.kind === 'shot'){
+      const a = 1 - e.t / 0.3; ctx.globalAlpha = a; ctx.fillStyle = '#fff6b0'; ctx.beginPath();
+      for (let k = 0; k < 8; k++){ const ang = k * Math.PI / 4, rr = k % 2 ? 7 : 16; ctx.lineTo(e.x + Math.cos(ang) * rr, e.y + Math.sin(ang) * rr); }
+      ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
+    } else {
+      const k = e.t / 1.1, rr = 18 + k * 62;
+      ctx.globalAlpha = Math.max(0, 0.75 * (1 - k)); ctx.fillStyle = '#ffb347'; ctx.beginPath(); ctx.arc(e.x, e.y, rr, 0, 6.28); ctx.fill();
+      ctx.globalAlpha = Math.max(0, 0.55 * (1 - k)); ctx.fillStyle = '#7a7a7a'; ctx.beginPath(); ctx.arc(e.x - 12, e.y - 10 - k * 28, rr * 0.7, 0, 6.28); ctx.arc(e.x + 14, e.y - 4 - k * 22, rr * 0.6, 0, 6.28); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  for (const b of bubbles){
+    if (!v(b.who)) continue;
+    const bx = b.who.x, by = b.who.y - 38 - (b.who === player ? 36 : 0);
+    ctx.globalAlpha = Math.min(1, b.t * 2); ctx.textAlign = 'center';
+    ctx.font = '700 15px ' + BN_FONT;
+    const w = Math.max(ctx.measureText(b.bn).width, 70) + 16;
+    ctx.fillStyle = '#fff'; ctx.strokeStyle = '#333'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.roundRect(bx - w / 2, by - 26, w, 34, 8); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(bx - 5, by + 8); ctx.lineTo(bx, by + 15); ctx.lineTo(bx + 5, by + 8); ctx.fillStyle = '#fff'; ctx.fill();
+    ctx.fillStyle = '#0b6b3a'; ctx.fillText(b.bn, bx, by - 8);
+    ctx.font = '10px system-ui'; ctx.fillStyle = '#666'; ctx.fillText(b.rom, bx, by + 4);
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+  drawHUD();
+}
+
+function inShutdown(){ return shutdowns.some(s => dist(s, player) < s.r); }
+
+function drawHUD(){
+  ctx.textAlign = 'left';
+  const evTxt = EVENTS[game.day];
+  ctx.font = 'bold 24px ' + BN_FONT; const evW = evTxt ? ctx.measureText(evTxt).width : 0;
+  const pw = Math.max(270, evW + 34), ph = evTxt ? 98 : 58;
+  ctx.fillStyle = 'rgba(0,0,0,.68)'; ctx.fillRect(10, 10, pw, ph);
+  ctx.fillStyle = '#ffd54f'; ctx.font = 'bold 32px system-ui'; ctx.fillText(game.day + ' July', 22, 48);
+  ctx.fillStyle = '#cfd8dc'; ctx.font = '14px system-ui'; ctx.fillText('Day ' + game.day + ' of 36', 175, 46);
+  if (evTxt){ ctx.fillStyle = '#fff'; ctx.font = 'bold 24px ' + BN_FONT; ctx.fillText(evTxt, 22, 86); }
+  const y0 = 10 + ph + 10;
+  ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(10, y0, 230, 78);
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 16px system-ui';
+  ctx.fillText('Crowd: ' + (followers.length + 1), 20, y0 + 22);
+  ctx.fillText('Time: ' + Math.floor(game.t) + 's', 130, y0 + 22);
+  ctx.font = '12px system-ui'; ctx.fillText('Morale', 20, y0 + 44);
+  ctx.fillStyle = '#444'; ctx.fillRect(70, y0 + 35, 160, 10);
+  ctx.fillStyle = player.morale > 30 ? '#4caf50' : '#e53935'; ctx.fillRect(70, y0 + 35, 1.6 * player.morale, 10);
+  const ri = RINGS.findIndex(r => r < Math.hypot(player.x, player.y) - 20);
+  ctx.fillStyle = '#fff'; ctx.fillText(ri >= 0 ? 'Next police barricade needs ' + GATE_NEEDS[ri] + ' people' : 'All barricades passed!', 20, y0 + 68);
+  if (player.injured){ ctx.fillStyle = '#e53935'; ctx.font = 'bold 13px system-ui'; ctx.fillText('INJURED: find a hospital', 20, y0 + 96); }
+
+  if (!inShutdown()){
+    const a = Math.atan2(GOAL.y - player.y, GOAL.x - player.x);
+    ctx.save(); ctx.translate(vw - 50, 50); ctx.rotate(a);
+    ctx.fillStyle = '#c8102e'; ctx.beginPath(); ctx.moveTo(24, 0); ctx.lineTo(-12, -14); ctx.lineTo(-6, 0); ctx.lineTo(-12, 14); ctx.fill(); ctx.restore();
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = '11px system-ui'; ctx.fillText((dist(player, GOAL) / 190).toFixed(1) + ' km', vw - 50, 84);
+    if (player.injured){
+      const h = nearestHospital(player), ha = Math.atan2(h.y - player.y, h.x - player.x);
+      ctx.save(); ctx.translate(vw - 50, 130); ctx.rotate(ha);
+      ctx.fillStyle = '#2e9e5b'; ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(-10, -11); ctx.lineTo(-5, 0); ctx.lineTo(-10, 11); ctx.fill(); ctx.restore();
+      ctx.fillStyle = '#fff'; ctx.font = '11px system-ui'; ctx.fillText('Hospital ' + (dist(player, h) / 190).toFixed(1) + ' km', vw - 50, 158);
+    }
+    const mr = 62, mx = vw - mr - 12, my = vh - mr - 44, s = mr / MAP_R;
+    ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.beginPath(); ctx.arc(mx, my, mr, 0, 6.28); ctx.fill();
+    ctx.strokeStyle = '#888'; ctx.lineWidth = 1; for (const r of RINGS){ ctx.beginPath(); ctx.arc(mx, my, r * s, 0, 6.28); ctx.stroke(); }
+    ctx.fillStyle = '#4caf50'; ctx.fillRect(mx - 3, my - 3, 6, 6);
+    ctx.fillStyle = '#ff5252'; for (const h of HOSPITALS) ctx.fillRect(mx + h.x * s - 2, my + h.y * s - 2, 4, 4);
+    ctx.fillStyle = '#4a8bff'; for (const p of patrols) ctx.fillRect(mx + p.x * s - 1, my + p.y * s - 1, 3, 3);
+    ctx.fillStyle = '#000'; ctx.strokeStyle = '#fff'; for (const r of rivals){ ctx.fillRect(mx + r.x * s - 2, my + r.y * s - 2, 5, 5); ctx.strokeRect(mx + r.x * s - 2, my + r.y * s - 2, 5, 5); }
+    ctx.fillStyle = '#fff'; ctx.fillRect(mx + player.x * s - 2, my + player.y * s - 2, 5, 5);
+  } else { ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = 'bold 12px system-ui'; ctx.fillText('NO SIGNAL', vw - 50, 54); }
+
+  ctx.textAlign = 'center';
+  if (game.contested){ ctx.fillStyle = '#fff'; ctx.font = 'bold 16px system-ui'; ctx.fillText('A bigger rival crowd is in the square. Out-recruit them.', vw / 2, 38); }
+  else if (game.hold > 0){
+    ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(vw / 2 - 150, 20, 300, 26);
+    ctx.fillStyle = '#4caf50'; ctx.fillRect(vw / 2 - 150, 20, 300 * game.hold / NEED_HOLD, 26);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 14px system-ui'; ctx.fillText('HOLDING THE SHAHEED MINAR', vw / 2, 38);
+  } else if (game.rhold > 0){
+    ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(vw / 2 - 150, 20, 300, 26);
+    ctx.fillStyle = '#e53935'; ctx.fillRect(vw / 2 - 150, 20, 300 * game.rhold / RIVAL_HOLD, 26);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 14px system-ui'; ctx.fillText('RIVAL HOLDING THE SQUARE', vw / 2, 38);
+  } else if (dist(player, GOAL) < GOAL.r && followers.length + 1 < NEED_CROWD){
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 16px system-ui'; ctx.fillText('You need ' + NEED_CROWD + ' people to hold the Shaheed Minar', vw / 2, 38);
+  }
+  if (game.msgT > 0){
+    ctx.font = 'bold 17px ' + BN_FONT;
+    const w = ctx.measureText(game.msg).width + 30;
+    ctx.fillStyle = 'rgba(0,0,0,.72)'; ctx.fillRect(vw / 2 - w / 2, vh - 110, w, 34);
+    ctx.fillStyle = '#fff'; ctx.fillText(game.msg, vw / 2, vh - 87);
+  }
+  toasts.forEach((t, i) => {
+    const x = 12, y = vh - 60 - (i + 1) * 118;
+    ctx.save(); ctx.globalAlpha = Math.min(1, t.t);
+    ctx.fillStyle = '#fff'; ctx.fillRect(x, y, 100, 108); ctx.fillStyle = '#d7d3c8'; ctx.fillRect(x + 6, y + 6, 88, 66);
+    person(ctx, x + 50, y + 62, {dress: WHITE, skin: t.skin, scale: 2.2});
+    ctx.fillStyle = '#c8102e'; ctx.font = 'bold 12px system-ui'; ctx.textAlign = 'center'; ctx.fillText('DETAINED', x + 50, y + 88);
+    ctx.fillStyle = '#222'; ctx.font = '11px ' + BN_FONT; ctx.fillText(t.name + ' · ' + t.station.replace(' Thana', ''), x + 50, y + 102);
+    ctx.restore();
+  });
+  if (game.flash > 0){ ctx.fillStyle = 'rgba(200,0,0,' + (game.flash * 0.9) + ')'; ctx.fillRect(0, 0, vw, vh); }
+  if (game.ev){   // big banner when an event day starts
+    const txt = game.day + ' July: ' + game.ev.text;
+    ctx.globalAlpha = Math.min(1, game.ev.t); ctx.font = 'bold 36px ' + BN_FONT; ctx.textAlign = 'center';
+    const w = ctx.measureText(txt).width + 50;
+    ctx.fillStyle = 'rgba(0,0,0,.75)'; ctx.fillRect(vw / 2 - w / 2, 70, w, 62);
+    ctx.fillStyle = '#ffd54f'; ctx.fillText(txt, vw / 2, 114); ctx.globalAlpha = 1;
+  }
+}
+
+// ---------- shareable photo card ----------
+function fitText(g, text, maxW, size, weight, family){
+  let s = size; g.font = weight + ' ' + s + 'px ' + family;
+  while (g.measureText(text).width > maxW && s > 14){ s -= 2; g.font = weight + ' ' + s + 'px ' + family; }
+}
+function renderCard(kind, info){
+  const c = document.createElement('canvas'); c.width = 720; c.height = 960; const g = c.getContext('2d');
+  const grad = g.createLinearGradient(0, 0, 0, 960); grad.addColorStop(0, kind === 'win' ? '#0b6b3a' : '#2a1414'); grad.addColorStop(1, '#0f2a1c');
+  g.fillStyle = grad; g.fillRect(0, 0, 720, 960);
+  g.textAlign = 'center'; g.fillStyle = '#fff'; g.font = 'bold 56px ' + BN_FONT; g.fillText('দেশি আন্দোলন', 360, 84);
+  g.font = '20px system-ui'; g.fillStyle = '#cfe3d6'; g.fillText('DESHI ANDOLON', 360, 116);
+
+  // polaroid: photo area on top, text strip below, nothing overlaps
+  g.save(); g.translate(360, 480); g.rotate(-0.03);
+  g.fillStyle = '#f7f4ea'; g.shadowColor = 'rgba(0,0,0,.5)'; g.shadowBlur = 24; g.fillRect(-290, -330, 580, 680); g.shadowBlur = 0;
+  const PX = -262, PY = -302, PW = 524, PH = 440;                    // photo box
+  g.fillStyle = kind === 'win' ? '#cfe6d6' : '#c9c5bb'; g.fillRect(PX, PY, PW, PH);
+  g.fillStyle = 'rgba(0,0,0,.08)'; for (let y = PY; y < PY + PH; y += 44) g.fillRect(PX, y, PW, 2);
+  g.save(); g.beginPath(); g.rect(PX, PY, PW, PH); g.clip();
+  if (info.photo){   // uploaded photo replaces the avatar, cropped to fill the frame
+    const im = info.photo, k = Math.max(PW / im.width, PH / im.height), dw = im.width * k, dh = im.height * k;
+    if (kind !== 'win') g.filter = 'grayscale(0.7)';
+    g.drawImage(im, PX + (PW - dw) / 2, PY + (PH - dh) / 2, dw, dh); g.filter = 'none';
+  } else person(g, 0, PY + PH - 100, {dress: WHITE, skin: info.skin, hat: 'band', scale: 9, flag: kind === 'win'});   // feet end ~10px above the photo's bottom
+  // stamp inside the photo, two lines in one box (lower on the photo so it doesn't cover a face)
+  g.save(); g.translate(0, info.photo ? PY + PH - 100 : PY + 80); g.rotate(-0.2);
+  const col = kind === 'win' ? '#0b6b3a' : '#c8102e'; g.strokeStyle = col; g.fillStyle = col; g.lineWidth = 7; g.globalAlpha = 0.9;
+  const label1 = kind === 'win' ? 'HELD THE SQUARE' : (info.station ? 'DETAINED' : 'LOST THE SQUARE');
+  fitText(g, label1, 440, 70, 'bold', 'system-ui');
+  const bw = Math.max(g.measureText(label1).width + 40, 240), sub = kind === 'win' ? 'শহীদ মিনার' : (info.station ? 'আটক' : '');
+  const bh = sub ? 138 : 92;
+  g.fillStyle = 'rgba(247,244,234,.78)'; g.fillRect(-bw / 2, -50, bw, bh); g.strokeRect(-bw / 2, -50, bw, bh);
+  g.fillStyle = col; g.textAlign = 'center'; g.fillText(label1, 0, 8);
+  if (sub){ g.font = 'bold 40px ' + BN_FONT; g.fillText(sub, 0, 62); }
+  g.restore();
+  g.restore();
+  // text strip
+  g.fillStyle = '#111'; g.textAlign = 'center'; fitText(g, info.name, 500, 38, 'bold', BN_FONT); g.fillText(info.name, 0, PY + PH + 50);
+  g.fillStyle = '#444'; fitText(g, kind === 'win' ? 'Held the Central Shaheed Minar with ' + info.crowd + ' people' : (info.station ? 'Taken to ' + info.station : 'The square was taken'), 500, 22, 'normal', BN_FONT);
+  g.fillText(kind === 'win' ? 'Held the Central Shaheed Minar with ' + info.crowd + ' people' : (info.station ? 'Taken to ' + info.station : 'The square was taken'), 0, PY + PH + 86);
+  g.font = '20px system-ui'; g.fillText(info.date, 0, PY + PH + 118);
+  g.restore();
+  g.fillStyle = '#cfe3d6'; g.font = '20px system-ui'; g.textAlign = 'center';
+  g.fillText('Fictional game · Play Deshi Andolon' + (location.protocol.startsWith('http') ? ' · ' + location.host : ''), 360, 925);
+  return c;
+}
+async function shareCard(canvas, text){
+  const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+  const file = new File([blob], 'deshi-andolon.png', {type: 'image/png'});
+  if (navigator.canShare && navigator.canShare({files: [file]})){ try { await navigator.share({files: [file], text, title: 'Deshi Andolon'}); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+  downloadCard(canvas);
+}
+function downloadCard(canvas){ const a = document.createElement('a'); a.download = 'deshi-andolon.png'; a.href = canvas.toDataURL('image/png'); a.click(); }
+
+// ---------- player photo (optional, stays in the browser) ----------
+let playerPhoto = null;
+function loadPhoto(file, cb){
+  if (!file) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    const im = new Image();
+    im.onload = () => {
+      const k = Math.min(1, 900 / Math.max(im.width, im.height)), c = document.createElement('canvas');   // shrink big photos
+      c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+      playerPhoto = c; if (cb) cb();
+    };
+    im.src = rd.result;
+  };
+  rd.readAsDataURL(file);
+}
+
+// ---------- end / menu ----------
+function end(won, info){
+  info = info || {};
+  game.started = false;
+  const date = 'Day ' + game.day + ' · ' + game.day + ' July';
+  const cardInfo = {name: playerName, skin: player.skin, station: info.station, crowd: followers.length + 1, date};
+  const build = () => renderCard(won ? 'win' : 'lose', Object.assign({photo: playerPhoto}, cardInfo));
+  let canvas = build();
+  const box = document.getElementById('card');
+  let head;
+  if (won) head = '<h1>Shaheed Minar <span>held!</span></h1><p>Your crowd of <b>' + (followers.length + 1) + '</b> held the square on <b>' + game.day + ' July</b>.</p>';
+  else if (info.aynaghor) head = '<h1>Taken to <span>Aynaghor</span></h1><p>The police van took you to Aynaghor. The game is over.</p>';
+  else if (info.station) head = '<h1>Detained at <span>' + info.station + '</span></h1><p>You were caught by the police and taken by van. The game is over.</p>';
+  else head = '<h1>The square <span>was taken</span></h1><p>A bigger rival crowd held the Shaheed Minar. Recruit more people and try again.</p>';
+  box.innerHTML = head + '<img id="cardimg" alt="Photo card" src="' + canvas.toDataURL('image/png') + '">' +
+    '<label>Put your own photo on the card (optional)<input id="photo2" type="file" accept="image/*"></label>' +
+    '<button id="share">Share card</button><button id="dl" class="alt">Download</button><button id="go">March again</button>' +
+    (playerPhoto ? '<button id="nophoto" class="alt">Use default avatar</button>' : '') +
+    '<small>Your photo stays on your device. It is only drawn onto this card. Fictional game; characters and events are not real people or incidents.</small>';
+  const text = won ? 'I held the Central Shaheed Minar in Deshi Andolon!' : (info.station ? 'I was detained at ' + info.station + ' in Deshi Andolon.' : 'The square was taken in Deshi Andolon.');
+  const refresh = () => { canvas = build(); document.getElementById('cardimg').src = canvas.toDataURL('image/png'); const b = document.getElementById('nophoto'); if (!b && playerPhoto){ const n = document.createElement('button'); n.id = 'nophoto'; n.className = 'alt'; n.textContent = 'Use default avatar'; n.onclick = () => { playerPhoto = null; n.remove(); refresh(); }; document.getElementById('go').after(n); } };
+  document.getElementById('photo2').onchange = e => loadPhoto(e.target.files[0], refresh);
+  const np = document.getElementById('nophoto'); if (np) np.onclick = () => { playerPhoto = null; np.remove(); refresh(); };
+  document.getElementById('share').onclick = () => shareCard(canvas, text);
+  document.getElementById('dl').onclick = () => downloadCard(canvas);
+  document.getElementById('go').onclick = start;
+  document.getElementById('menu').style.display = 'flex';
+}
+
+// ---------- loop ----------
+let last = 0;
+function frame(ts){
+  const dt = Math.min(0.05, (ts - last) / 1000 || 0); last = ts;
+  if (game && game.started) update(dt);
+  if (game) draw();
+  requestAnimationFrame(frame);
+}
+function start(){
+  const inp = document.getElementById('pname');
+  if (inp && inp.value.trim()) playerName = inp.value.trim();
+  try { localStorage.setItem('da_name', playerName); } catch (e) {}
+  ac();   // unlock audio on the user's click
+  document.getElementById('menu').style.display = 'none';
+  newGame();
+}
+document.getElementById('go').onclick = start;
+document.getElementById('photo').onchange = e => loadPhoto(e.target.files[0]);
+cv.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+cv.addEventListener('touchmove', e => { const t = e.touches[0]; mouse.x = t.clientX; mouse.y = t.clientY; e.preventDefault(); }, {passive: false});
+cv.addEventListener('touchstart', e => { const t = e.touches[0]; mouse.x = t.clientX; mouse.y = t.clientY; });
+let hi = 0; const tk = document.getElementById('tk');
+function tick(){ tk.textContent = HEADLINES[hi++ % HEADLINES.length]; }
+tick(); setInterval(tick, 8000);
+try { const n = localStorage.getItem('da_name'); if (n){ playerName = n; document.getElementById('pname').value = n; } } catch (e) {}
+mouse.x = innerWidth / 2; mouse.y = innerHeight / 2;
+requestAnimationFrame(frame);
