@@ -418,9 +418,9 @@ function updateChant(dt){
   chant.timer -= dt;
   if (chant.timer > 0) return;
   const c = CHANTS[chant.i];
-  if (chant.phase === 0){ bubble(player, c.call[0], c.call[1], 2.2); chant.phase = 1; chant.timer = 1.3; }
+  if (chant.phase === 0){ bubble(player, c.call[0], c.call[1], 1.3); chant.phase = 1; chant.timer = 1.3; }
   else {
-    [...followers].sort(() => Math.random() - 0.5).slice(0, Math.min(4, followers.length)).forEach(f => bubble(f, c.resp[0], c.resp[1], 2));
+    [...followers].sort(() => Math.random() - 0.5).slice(0, Math.min(vw < 700 ? 2 : 4, followers.length)).forEach(f => bubble(f, c.resp[0], c.resp[1], 1.8));
     chant.phase = 0; chant.i = (chant.i + 1) % CHANTS.length; chant.timer = 3;
   }
 }
@@ -620,15 +620,23 @@ function draw(){
   for (const b of bubbles){
     if (!v(b.who)) continue;
     const bx = b.who.x, by = b.who.y - 38 - (b.who === player ? 36 * zf : 0);
-    ctx.save(); ctx.translate(bx, by); ctx.scale(zf, zf);
+    ctx.save(); ctx.translate(bx, by); ctx.scale(zf, zf);   // from here 1 unit = 1 screen pixel
     ctx.globalAlpha = Math.min(1, b.t * 2); ctx.textAlign = 'center';
-    ctx.font = '700 15px ' + BN_FONT;
-    const w = Math.max(ctx.measureText(b.bn).width, 70) + 16;
+    let fs = 16; ctx.font = '700 ' + fs + 'px ' + BN_FONT;
+    const maxW = Math.min(vw - 20, 320);
+    while (ctx.measureText(b.bn).width + 24 > maxW && fs > 11){ fs--; ctx.font = '700 ' + fs + 'px ' + BN_FONT; }
+    const w1 = ctx.measureText(b.bn).width; ctx.font = '11px system-ui'; const w2 = ctx.measureText(b.rom).width;
+    const w = Math.max(w1, w2, 70) + 24, h = 50;   // wide enough for both lines, tall enough for Bangla glyphs
+    // keep the whole bubble on screen
+    const sx = (bx - cam.x) * Z, sy = (by - cam.y) * Z;
+    let dx = 0, dy = 0;
+    if (sx - w / 2 < 6) dx = 6 - (sx - w / 2); else if (sx + w / 2 > vw - 6) dx = (vw - 6) - (sx + w / 2);
+    if (sy - 38 < 6) dy = 6 - (sy - 38);
     ctx.fillStyle = '#fff'; ctx.strokeStyle = '#333'; ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.roundRect(-w / 2, -26, w, 34, 8); ctx.fill(); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(-5, 8); ctx.lineTo(0, 15); ctx.lineTo(5, 8); ctx.fillStyle = '#fff'; ctx.fill();
-    ctx.fillStyle = '#0b6b3a'; ctx.fillText(b.bn, 0, -8);
-    ctx.font = '10px system-ui'; ctx.fillStyle = '#666'; ctx.fillText(b.rom, 0, 4);
+    ctx.beginPath(); ctx.roundRect(-w / 2 + dx, -38 + dy, w, h, 10); ctx.fill(); ctx.stroke();
+    if (dy === 0){ const tx = Math.max(-w / 2 + dx + 12, Math.min(w / 2 + dx - 12, 0)); ctx.beginPath(); ctx.moveTo(tx - 6, 12); ctx.lineTo(tx, 20); ctx.lineTo(tx + 6, 12); ctx.fillStyle = '#fff'; ctx.fill(); }
+    ctx.font = '700 ' + fs + 'px ' + BN_FONT; ctx.fillStyle = '#0b6b3a'; ctx.fillText(b.bn, dx, -14 + dy);
+    ctx.font = '11px system-ui'; ctx.fillStyle = '#666'; ctx.fillText(b.rom, dx, 6 + dy);
     ctx.globalAlpha = 1; ctx.restore();
   }
   ctx.restore();
