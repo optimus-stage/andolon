@@ -1,6 +1,6 @@
-#Andolon (আন্দোলন)
+# Deshi Andolon (দেশি আন্দোলন)
 
-Single-player browser game inspired by the recent movement in Bangladesh. Fictional characters and events; stylised map.
+Single-player browser game inspired by popular protest movements in Bangladesh. Fictional characters and events; stylised map.
 
 ## Run
 Open `index.html` in a browser (no build, no server needed). To share online, upload this whole folder to any static host (GitHub Pages, Netlify, Vercel).
@@ -8,21 +8,26 @@ Open `index.html` in a browser (no build, no server needed). To share online, up
 ## Files
 - `index.html`: page and start menu
 - `css/style.css`: styles
-- `js/data.js`: map size, rings, barricade sizes, police stations, Aynaghor, hospitals, landmarks, chants, Bangla news headlines, names
-- `js/events.js`: the 1 July to 36 July timeline (edit the event names here)
-- `js/game.js`: game logic, drawing, sounds, police van arrest, shareable photo card
+- `js/data.js`: map size, rings, barricade sizes, day length, score weights, ranks, tags and roasts (Bengali), police stations, hospitals, landmarks, chants, news headlines
+- `js/game.js`: game logic, drawing, sounds, police van arrest, scoring, shareable photo card
 
 ## Rules
-- Walk with the mouse, recruit bystanders (they turn white and join you). Your name shows above your head.
-- 3 rings of police barricades: 6 barricades on the outer ring (6 people each), 2 on the middle ring (14 people), 2 on the inner ring (25 people).
-- Police (blue, with sticks) patrol every zone: 1 in the outermost, then 2, 3 and 4 towards the centre. Each hit costs 25 morale and makes a beating sound. If they hit you when your morale is 25 or less, a police van takes you to a thana or Aynaghor and the game ends.
+- Walk with the mouse (or touch and hold on a phone). Recruit bystanders and they join your crowd in white. Your name shows above your head.
+- Police barricades: 6 on the outer ring (6 people each), 2 on the middle ring (14 people), 2 on the inner ring (25 people).
+- Police (blue, with sticks) patrol every zone: 1 in the outermost, then 2, 3 and 4 towards the centre. Each hit costs 25 morale. If they hit you when your morale is 25 or less, a police van takes you to a thana or Aynaghor and the game ends.
 - After a beating you are injured (slower). Walk into a hospital to recover morale. A green arrow points to the nearest one.
-- বিরিয়ানি stalls restore morale while you stand in them. মামার টঙের চা huts give an instant morale and speed boost (they refill after 45 seconds).
-- Rivals (black clothes) support the police and are never hit by them. When a rival crowd meets yours they fight: both sides lose people, the smaller side loses more, and a tie goes to the protesters. Fights sometimes add gunshot and grenade-blast sounds with a flash on screen (no gore).
-- Houses, mosques, coffee shops and hospitals are solid; only about 110 houses are on the map.
+- Biriyani stalls restore morale while you stand in them. Mama r Tong er Cha huts give an instant morale and speed boost (they refill after 45 seconds).
+- Rivals (black clothes) support the police and are never hit by them. They recruit slowly and stop at 12 members. When a rival crowd meets yours they fight: the smaller side loses more, and a tie goes to the protesters. About 40% of beaten rivals switch to your side, and the rest go home for a while. A rival crowd with no one left gives up, and a new small one appears later. A rival crowd of 8 or more that is bigger than yours stops you holding the square.
 - Win: hold the Central Shaheed Minar with 15 people for 10 seconds.
-- The date and event names (1 July to 36 July) are shown large at the top-left. Edit them in `js/events.js`.
-- End screens produce a shareable PNG photo card (Web Share on phones, download on desktop). You can upload your own photo on the start screen or on the card screen; it replaces the avatar and never leaves your device. Press M to mute sound.
+- The game lasts 30 days (8 seconds each, about 4 minutes). The top-left shows Day 1, Day 2, and so on, plus your live score.
+- Bystanders slowly refill over time so the map never runs empty.
+
+## Score, ranks and tags
+- Score = 5 per person recruited + 10 per person in your crowd (peak crowd if you did not win) + 300 per barricade ring passed + 20 per fight won. A win adds 2000 plus 5 per second faster than 180 seconds. If you are detained the score is multiplied by 0.6, and if time runs out by 0.8.
+- Ranks: নবীন (Newcomer), স্বেচ্ছাসেবক (Volunteer, 500+), সংগঠক (Organiser, 1,500+), নেতা (Leader, 3,000+), কিংবদন্তি (Legend, 5,000+).
+- Special tags for winners: ঝড়ের গতি, অদম্য, জনসমুদ্র, শেষ লড়াই, ব্যারিকেড ভাঙনকারী. For detained players: প্রথম কণ্ঠ, মাঝপথের যোদ্ধা, ভেতরের সীমানা পর্যন্ত.
+- If Day 30 ends without a win you get a friendly roast tag instead of a rank: বিরিয়ানি বিপ্লবী, একলা চলো রে, ব্যারিকেডের ভয়ে ঘরমুখো or ফেসবুক বিপ্লবী.
+- End screens produce a shareable PNG photo card (Web Share on phones, download on desktop). You can upload your own photo on the start screen or on the card screen; it replaces the avatar and never leaves your device. Your best score is saved in your browser. Press M to mute sound.
 
 ## Tuning
-Difficulty numbers are at the top of `js/data.js` (barricade sizes, gates per ring, hold time, crowd needed). Day length is `DAY_SECONDS` in `js/events.js`. Police strength is in `strikePlayer()` in `js/game.js`.
+Everything is at the top of `js/data.js`: gates per ring, barricade sizes, crowd needed, day length, bystander counts, rival limits, score weights, ranks, tags and roast lines. Police strength is in `strikePlayer()` in `js/game.js`.
