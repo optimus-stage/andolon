@@ -1,4 +1,4 @@
-// Deshi Andolon (দেশি আন্দোলন): single-player march game. Depends on data.js and events.js.
+// Deshi Andolon (দেশি আন্দোলন): single-player march game. Depends on data.js.
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
 let vw, vh, Z = 1, dpr = 1;
 function resize(){
@@ -106,7 +106,7 @@ function blocked(x, y, margin){
   return false;
 }
 function genTown(){
-  const rng = mulberry(20240701), houses = [], occ = new Set(), mosques = NAMED_MOSQUES.slice(), coffee = NAMED_COFFEE.slice();
+  const rng = mulberry(7771999), houses = [], occ = new Set(), mosques = NAMED_MOSQUES.slice(), coffee = NAMED_COFFEE.slice();
   for (let i = 0; i < 40000 && houses.length < HOUSE_COUNT; i++){
     const a = rng() * 6.283, r = Math.sqrt(rng()) * MAP_R, x = Math.cos(a) * r, y = Math.sin(a) * r;
     if (blocked(x, y, 0)) continue;
@@ -138,7 +138,7 @@ function newGame(){
     for (let k = 0; k < n; k++){ const ang = base + k * 2 * Math.PI / n, p = polar(ang, r); gates.push({r, ring: i, ang, x: p.x, y: p.y, need: GATE_NEEDS[i], open: 0}); }
   });
   neutrals = []; followers = []; patrols = []; rivals = [];
-  const counts = [120, 100, 80, 60];   // bystanders per zone (doubled)
+  const counts = BYSTANDERS;
   for (let z = 0; z < 4; z++){
     const r0 = ZR[z + 1] + 70, r1 = ZR[z] - 70;
     for (let i = 0; i < counts[z]; i++){ const p = spawnIn(Math.max(r0, 60), r1); neutrals.push(mkNeutral(p.x, p.y)); }
@@ -146,16 +146,15 @@ function newGame(){
     for (let i = 0; i < (z === 0 ? 2 : 1); i++){ const p = spawnIn(Math.max(r0, 220), r1); teas.push({x: p.x, y: p.y, cd: 0}); }
     for (let i = 0; i < POLICE_PER_ZONE[z]; i++) patrols.push(mkPatrol(z));   // fewer police in the outer zones
   }
-  [[2, 3, 150], [3, 4, 110]].forEach(([z, n, delay]) => {
+  [[2, 3, 180], [3, 3, 140]].forEach(([z, n, delay]) => {
     const p = spawnIn(ZR[z + 1] + 100, ZR[z] - 100), r = {x: p.x, y: p.y, members: [], delay, moving: false};
     for (let i = 0; i < n; i++) r.members.push({x: r.x + rand(-30, 30), y: r.y + rand(-30, 30), skin: pick(SKINS)});
     rivals.push(r);
   });
   shutdowns.push({x: -900, y: -1100, r: 300}, {x: 700, y: 900, r: 260});
   player = {x: START.x, y: START.y, r: 12, morale: 100, injured: false, skin: pick(SKINS), moving: false, hidden: false};
-  game = {ev: null, t: 0, day: 1, hold: 0, rhold: 0, started: true, mode: 'play', msg: '', msgT: 0, viralT: 40 + rand(0, 20), drain: 0, boost: 0, flash: 0, van: null, arrest: null, contested: false};
+  game = {t: 0, day: 1, hold: 0, started: true, spawnT: 4, rivalSpawnT: 60, stats: {recruits: 0, peak: 1, rings: 0, clashWins: 0, beaten: 0, cures: 0, teas: 0, stallT: 0}, mode: 'play', msg: '', msgT: 0, viralT: 40 + rand(0, 20), drain: 0, boost: 0, flash: 0, van: null, arrest: null, contested: false};
   chant = {i: 0, timer: 3, phase: 0};
-  announceDay(1);
   if ('ontouchstart' in window || navigator.maxTouchPoints > 0) say('Touch and hold the screen to walk. Lift your finger to stop.', 6);
 }
 function mkNeutral(x, y){
@@ -168,7 +167,20 @@ function mkPatrol(z){
 }
 function pickWaypoint(p){ const s = spawnIn(Math.max(ZR[p.z + 1] + 70, 60), ZR[p.z] - 70); p.tx = s.x; p.ty = s.y; }
 function say(m, t){ game.msg = m; game.msgT = t || 3; }
-function announceDay(d){ if (EVENTS[d]) game.ev = {day: d, text: EVENTS[d], t: 4}; }
+function spawnBystander(){   // slow refill so the map never runs empty
+  if (neutrals.length >= 640) return;
+  const w = [0.35, 0.3, 0.2, 0.15]; let z = 0, x = Math.random(); while (z < 3 && x > w[z]){ x -= w[z]; z++; }
+  const p = spawnIn(Math.max(ZR[z + 1] + 70, 60), ZR[z] - 70);
+  if (Math.hypot(p.x - player.x, p.y - player.y) < 450) return;
+  neutrals.push(mkNeutral(p.x, p.y));
+}
+function spawnRival(){   // a new small rival crowd appears after one gives up
+  const z = Math.random() < 0.5 ? 1 : 2, p = spawnIn(ZR[z + 1] + 100, ZR[z] - 100);
+  if (Math.hypot(p.x - player.x, p.y - player.y) < 600) return false;
+  const r = {x: p.x, y: p.y, members: [], delay: game.t + 40, moving: false};
+  for (let i = 0; i < 3; i++) r.members.push({x: r.x + rand(-30, 30), y: r.y + rand(-30, 30), skin: pick(SKINS)});
+  rivals.push(r); return true;
+}
 
 // ---------- collision ----------
 function resolveRect(o, r, rad){
@@ -213,13 +225,12 @@ function nearestHospital(p){ return HOSPITALS.reduce((b, h) => !b || dist(h, p) 
 // ---------- update ----------
 function update(dt){
   game.t += dt; game.msgT -= dt; game.flash = Math.max(0, game.flash - dt);
-  if (game.ev){ game.ev.t -= dt; if (game.ev.t <= 0) game.ev = null; }
   for (let i = fx.length - 1; i >= 0; i--){ fx[i].t += dt; if (fx[i].t > (fx[i].kind === 'boom' ? 1.1 : 0.3)) fx.splice(i, 1); }
-  const day = Math.min(36, 1 + Math.floor(game.t / DAY_SECONDS));
-  if (day !== game.day){ game.day = day; announceDay(day); }
+  game.day = Math.min(MAX_DAY, 1 + Math.floor(game.t / DAY_SECONDS));
   for (let i = toasts.length - 1; i >= 0; i--){ toasts[i].t -= dt; if (toasts[i].t <= 0) toasts.splice(i, 1); }
   updateBubbles(dt);
   if (game.mode === 'arrest'){ updateArrest(dt); return; }
+  if (game.t >= MAX_DAY * DAY_SECONDS){ end(false, {timeout: true}); return; }   // 30 days are up
 
   // player
   game.boost = Math.max(0, game.boost - dt);
@@ -234,10 +245,10 @@ function update(dt){
   // neutrals
   for (let i = neutrals.length - 1; i >= 0; i--){
     const n = neutrals[i];
-    n.cool -= dt; n.wt -= dt;
+    n.cool -= dt; n.wt -= dt; n.rcool = Math.max(0, (n.rcool || 0) - dt);
     if (n.wt <= 0){ const a = rand(0, 6.28), s = rand(0, 25); n.vx = Math.cos(a) * s; n.vy = Math.sin(a) * s; n.wt = rand(1, 3); }
     n.x += n.vx * dt; n.y += n.vy * dt; collide(n, 7);
-    if (n.cool <= 0 && dist(n, player) < 24){ followers.push(n); neutrals.splice(i, 1); }
+    if (n.cool <= 0 && dist(n, player) < RECRUIT_R){ followers.push(n); neutrals.splice(i, 1); game.stats.recruits++; }
   }
 
   // police: slow, short-range chase, strike with sticks
@@ -263,7 +274,7 @@ function update(dt){
     r.moving = false;
     const z = zoneOf(r.x, r.y);
     let tgt = null, best = 1e9;
-    for (const n of neutrals){ const dd = dist(n, r); if (n.cool <= 0 && dd < best && dd < 600 && zoneOf(n.x, n.y) === z){ best = dd; tgt = n; } }
+    if (r.members.length < RIVAL_MAX) for (const n of neutrals){ const dd = dist(n, r); if (n.cool <= 0 && !(n.rcool > 0) && dd < best && dd < 600 && zoneOf(n.x, n.y) === z){ best = dd; tgt = n; } }
     if (!tgt && game.t > r.delay){
       const dr = Math.hypot(r.x, r.y), ri = RINGS.findIndex(rr => rr < dr - 20);
       if (ri >= 0){
@@ -277,12 +288,15 @@ function update(dt){
     }
     collide(r, 12);
     followRing(r.members, r, dt);
-    for (let i = neutrals.length - 1; i >= 0; i--) if (neutrals[i].cool <= 0 && dist(neutrals[i], r) < 24){ r.members.push({x: neutrals[i].x, y: neutrals[i].y, skin: neutrals[i].skin}); neutrals.splice(i, 1); }
+    r.recT = (r.recT || 0) - dt;   // rivals recruit slowly and never beyond their cap
+    if (r.recT <= 0 && r.members.length < RIVAL_MAX){ const ri = neutrals.findIndex(n => n.cool <= 0 && !(n.rcool > 0) && dist(n, r) < 24); if (ri >= 0){ const n = neutrals.splice(ri, 1)[0]; r.members.push({x: n.x, y: n.y, skin: n.skin}); r.recT = RIVAL_RECRUIT_EVERY; } }
     for (const g of gates) if (g.open < 1 && dist(r, g) < 130 && r.members.length >= g.need) g.open = Math.min(1, g.open + dt / 3);
     // clash: when protesters and a rival crowd meet they fight; ties go to the protesters
     r.fightT = (r.fightT || 0) - dt;
     if (r.fightT <= 0 && r.members.length && (dist(r, player) < 110 || followers.some(f => dist(f, r) < 55))){ r.fightT = 1.3; clash(r); }
   }
+  const nRiv = rivals.length; rivals = rivals.filter(r => !r.dead); if (rivals.length < nRiv) say('A rival crowd gave up and left', 3);
+  if (rivals.length < 2){ game.rivalSpawnT -= dt; if (game.rivalSpawnT <= 0 && spawnRival()) game.rivalSpawnT = 60; }
 
   // police barricades
   for (const g of gates){
@@ -294,14 +308,14 @@ function update(dt){
   }
 
   // morale: drains slowly; Biriyani stalls and hospitals restore it; Mama r Tong er Cha gives a boost
-  let restoring = stalls.some(s => dist(s, player) < s.r + 10) ? 30 : 0;
+  const inStall = stalls.some(s => dist(s, player) < s.r + 10); let restoring = inStall ? 30 : 0; if (inStall) game.stats.stallT += dt;
   const hosp = HOSPITALS.find(h => dist(h, player) < 62);
-  if (hosp){ restoring = Math.max(restoring, 45); if (player.injured && player.morale > 60){ player.injured = false; sfxChime(); say('Treated at ' + hosp.name + '. You are back on your feet!'); } }
+  if (hosp){ restoring = Math.max(restoring, 45); if (player.injured && player.morale > 60){ player.injured = false; game.stats.cures++; sfxChime(); say('Treated at ' + hosp.name + '. You are back on your feet!'); } }
   if (restoring) player.morale = Math.min(100, player.morale + restoring * dt);
   else player.morale = Math.max(0, player.morale - (followers.length ? 0.9 : 0) * dt);
   for (const t of teas){
     t.cd = Math.max(0, t.cd - dt);
-    if (t.cd <= 0 && dist(t, player) < 34){ t.cd = 45; player.morale = Math.min(100, player.morale + 50); game.boost = 6; sfxChime(); say('মামার টঙের চা! Morale boost and extra speed'); }
+    if (t.cd <= 0 && dist(t, player) < 34){ t.cd = 45; game.stats.teas++; player.morale = Math.min(100, player.morale + 50); game.boost = 6; sfxChime(); say('মামার টঙের চা! Morale boost and extra speed'); }
   }
   if (player.morale <= 0){
     game.drain += dt;
@@ -317,16 +331,17 @@ function update(dt){
   }
 
   updateChant(dt);
+  const st = game.stats, dpl = Math.hypot(player.x, player.y);
+  st.peak = Math.max(st.peak, followers.length + 1); st.rings = Math.max(st.rings, RINGS.filter(r => dpl < r - 20).length);
+  game.spawnT -= dt; if (game.spawnT <= 0){ game.spawnT = 4; spawnBystander(); }
 
-  // the Shaheed Minar: protesters win ties against rivals
+  // the Shaheed Minar: a bigger rival crowd standing in it blocks you; ties go to the protesters
   const pIn = dist(player, GOAL) < GOAL.r;
-  const rIn = rivals.find(r => dist(r, GOAL) < GOAL.r && r.members.length + 1 >= RIVAL_CROWD);
+  const rIn = rivals.find(r => dist(r, GOAL) < GOAL.r && r.members.length >= RIVAL_BLOCK);
   const rivalAhead = rIn && rIn.members.length > followers.length;
   game.contested = pIn && !!rivalAhead;
   if (pIn && followers.length + 1 >= NEED_CROWD && !rivalAhead) game.hold += dt; else game.hold = Math.max(0, game.hold - dt);
-  if (rivalAhead && !pIn) game.rhold += dt; else game.rhold = Math.max(0, game.rhold - dt * 0.5);
   if (game.hold >= NEED_HOLD) end(true);
-  else if (game.rhold >= RIVAL_HOLD) end(false, {rival: true});
 }
 
 // ---------- rival clash ----------
@@ -334,16 +349,23 @@ function clash(r){
   const pP = followers.length + 1, pR = r.members.length + 1;
   let dmgP = Math.ceil(0.2 * pR * (pR > pP ? 1 : 0.5)), dmgR = Math.ceil(0.2 * pP * (pP >= pR ? 1 : 0.5));
   dmgP = Math.min(dmgP, followers.length); dmgR = Math.min(dmgR, r.members.length);
-  for (let i = 0; i < dmgP; i++){ const f = followers.pop(); f.cool = 6; f.vx = rand(-70, 70); f.vy = rand(-70, 70); f.wt = 1; neutrals.push(f); }
-  for (let i = 0; i < dmgR; i++){ const m = r.members.pop(); const n = mkNeutral(m.x, m.y); n.cool = 6; n.vx = rand(-70, 70); n.vy = rand(-70, 70); n.wt = 1; neutrals.push(n); }
+  for (let i = 0; i < dmgP; i++){ const f = followers.pop(); f.cool = 6; f.rcool = 15; f.vx = rand(-70, 70); f.vy = rand(-70, 70); f.wt = 1; neutrals.push(f); }
+  let switched = 0;
+  for (let i = 0; i < dmgR; i++){
+    const m = r.members.pop();
+    if (Math.random() < 0.4){ const n = mkNeutral(m.x, m.y); n.skin = m.skin; followers.push(n); switched++; game.stats.recruits++; }   // persuaded to join the protesters
+    else { const n = mkNeutral(m.x, m.y); n.skin = m.skin; n.cool = 6; n.rcool = 25; n.vx = rand(-70, 70); n.vy = rand(-70, 70); n.wt = 1; neutrals.push(n); }   // goes home for a while
+  }
+  if (dmgR > dmgP) game.stats.clashWins++;
+  if (!r.members.length) r.dead = true;
   player.morale = Math.max(0, player.morale - 4);
   fightSfx((r.x + player.x) / 2, (r.y + player.y) / 2);
-  say('Clash with a rival crowd! You lost ' + dmgP + ', they lost ' + dmgR, 2);
+  say('Clash with a rival crowd! You lost ' + dmgP + ', they lost ' + dmgR + (switched ? ' (' + switched + ' switched sides)' : ''), 2.5);
 }
 
 // ---------- police strikes ----------
 function strikePlayer(p){
-  p.swing = 0.35; p.cool = 1.4; fightSfx(player.x, player.y); game.flash = 0.4;
+  p.swing = 0.35; p.cool = 1.4; fightSfx(player.x, player.y); game.flash = 0.4; game.stats.beaten++;
   if (player.morale <= 25){ startArrest(p); return; }   // too exhausted to get away: detained
   player.morale -= 25; player.injured = true;
   const a = Math.atan2(player.y - p.y, player.x - p.x); player.x += Math.cos(a) * 45; player.y += Math.sin(a) * 45; collide(player, player.r);
@@ -621,13 +643,12 @@ function drawHUD(){
   const barY = vw < 800 ? vh - 170 : 20, bannerY = vw < 800 ? Math.round(vh * 0.5) : 70;
   ctx.save(); ctx.scale(k, k);
   ctx.textAlign = 'left';
-  const evTxt = EVENTS[game.day];
-  ctx.font = 'bold 24px ' + BN_FONT; const evW = evTxt ? ctx.measureText(evTxt).width : 0;
-  const pw = Math.max(270, evW + 34), ph = evTxt ? 98 : 58;
-  ctx.fillStyle = 'rgba(0,0,0,.68)'; ctx.fillRect(10, 10, pw, ph);
-  ctx.fillStyle = '#ffd54f'; ctx.font = 'bold 32px system-ui'; ctx.fillText(game.day + ' July', 22, 48);
-  ctx.fillStyle = '#cfd8dc'; ctx.font = '14px system-ui'; ctx.fillText('Day ' + game.day + ' of 36', 175, 46);
-  if (evTxt){ ctx.fillStyle = '#fff'; ctx.font = 'bold 24px ' + BN_FONT; ctx.fillText(evTxt, 22, 86); }
+  const ph = 58;
+  ctx.fillStyle = 'rgba(0,0,0,.68)'; ctx.fillRect(10, 10, 300, ph);
+  ctx.fillStyle = '#ffd54f'; ctx.font = 'bold 34px system-ui'; ctx.fillText('Day ' + game.day, 22, 52);
+  const dayW = ctx.measureText('Day ' + game.day).width;
+  ctx.fillStyle = '#cfd8dc'; ctx.font = '15px system-ui'; ctx.fillText('of ' + MAX_DAY, 22 + dayW + 8, 50);
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 17px system-ui'; ctx.textAlign = 'right'; ctx.fillText('Score ' + computeScore(false, 'timeout', true).toLocaleString('en-US'), 300, 49); ctx.textAlign = 'left';
   const y0 = 10 + ph + 10;
   ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(10, y0, 230, 78);
   ctx.fillStyle = '#fff'; ctx.font = 'bold 16px system-ui';
@@ -667,10 +688,6 @@ function drawHUD(){
     ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(vw / 2 - 150, barY, 300, 26);
     ctx.fillStyle = '#4caf50'; ctx.fillRect(vw / 2 - 150, barY, 300 * game.hold / NEED_HOLD, 26);
     ctx.fillStyle = '#fff'; ctx.font = 'bold 14px system-ui'; ctx.fillText('HOLDING THE SHAHEED MINAR', vw / 2, barY + 18);
-  } else if (game.rhold > 0){
-    ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(vw / 2 - 150, barY, 300, 26);
-    ctx.fillStyle = '#e53935'; ctx.fillRect(vw / 2 - 150, barY, 300 * game.rhold / RIVAL_HOLD, 26);
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 14px system-ui'; ctx.fillText('RIVAL HOLDING THE SQUARE', vw / 2, barY + 18);
   } else if (dist(player, GOAL) < GOAL.r && followers.length + 1 < NEED_CROWD){
     ctx.fillStyle = '#fff'; ctx.font = 'bold 16px system-ui'; ctx.fillText('You need ' + NEED_CROWD + ' people to hold the Shaheed Minar', vw / 2, barY + 18);
   }
@@ -691,14 +708,6 @@ function drawHUD(){
     ctx.restore();
   });
   if (game.flash > 0){ ctx.fillStyle = 'rgba(200,0,0,' + (game.flash * 0.9) + ')'; ctx.fillRect(0, 0, vw, vh); }
-  if (game.ev){   // big banner when an event day starts
-    const txt = game.day + ' July: ' + game.ev.text;
-    let bf = 36; ctx.globalAlpha = Math.min(1, game.ev.t); ctx.font = 'bold ' + bf + 'px ' + BN_FONT; ctx.textAlign = 'center';
-    while (ctx.measureText(txt).width + 50 > vw - 16 && bf > 16){ bf -= 2; ctx.font = 'bold ' + bf + 'px ' + BN_FONT; }
-    const w = ctx.measureText(txt).width + 50;
-    ctx.fillStyle = 'rgba(0,0,0,.75)'; ctx.fillRect(vw / 2 - w / 2, bannerY, w, 62);
-    ctx.fillStyle = '#ffd54f'; ctx.fillText(txt, vw / 2, bannerY + 44); ctx.globalAlpha = 1;
-  }
   ctx.restore();
 }
 
@@ -729,20 +738,23 @@ function renderCard(kind, info){
   // stamp inside the photo, two lines in one box (lower on the photo so it doesn't cover a face)
   g.save(); g.translate(0, info.photo ? PY + PH - 100 : PY + 80); g.rotate(-0.2);
   const col = kind === 'win' ? '#0b6b3a' : '#c8102e'; g.strokeStyle = col; g.fillStyle = col; g.lineWidth = 7; g.globalAlpha = 0.9;
-  const label1 = kind === 'win' ? 'HELD THE SQUARE' : (info.station ? 'DETAINED' : 'LOST THE SQUARE');
+  const label1 = kind === 'win' ? 'HELD THE SQUARE' : (info.station ? 'DETAINED' : 'TIME UP');
   fitText(g, label1, 440, 70, 'bold', 'system-ui');
-  const bw = Math.max(g.measureText(label1).width + 40, 240), sub = kind === 'win' ? 'শহীদ মিনার' : (info.station ? 'আটক' : '');
+  const bw = Math.max(g.measureText(label1).width + 40, 240), sub = kind === 'win' ? 'শহীদ মিনার' : (info.station ? 'আটক' : 'সময় শেষ');
   const bh = sub ? 138 : 92;
   g.fillStyle = 'rgba(247,244,234,.78)'; g.fillRect(-bw / 2, -50, bw, bh); g.strokeRect(-bw / 2, -50, bw, bh);
   g.fillStyle = col; g.textAlign = 'center'; g.fillText(label1, 0, 8);
   if (sub){ g.font = 'bold 40px ' + BN_FONT; g.fillText(sub, 0, 62); }
   g.restore();
   g.restore();
-  // text strip
-  g.fillStyle = '#111'; g.textAlign = 'center'; fitText(g, info.name, 500, 38, 'bold', BN_FONT); g.fillText(info.name, 0, PY + PH + 50);
-  g.fillStyle = '#444'; fitText(g, kind === 'win' ? 'Held the Central Shaheed Minar with ' + info.crowd + ' people' : (info.station ? 'Taken to ' + info.station : 'The square was taken'), 500, 22, 'normal', BN_FONT);
-  g.fillText(kind === 'win' ? 'Held the Central Shaheed Minar with ' + info.crowd + ' people' : (info.station ? 'Taken to ' + info.station : 'The square was taken'), 0, PY + PH + 86);
-  g.font = '20px system-ui'; g.fillText(info.date, 0, PY + PH + 118);
+  // text strip: name, rank (or roast tag), special tag (or roast), detail, score
+  const y1 = PY + PH;
+  g.textAlign = 'center';
+  g.fillStyle = '#111'; fitText(g, info.name, 500, 36, 'bold', BN_FONT); g.fillText(info.name, 0, y1 + 44);
+  g.fillStyle = col; fitText(g, info.line1, 500, 30, 'bold', BN_FONT); g.fillText(info.line1, 0, y1 + 82);
+  g.fillStyle = '#333'; fitText(g, info.line2, 500, 22, 'bold', BN_FONT); g.fillText(info.line2, 0, y1 + 112);
+  g.fillStyle = '#555'; fitText(g, info.detail, 500, 19, 'normal', BN_FONT); g.fillText(info.detail, 0, y1 + 140);
+  g.fillStyle = '#111'; fitText(g, info.line3, 500, 22, 'bold', 'system-ui'); g.fillText(info.line3, 0, y1 + 170);
   g.restore();
   g.fillStyle = '#cfe3d6'; g.font = '20px system-ui'; g.textAlign = 'center';
   g.fillText('Fictional game · Play Deshi Andolon' + (location.protocol.startsWith('http') ? ' · ' + location.host : ''), 360, 925);
@@ -774,26 +786,57 @@ function loadPhoto(file, cb){
   rd.readAsDataURL(file);
 }
 
+// ---------- scoring ----------
+function computeScore(won, outcome, live){
+  const st = game.stats, crowd = followers.length + 1;
+  let sc = st.recruits * SCORE.recruit + (won ? crowd : st.peak) * SCORE.crowd + st.rings * SCORE.ring + st.clashWins * SCORE.clash;
+  if (won) sc += SCORE.win + Math.max(0, Math.round((TIME_PAR - game.t) * SCORE.speed));
+  else if (!live) sc *= outcome === 'detained' ? SCORE.detained : SCORE.timeout;
+  return Math.round(sc);
+}
+function rankFor(score){ let r = RANKS[0]; for (const x of RANKS) if (score >= x.min) r = x; return r; }
+function pickTag(won, outcome){
+  const st = game.stats;
+  if (won){ if (game.t < 150) return TAGS.fast; if (st.beaten === 0) return TAGS.unbreakable; if (st.peak >= 60) return TAGS.mass; if (st.cures > 0) return TAGS.laststand; return TAGS.breaker; }
+  return st.rings === 0 ? TAGS.first : st.rings >= 2 ? TAGS.inner : TAGS.mid;
+}
+function pickRoast(){
+  const st = game.stats;
+  if (st.stallT >= 25 || st.teas >= 3) return ROASTS.biriyani;
+  if (st.peak < 5) return ROASTS.alone;
+  if (st.rings === 0) return ROASTS.afraid;
+  return ROASTS.fb;
+}
+
 // ---------- end / menu ----------
 function end(won, info){
   info = info || {};
   game.started = false;
-  const date = 'Day ' + game.day + ' · ' + game.day + ' July';
-  const cardInfo = {name: playerName, skin: player.skin, station: info.station, crowd: followers.length + 1, date};
+  const outcome = won ? 'win' : info.timeout ? 'timeout' : 'detained', st = game.stats, crowd = followers.length + 1;
+  const score = computeScore(won, outcome), rank = rankFor(score);
+  let line1, line2, detail;
+  if (outcome === 'timeout'){ const r = pickRoast(); line1 = r.tag; line2 = r.line; detail = 'Day ' + MAX_DAY + ' ended before the Minar was held'; }
+  else { const t = pickTag(won, outcome); line1 = rank.bn + ' · ' + rank.en; line2 = t.bn + ' · ' + t.en; detail = won ? 'Held the Central Shaheed Minar with ' + crowd + ' people' : 'Taken to ' + info.station; }
+  const line3 = 'Score ' + score.toLocaleString('en-US') + ' · Day ' + game.day + ' · ' + (won ? 'Crowd ' + crowd : 'Peak crowd ' + st.peak);
+  let best = 0, newBest = false; try { best = +localStorage.getItem('da_best') || 0; if (score > best){ newBest = best > 0; localStorage.setItem('da_best', String(score)); best = score; } } catch (e) {}
+  const cardInfo = {name: playerName, skin: player.skin, station: info.station, timeout: !!info.timeout, line1, line2, line3, detail};
   const build = () => renderCard(won ? 'win' : 'lose', Object.assign({photo: playerPhoto}, cardInfo));
   let canvas = build();
   const box = document.getElementById('card');
   let head;
-  if (won) head = '<h1>Shaheed Minar <span>held!</span></h1><p>Your crowd of <b>' + (followers.length + 1) + '</b> held the square on <b>' + game.day + ' July</b>.</p>';
+  if (won) head = '<h1>Shaheed Minar <span>held!</span></h1><p>Your crowd of <b>' + crowd + '</b> held the square on <b>Day ' + game.day + '</b>.</p>';
+  else if (outcome === 'timeout') head = '<h1>Day ' + MAX_DAY + ' <span>is over</span></h1><p><b>' + line1 + '</b>: ' + line2 + '</p>';
   else if (info.aynaghor) head = '<h1>Taken to <span>Aynaghor</span></h1><p>The police van took you to Aynaghor. The game is over.</p>';
-  else if (info.station) head = '<h1>Detained at <span>' + info.station + '</span></h1><p>You were caught by the police and taken by van. The game is over.</p>';
-  else head = '<h1>The square <span>was taken</span></h1><p>A bigger rival crowd held the Shaheed Minar. Recruit more people and try again.</p>';
-  box.innerHTML = head + '<img id="cardimg" alt="Photo card" src="' + canvas.toDataURL('image/png') + '">' +
+  else head = '<h1>Detained at <span>' + info.station + '</span></h1><p>You were caught by the police and taken by van. The game is over.</p>';
+  const summary = '<p>Score <b>' + score.toLocaleString('en-US') + '</b>' + (outcome === 'timeout' ? '' : ' · <b>' + rank.bn + '</b> (' + rank.en + ') · ' + line2) + (newBest ? ' · <b>New best!</b>' : best ? ' · Best ' + best.toLocaleString('en-US') : '') + '</p>';
+  box.innerHTML = head + summary + '<img id="cardimg" alt="Photo card" src="' + canvas.toDataURL('image/png') + '">' +
     '<label>Put your own photo on the card (optional)<input id="photo2" type="file" accept="image/*"></label>' +
     '<button id="share">Share card</button><button id="dl" class="alt">Download</button><button id="go">March again</button>' +
     (playerPhoto ? '<button id="nophoto" class="alt">Use default avatar</button>' : '') +
     '<small>Your photo stays on your device. It is only drawn onto this card. Fictional game; characters and events are not real people or incidents.</small>';
-  const text = won ? 'I held the Central Shaheed Minar in Deshi Andolon!' : (info.station ? 'I was detained at ' + info.station + ' in Deshi Andolon.' : 'The square was taken in Deshi Andolon.');
+  const text = won ? 'I held the Central Shaheed Minar in Deshi Andolon! ' + rank.en + ', ' + score.toLocaleString('en-US') + ' pts.'
+    : outcome === 'timeout' ? 'Deshi Andolon called me "' + line1 + '". Can you do better?'
+    : 'I was detained at ' + info.station + ' in Deshi Andolon. ' + score.toLocaleString('en-US') + ' pts.';
   const refresh = () => { canvas = build(); document.getElementById('cardimg').src = canvas.toDataURL('image/png'); const b = document.getElementById('nophoto'); if (!b && playerPhoto){ const n = document.createElement('button'); n.id = 'nophoto'; n.className = 'alt'; n.textContent = 'Use default avatar'; n.onclick = () => { playerPhoto = null; n.remove(); refresh(); }; document.getElementById('go').after(n); } };
   document.getElementById('photo2').onchange = e => loadPhoto(e.target.files[0], refresh);
   const np = document.getElementById('nophoto'); if (np) np.onclick = () => { playerPhoto = null; np.remove(); refresh(); };

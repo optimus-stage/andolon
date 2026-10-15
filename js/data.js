@@ -11,7 +11,39 @@ const POLICE_PER_ZONE = [1, 2, 3, 4];  // police from the outer zone to the cent
 const GATE_HALF = 85;                  // half-width of a gate gap in px
 const GOAL = {x: 0, y: 0, r: 130};
 const NEED_HOLD = 10, NEED_CROWD = 15; // hold the Shaheed Minar for 10s with 15 people
-const RIVAL_HOLD = 30, RIVAL_CROWD = 15;
+const MAX_DAY = 30, DAY_SECONDS = 8;     // 30 days x 8 seconds = 4 minutes
+const TIME_PAR = 180;                   // winning faster than this earns a speed bonus
+const BYSTANDERS = [180, 150, 120, 90]; // starting bystanders per zone, outer to centre
+const RECRUIT_R = 32;                   // how close you must get to bring a bystander along
+const RIVAL_MAX = 12, RIVAL_BLOCK = 8, RIVAL_RECRUIT_EVERY = 4;   // rival crowd size cap, size that can block the square, seconds between recruits
+const SCORE = {recruit: 5, crowd: 10, ring: 300, clash: 20, win: 2000, speed: 5, detained: 0.6, timeout: 0.8};
+
+// Ranks by score (Bengali + English)
+const RANKS = [
+  {min: 0,    bn: 'নবীন',        en: 'Newcomer'},
+  {min: 500,  bn: 'স্বেচ্ছাসেবক', en: 'Volunteer'},
+  {min: 1500, bn: 'সংগঠক',       en: 'Organiser'},
+  {min: 3000, bn: 'নেতা',        en: 'Leader'},
+  {min: 5000, bn: 'কিংবদন্তি',    en: 'Legend'},
+];
+// Special tags shown on the final card
+const TAGS = {
+  fast:        {bn: 'ঝড়ের গতি',            en: 'Storm Speed'},
+  unbreakable: {bn: 'অদম্য',                en: 'Unbreakable'},
+  mass:        {bn: 'জনসমুদ্র',              en: 'Sea of People'},
+  laststand:   {bn: 'শেষ লড়াই',            en: 'Last Stand'},
+  breaker:     {bn: 'ব্যারিকেড ভাঙনকারী',    en: 'Barricade Breaker'},
+  first:       {bn: 'প্রথম কণ্ঠ',            en: 'First Voice'},
+  mid:         {bn: 'মাঝপথের যোদ্ধা',        en: 'Midway Fighter'},
+  inner:       {bn: 'ভেতরের সীমানা পর্যন্ত', en: 'Made It to the Inner Line'},
+};
+// Friendly roasts when Day 30 ends without holding the Shaheed Minar
+const ROASTS = {
+  biriyani: {tag: 'বিরিয়ানি বিপ্লবী',        line: '৩০ দিন পার, বিরিয়ানির লাইনেই দিন শেষ!'},
+  alone:    {tag: 'একলা চলো রে',             line: 'একাই একশো ভাবলেন, কিন্তু গুনে দেখি ১!'},
+  afraid:   {tag: 'ব্যারিকেডের ভয়ে ঘরমুখো',   line: 'ব্যারিকেড দেখেই ঘরের পথ ধরলেন?'},
+  fb:       {tag: 'ফেসবুক বিপ্লবী',           line: 'পোস্ট তো অনেক করলেন, রাজপথে এলেন কই?'},
+};
 const START = {x: -300, y: -2900};     // north edge (Uttara side)
 
 // Police stations a detained protester can be taken to (plus Aynaghor).
