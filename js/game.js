@@ -1,7 +1,11 @@
 // Deshi Andolon (দেশি আন্দোলন): single-player march game. Depends on data.js and events.js.
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
-let vw, vh;
-function resize(){ cv.width = vw = innerWidth; cv.height = vh = innerHeight; }
+let vw, vh, Z = 1, dpr = 1;
+function resize(){
+  vw = innerWidth; vh = innerHeight; dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);   // sharp on phone screens
+  Z = Math.max(0.7, Math.min(1, Math.min(vw, vh) / 700));   // zoom out a little on small screens
+}
 addEventListener('resize', resize); resize();
 
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -73,7 +77,9 @@ function fightSfx(x, y){
   if (Math.random() < 0.45){ setTimeout(sfxGunshot, 120); addFx(x + rand(-25, 25), y + rand(-25, 10), 'shot'); }
   if (Math.random() < 0.18){ setTimeout(sfxGrenade, 250); addFx(x + rand(-45, 45), y + rand(-35, 35), 'boom'); }
 }
-addEventListener('keydown', e => { if (e.key === 'm' || e.key === 'M') muted = !muted; });
+function updateMute(){ const b = document.getElementById('mute'); if (b) b.textContent = muted ? '\u{1F507}' : '\u{1F50A}'; }
+function toggleMute(){ muted = !muted; updateMute(); }
+addEventListener('keydown', e => { if (e.key === 'm' || e.key === 'M') toggleMute(); });
 
 // ---------- town (houses, mosques, coffee shops): generated once, same every game ----------
 function mulberry(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -150,6 +156,7 @@ function newGame(){
   game = {ev: null, t: 0, day: 1, hold: 0, rhold: 0, started: true, mode: 'play', msg: '', msgT: 0, viralT: 40 + rand(0, 20), drain: 0, boost: 0, flash: 0, van: null, arrest: null, contested: false};
   chant = {i: 0, timer: 3, phase: 0};
   announceDay(1);
+  if ('ontouchstart' in window || navigator.maxTouchPoints > 0) say('Touch and hold the screen to walk. Lift your finger to stop.', 6);
 }
 function mkNeutral(x, y){
   const tones = ['#c9a27a', '#7a9cc9', '#c97a8f', '#8fc97a', '#c9b97a', '#9a7ac9'];
@@ -216,7 +223,7 @@ function update(dt){
 
   // player
   game.boost = Math.max(0, game.boost - dt);
-  const mw = {x: mouse.x + cam.x, y: mouse.y + cam.y};
+  const mw = {x: mouse.x / Z + cam.x, y: mouse.y / Z + cam.y};
   const dx = mw.x - player.x, dy = mw.y - player.y, d = Math.hypot(dx, dy);
   const speed = Math.max(110, 210 - Math.min(followers.length, 40) * 2) * (player.injured ? 0.75 : 1) * (game.boost > 0 ? 1.4 : 1);
   player.moving = d > 8;
@@ -493,10 +500,12 @@ function drawTea(c, t){
 // ---------- draw ----------
 function draw(){
   const target = game.mode === 'arrest' && game.van && game.arrest.phase > 0 ? game.van : player;
-  cam.x = target.x - vw / 2; cam.y = target.y - vh / 2;
-  const v = o => o.x > cam.x - 100 && o.x < cam.x + vw + 100 && o.y > cam.y - 100 && o.y < cam.y + vh + 100;
+  cam.x = target.x - vw / (2 * Z); cam.y = target.y - vh / (2 * Z);
+  const VWZ = vw / Z, VHZ = vh / Z, zf = 1 / Z;
+  const v = o => o.x > cam.x - 100 && o.x < cam.x + VWZ + 100 && o.y > cam.y - 100 && o.y < cam.y + VHZ + 100;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.fillStyle = '#0f2a1c'; ctx.fillRect(0, 0, vw, vh);
-  ctx.save(); ctx.translate(-cam.x, -cam.y);
+  ctx.save(); ctx.scale(Z, Z); ctx.translate(-cam.x, -cam.y);
   ctx.beginPath(); ctx.arc(0, 0, MAP_R, 0, 6.283); ctx.fillStyle = '#e8dfc4'; ctx.fill();
   ctx.save(); ctx.clip();
 
@@ -509,7 +518,7 @@ function draw(){
   ctx.fillStyle = '#8ec3e6'; ctx.beginPath(); ctx.ellipse(130, -380, 110, 50, -0.5, 0, 6.28); ctx.fill();
 
   // houses
-  for (const h of TOWN.houses) if (h.x > cam.x - 80 && h.x < cam.x + vw + 80 && h.y > cam.y - 80 && h.y < cam.y + vh + 80){
+  for (const h of TOWN.houses) if (h.x > cam.x - 80 && h.x < cam.x + VWZ + 80 && h.y > cam.y - 80 && h.y < cam.y + VHZ + 80){
     ctx.fillStyle = 'rgba(0,0,0,.14)'; ctx.fillRect(h.x + 3, h.y + 3, h.w, h.h);
     ctx.fillStyle = h.c; ctx.fillRect(h.x, h.y, h.w, h.h);
     ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(h.x, h.y, h.w, 5);
@@ -537,7 +546,7 @@ function draw(){
   ctx.fillStyle = 'rgba(11,107,58,.18)'; ctx.beginPath(); ctx.arc(0, 0, GOAL.r, 0, 6.28); ctx.fill();
   ctx.strokeStyle = '#0b6b3a'; ctx.lineWidth = 4; ctx.stroke();
   drawMonument(ctx);
-  label(ctx, 'কেন্দ্রীয় শহীদ মিনার', 0, -GOAL.r - 12, 'bold 20px ' + BN_FONT, '#0b6b3a');
+  label(ctx, 'কেন্দ্রীয় শহীদ মিনার', 0, -GOAL.r - 12, 'bold ' + Math.round(20 * zf) + 'px ' + BN_FONT, '#0b6b3a');
 
   // police barricade rings
   RINGS.forEach((r, i) => {
@@ -546,7 +555,7 @@ function draw(){
     gs.forEach((g, k) => { const nx = gs[(k + 1) % gs.length], end = k + 1 < gs.length ? nx.ang : nx.ang + 2 * Math.PI; ctx.beginPath(); ctx.arc(0, 0, r, g.ang + half, end - half); ctx.stroke(); });
     for (const g of gs){
       ctx.globalAlpha = 1 - g.open * 0.85; ctx.strokeStyle = '#b5532a'; ctx.beginPath(); ctx.arc(0, 0, r, g.ang - half, g.ang + half); ctx.stroke(); ctx.globalAlpha = 1;
-      const lp = polar(g.ang, r + 32); label(ctx, g.open >= 1 ? 'OPEN' : 'POLICE BARRICADE: ' + g.need + ' people', lp.x, lp.y, 'bold 14px system-ui', '#111');
+      const lp = polar(g.ang, r + 32); label(ctx, g.open >= 1 ? 'OPEN' : 'POLICE BARRICADE: ' + g.need + ' people', lp.x, lp.y, 'bold ' + Math.round(14 * zf) + 'px system-ui', '#111');
     }
   });
 
@@ -561,9 +570,11 @@ function draw(){
   if (!player.hidden) list.push([player.y, () => {
     person(ctx, player.x, player.y, {dress: WHITE, skin: player.skin, hat: 'band', scale: 1.35, moving: player.moving, flag: true});
     // name tag above the head so you can find yourself
+    ctx.save(); ctx.translate(player.x, player.y - 36); ctx.scale(zf, zf);   // keeps the tag readable when zoomed out
     ctx.font = 'bold 13px ' + BN_FONT; const w = ctx.measureText(playerName).width + 14;
-    ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.beginPath(); ctx.roundRect(player.x - w / 2, player.y - 56, w, 20, 6); ctx.fill();
-    ctx.fillStyle = '#ffd54f'; ctx.textAlign = 'center'; ctx.fillText(playerName, player.x, player.y - 41);
+    ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.beginPath(); ctx.roundRect(-w / 2, -20, w, 20, 6); ctx.fill();
+    ctx.fillStyle = '#ffd54f'; ctx.textAlign = 'center'; ctx.fillText(playerName, 0, -5);
+    ctx.restore();
   }]);
   list.sort((a, b) => a[0] - b[0]).forEach(e => e[1]());
   for (const p of patrols) if (v(p)){   // police: blue, stick, no flag
@@ -586,16 +597,17 @@ function draw(){
 
   for (const b of bubbles){
     if (!v(b.who)) continue;
-    const bx = b.who.x, by = b.who.y - 38 - (b.who === player ? 36 : 0);
+    const bx = b.who.x, by = b.who.y - 38 - (b.who === player ? 36 * zf : 0);
+    ctx.save(); ctx.translate(bx, by); ctx.scale(zf, zf);
     ctx.globalAlpha = Math.min(1, b.t * 2); ctx.textAlign = 'center';
     ctx.font = '700 15px ' + BN_FONT;
     const w = Math.max(ctx.measureText(b.bn).width, 70) + 16;
     ctx.fillStyle = '#fff'; ctx.strokeStyle = '#333'; ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.roundRect(bx - w / 2, by - 26, w, 34, 8); ctx.fill(); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(bx - 5, by + 8); ctx.lineTo(bx, by + 15); ctx.lineTo(bx + 5, by + 8); ctx.fillStyle = '#fff'; ctx.fill();
-    ctx.fillStyle = '#0b6b3a'; ctx.fillText(b.bn, bx, by - 8);
-    ctx.font = '10px system-ui'; ctx.fillStyle = '#666'; ctx.fillText(b.rom, bx, by + 4);
-    ctx.globalAlpha = 1;
+    ctx.beginPath(); ctx.roundRect(-w / 2, -26, w, 34, 8); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-5, 8); ctx.lineTo(0, 15); ctx.lineTo(5, 8); ctx.fillStyle = '#fff'; ctx.fill();
+    ctx.fillStyle = '#0b6b3a'; ctx.fillText(b.bn, 0, -8);
+    ctx.font = '10px system-ui'; ctx.fillStyle = '#666'; ctx.fillText(b.rom, 0, 4);
+    ctx.globalAlpha = 1; ctx.restore();
   }
   ctx.restore();
   drawHUD();
@@ -604,6 +616,10 @@ function draw(){
 function inShutdown(){ return shutdowns.some(s => dist(s, player) < s.r); }
 
 function drawHUD(){
+  // draw the HUD on a virtual screen that shrinks on small displays so nothing overlaps
+  const k = Math.max(0.6, Math.min(1, innerWidth / 760, innerHeight / 540)), vw = innerWidth / k, vh = innerHeight / k;
+  const barY = vw < 800 ? vh - 170 : 20, bannerY = vw < 800 ? Math.round(vh * 0.5) : 70;
+  ctx.save(); ctx.scale(k, k);
   ctx.textAlign = 'left';
   const evTxt = EVENTS[game.day];
   ctx.font = 'bold 24px ' + BN_FONT; const evW = evTxt ? ctx.measureText(evTxt).width : 0;
@@ -646,20 +662,21 @@ function drawHUD(){
   } else { ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = 'bold 12px system-ui'; ctx.fillText('NO SIGNAL', vw - 50, 54); }
 
   ctx.textAlign = 'center';
-  if (game.contested){ ctx.fillStyle = '#fff'; ctx.font = 'bold 16px system-ui'; ctx.fillText('A bigger rival crowd is in the square. Out-recruit them.', vw / 2, 38); }
+  if (game.contested){ ctx.fillStyle = '#fff'; ctx.font = 'bold 16px system-ui'; ctx.fillText('A bigger rival crowd is in the square. Out-recruit them.', vw / 2, barY + 18); }
   else if (game.hold > 0){
-    ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(vw / 2 - 150, 20, 300, 26);
-    ctx.fillStyle = '#4caf50'; ctx.fillRect(vw / 2 - 150, 20, 300 * game.hold / NEED_HOLD, 26);
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 14px system-ui'; ctx.fillText('HOLDING THE SHAHEED MINAR', vw / 2, 38);
+    ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(vw / 2 - 150, barY, 300, 26);
+    ctx.fillStyle = '#4caf50'; ctx.fillRect(vw / 2 - 150, barY, 300 * game.hold / NEED_HOLD, 26);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 14px system-ui'; ctx.fillText('HOLDING THE SHAHEED MINAR', vw / 2, barY + 18);
   } else if (game.rhold > 0){
-    ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(vw / 2 - 150, 20, 300, 26);
-    ctx.fillStyle = '#e53935'; ctx.fillRect(vw / 2 - 150, 20, 300 * game.rhold / RIVAL_HOLD, 26);
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 14px system-ui'; ctx.fillText('RIVAL HOLDING THE SQUARE', vw / 2, 38);
+    ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(vw / 2 - 150, barY, 300, 26);
+    ctx.fillStyle = '#e53935'; ctx.fillRect(vw / 2 - 150, barY, 300 * game.rhold / RIVAL_HOLD, 26);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 14px system-ui'; ctx.fillText('RIVAL HOLDING THE SQUARE', vw / 2, barY + 18);
   } else if (dist(player, GOAL) < GOAL.r && followers.length + 1 < NEED_CROWD){
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 16px system-ui'; ctx.fillText('You need ' + NEED_CROWD + ' people to hold the Shaheed Minar', vw / 2, 38);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 16px system-ui'; ctx.fillText('You need ' + NEED_CROWD + ' people to hold the Shaheed Minar', vw / 2, barY + 18);
   }
   if (game.msgT > 0){
-    ctx.font = 'bold 17px ' + BN_FONT;
+    let mf = 17; ctx.font = 'bold ' + mf + 'px ' + BN_FONT;
+    while (ctx.measureText(game.msg).width + 30 > vw - 16 && mf > 11){ mf -= 1; ctx.font = 'bold ' + mf + 'px ' + BN_FONT; }
     const w = ctx.measureText(game.msg).width + 30;
     ctx.fillStyle = 'rgba(0,0,0,.72)'; ctx.fillRect(vw / 2 - w / 2, vh - 110, w, 34);
     ctx.fillStyle = '#fff'; ctx.fillText(game.msg, vw / 2, vh - 87);
@@ -676,11 +693,13 @@ function drawHUD(){
   if (game.flash > 0){ ctx.fillStyle = 'rgba(200,0,0,' + (game.flash * 0.9) + ')'; ctx.fillRect(0, 0, vw, vh); }
   if (game.ev){   // big banner when an event day starts
     const txt = game.day + ' July: ' + game.ev.text;
-    ctx.globalAlpha = Math.min(1, game.ev.t); ctx.font = 'bold 36px ' + BN_FONT; ctx.textAlign = 'center';
+    let bf = 36; ctx.globalAlpha = Math.min(1, game.ev.t); ctx.font = 'bold ' + bf + 'px ' + BN_FONT; ctx.textAlign = 'center';
+    while (ctx.measureText(txt).width + 50 > vw - 16 && bf > 16){ bf -= 2; ctx.font = 'bold ' + bf + 'px ' + BN_FONT; }
     const w = ctx.measureText(txt).width + 50;
-    ctx.fillStyle = 'rgba(0,0,0,.75)'; ctx.fillRect(vw / 2 - w / 2, 70, w, 62);
-    ctx.fillStyle = '#ffd54f'; ctx.fillText(txt, vw / 2, 114); ctx.globalAlpha = 1;
+    ctx.fillStyle = 'rgba(0,0,0,.75)'; ctx.fillRect(vw / 2 - w / 2, bannerY, w, 62);
+    ctx.fillStyle = '#ffd54f'; ctx.fillText(txt, vw / 2, bannerY + 44); ctx.globalAlpha = 1;
   }
+  ctx.restore();
 }
 
 // ---------- shareable photo card ----------
@@ -801,10 +820,16 @@ function start(){
   newGame();
 }
 document.getElementById('go').onclick = start;
+const mb = document.getElementById('mute'); if (mb) mb.onclick = toggleMute;
+const rulesEl = document.getElementById('rules'); if (rulesEl && innerWidth > 640) rulesEl.open = true;   // rules start folded on phones
 document.getElementById('photo').onchange = e => loadPhoto(e.target.files[0]);
 cv.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
-cv.addEventListener('touchmove', e => { const t = e.touches[0]; mouse.x = t.clientX; mouse.y = t.clientY; e.preventDefault(); }, {passive: false});
-cv.addEventListener('touchstart', e => { const t = e.touches[0]; mouse.x = t.clientX; mouse.y = t.clientY; });
+// touch: walk toward your finger, lift to stop (preventDefault also blocks emulated mouse events)
+const touchPos = e => { const t = e.touches[0]; if (t){ mouse.x = t.clientX; mouse.y = t.clientY; } e.preventDefault(); };
+const touchStop = () => { mouse.x = vw / 2; mouse.y = vh / 2; };
+cv.addEventListener('touchstart', touchPos, {passive: false});
+cv.addEventListener('touchmove', touchPos, {passive: false});
+cv.addEventListener('touchend', touchStop); cv.addEventListener('touchcancel', touchStop);
 let hi = 0; const tk = document.getElementById('tk');
 function tick(){ tk.textContent = HEADLINES[hi++ % HEADLINES.length]; }
 tick(); setInterval(tick, 8000);
