@@ -1,13 +1,25 @@
-html,body{margin:0;height:100%;background:#0f2a1c;overflow:hidden;font-family:system-ui,"Nirmala UI","Noto Sans Bengali",sans-serif}
-canvas#c{display:block;width:100vw;height:100vh;cursor:crosshair}
-#menu{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,20,15,.8);overflow:auto}
-#card{background:#f6f1e3;max-width:680px;margin:16px;padding:24px;border-radius:14px;box-shadow:0 10px 40px #0008}
+html,body{margin:0;height:100%;background:#0f2a1c;overflow:hidden;overscroll-behavior:none;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;font-family:system-ui,"Nirmala UI","Noto Sans Bengali",sans-serif}
+canvas#c{display:block;width:100vw;height:100vh;height:100dvh;cursor:crosshair;touch-action:none}
+#menu{position:fixed;inset:0;display:flex;background:rgba(10,20,15,.8);overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+#card{background:#f6f1e3;max-width:680px;margin:auto;padding:24px;border-radius:14px;box-shadow:0 10px 40px #0008}
 h1{margin:0;font-size:34px;color:#0b6b3a} h1 span{color:#c8102e}
 p,li{color:#222;line-height:1.5;font-size:19px} li{margin:7px 0} ul{padding-left:24px;margin:10px 0}
-input{width:100%;box-sizing:border-box;padding:10px;font-size:17px;border:1px solid #bbb;border-radius:8px;margin-top:6px}
+input{-webkit-user-select:text;user-select:text;width:100%;box-sizing:border-box;padding:10px;font-size:17px;border:1px solid #bbb;border-radius:8px;margin-top:6px}
 button{background:#0b6b3a;color:#fff;border:0;border-radius:10px;padding:12px 20px;font-size:16px;cursor:pointer;margin:8px 6px 0 0}
 button:hover{background:#09562f} button.alt{background:#333} button.alt:hover{background:#111}
 small{color:#666;display:block;margin-top:12px;font-size:14px}
 #cardimg{display:block;max-width:100%;max-height:52vh;margin:12px auto 0;border-radius:8px;box-shadow:0 4px 18px #0006}
-#ticker{position:fixed;left:0;right:0;bottom:0;background:#c8102e;color:#fff;font-size:15px;padding:6px 12px;white-space:nowrap;overflow:hidden}
+#ticker{position:fixed;left:0;right:0;bottom:0;background:#c8102e;color:#fff;font-size:15px;padding:6px 12px calc(6px + env(safe-area-inset-bottom));white-space:nowrap;overflow:hidden}
 #ticker b{background:#fff;color:#c8102e;padding:1px 8px;margin-right:10px;border-radius:3px}
+#mute{position:fixed;right:10px;top:46%;width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;border:0;font-size:20px;padding:0;margin:0;cursor:pointer}
+/* phones */
+@media (max-width:640px){
+  #card{width:calc(100% - 24px);margin:auto;padding:16px}
+  h1{font-size:28px}
+  p,li{font-size:16px;line-height:1.45} li{margin:5px 0} ul{padding-left:20px}
+  button{width:100%;margin:8px 0 0;padding:14px 16px;font-size:17px}
+  #mute{width:44px;padding:0;margin:0}
+  #cardimg{max-height:44vh}
+  #ticker{font-size:13px}
+}
+summary{font-size:21px;font-weight:700;color:#0b6b3a;cursor:pointer;margin:10px 0;padding:6px 0}

@@ -1,6 +1,6 @@
-# Deshi Andolon (দেশি আন্দোলন)
+#Andolon (আন্দোলন)
 
-Single-player browser game inspired by the July movement in Bangladesh. Fictional characters and events; stylised map.
+Single-player browser game inspired by the recent movement in Bangladesh. Fictional characters and events; stylised map.
 
 ## Run
 Open `index.html` in a browser (no build, no server needed). To share online, upload this whole folder to any static host (GitHub Pages, Netlify, Vercel).
