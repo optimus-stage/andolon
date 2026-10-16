@@ -53,7 +53,7 @@ h3.how{margin:14px 0 2px;font-size:21px;color:#0b6b3a}
 @media (max-width:640px){.goal{font-size:16px}h3.how{font-size:19px}}
 
 .support{margin-top:10px}
-.supportbtn{background:#8a5a1e;color:#fff;font-size:15px;padding:9px 14px}
+.supportbtn{background:#e0508f;color:#fff;font-size:15px;padding:9px 14px}
 .supportpanel{display:none;margin-top:8px;text-align:center}
 .supportpanel.open{display:block}
 .waqr{display:block;margin:6px auto;width:200px;max-width:70%;border-radius:8px;background:#fff}
