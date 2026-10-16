@@ -1612,7 +1612,7 @@ function coffeeHTML(){
   let p = '';
   if (SUPPORT.bkashNumber) p += '<div class="bknum">bKash (Send Money): <b>' + SUPPORT.bkashNumber + '</b> <button type="button" class="copybtn alt" data-num="' + SUPPORT.bkashNumber + '">Copy</button></div>';
   p += '<small>Optional and non-refundable. It does not unlock anything in the game.</small>';
-  return '<div class="support"><button type="button" class="supportbtn alt">Enjoyed the game? Buy your Neta a চা ☕</button><div class="supportpanel">' + p + '</div></div>';
+  return '<div class="support"><button type="button" class="supportbtn alt">Enjoyed the game? Gift your Neta a cup of tea 🍵</button><div class="supportpanel">' + p + '</div></div>';
 }
 document.addEventListener('click', e => {
   const c = e.target.closest && e.target.closest('.copybtn'); if (!c) return;
