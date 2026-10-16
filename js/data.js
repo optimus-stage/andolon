@@ -139,7 +139,7 @@ const PTAGS = {
 };
 
 // Optional support ("Buy your Neta a cha"). Leave all empty to hide it everywhere.
-// bkashNumber: shown with a Copy button. coffeeUrl: a Buy Me a Coffee / Ko-fi page.
-const SUPPORT = {bkashNumber: '', coffeeUrl: ''};
+// bkashNumber: shown with a Copy button.
+const SUPPORT = {bkashNumber: ''};
 // Optional WhatsApp group for game updates. qr: path to your QR image, e.g. 'img/whatsapp-qr.png'. link: the group invite link (lets phone users tap instead of scan).
 const WHATSAPP = {qr: '', link: ''};
