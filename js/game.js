@@ -651,9 +651,9 @@ function endPolice(won, why){
   if (won) tag = game.anger < 25 ? PTAGS.calm : game.t < 260 ? PTAGS.swift : st.squadPeak >= 10 ? PTAGS.full : st.smokes >= 5 ? PTAGS.smoke : PTAGS.steady;
   else tag = why === 'anger' ? PTAGS.overreach : st.squadPeak < 5 ? PTAGS.outnumbered : PTAGS.slow;
   const nxt = PRANKS.find(r => r.min > score);
-  const nextText = nxt ? ['NEXT: ' + nxt.bn, (nxt.min - score).toLocaleString('en-US') + ' pts'] : ['NEXT RANK', 'Maxed'];
+  const nextText = nxt ? ['NEXT: ' + nxt.metal.toUpperCase(), (nxt.min - score).toLocaleString('en-US') + ' pts'] : ['NEXT RANK', 'Maxed'];
   let best = 0, newBest = false; try { best = +localStorage.getItem('da_best_police') || 0; if (score > best){ newBest = best > 0; localStorage.setItem('da_best_police', String(score)); best = score; } } catch (e) {}
-  const cardInfo = {role: 'police', name: playerName, skin: player.skin, score, rankBn: rank.bn, tagBn: tag.bn, tagDesc: tag.desc, day: game.day, best, newBest, nextText,
+  const cardInfo = {role: 'police', tier: rank, name: playerName, skin: player.skin, score, rankBn: rank.bn, tagBn: tag.bn, tagDesc: tag.desc, day: game.day, best, newBest, nextText,
     stampLabel: won ? 'ORDER HELD' : why === 'anger' ? 'STOOD DOWN' : 'LINE BROKEN', stampSub: won ? 'SQUARE SECURED' : why === 'anger' ? 'TOO MUCH FORCE' : 'MINAR HELD',
     stampCol: won ? '#1f4e79' : '#a32d2d', dayText: 'Andolon · Day ' + game.day,
     row2Title: 'Crowds dispersed', row2Value: st.dispersed, row2Desc: 'Marches broken up before the Minar.', foot3: ['SQUAD PEAK', String(st.squadPeak)]};
@@ -1153,17 +1153,40 @@ function fitText(g, text, maxW, size, weight, family){
 }
 function rrect(g, x, y, w, h, r){ g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
 function starPath(g, cx, cy, R){ g.beginPath(); for (let i = 0; i < 10; i++){ const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? R * 0.45 : R; g.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r); } g.closePath(); }
+function lin(g, x0, y0, x1, y1, cols){ const l = g.createLinearGradient(x0, y0, x1, y1); cols.forEach((c, i) => l.addColorStop(i / (cols.length - 1), c)); return l; }
+function hexPath(g, R){ g.beginPath(); for (let i = 0; i < 6; i++){ const a = Math.PI / 6 + i * Math.PI / 3; g.lineTo(Math.cos(a) * R, Math.sin(a) * R); } g.closePath(); }
+// rank medal: stars, hexagon badge with gem, ribbon, wings for the top tiers
+function rankMedal(g, T, cx, cy, s){
+  g.save(); g.translate(cx, cy); g.scale(s, s);
+  if (T.glow){ g.shadowColor = T.m[1]; g.shadowBlur = 28; }
+  if (T.wings) for (const d of [-1, 1]){ g.fillStyle = lin(g, 0, -20, 0, 50, [T.m[0], T.m[2]]); g.strokeStyle = '#0008'; g.lineWidth = 2;
+    for (let k = 0; k < 3; k++){ g.beginPath(); g.moveTo(d * 50, -14 + k * 14); g.lineTo(d * (92 - k * 6), -34 + k * 16); g.lineTo(d * (86 - k * 6), -12 + k * 16); g.lineTo(d * 50, 4 + k * 14); g.closePath(); g.fill(); g.stroke(); } }
+  g.shadowBlur = 0;
+  g.fillStyle = lin(g, 0, 40, 0, 110, T.ribbon); g.strokeStyle = '#0009'; g.lineWidth = 3;
+  g.beginPath(); g.moveTo(-26, 38); g.lineTo(26, 38); g.lineTo(26, 108); g.lineTo(0, 90); g.lineTo(-26, 108); g.closePath(); g.fill(); g.stroke();
+  g.strokeStyle = '#0003'; g.lineWidth = 5; g.beginPath(); g.moveTo(-9, 44); g.lineTo(-9, 94); g.moveTo(9, 44); g.lineTo(9, 94); g.stroke();
+  g.strokeStyle = '#0009'; g.lineWidth = 4; g.fillStyle = lin(g, -40, -50, 40, 50, T.m); hexPath(g, 58); g.fill(); g.stroke();
+  g.fillStyle = lin(g, 40, 50, -40, -50, T.m); g.lineWidth = 3; hexPath(g, 44); g.fill(); g.stroke();
+  g.fillStyle = lin(g, -20, -20, 20, 20, [T.m[1], T.m[2]]); hexPath(g, 32); g.fill(); g.stroke();
+  g.fillStyle = lin(g, -14, -14, 14, 14, ['#fff', T.m[0], T.m[1]]); g.lineWidth = 2; hexPath(g, 16); g.fill(); g.stroke();
+  g.strokeStyle = '#fff9'; g.lineWidth = 3; g.beginPath(); g.moveTo(-6, 9); g.lineTo(6, -9); g.moveTo(1, 10); g.lineTo(11, -4); g.stroke();
+  const sp = 34, x0 = -(T.stars - 1) * sp / 2;
+  for (let i = 0; i < T.stars; i++){ g.fillStyle = lin(g, 0, -96, 0, -64, [T.m[0], T.m[1]]); g.strokeStyle = '#0008'; g.lineWidth = 2.5; starPath(g, x0 + i * sp, -80, 15); g.fill(); g.stroke(); }
+  g.restore();
+}
 // trading-card layout: gold when the player wins, blue when detained or out of time
 function renderCard(kind, info){
   const W = 720, H = 1000, win = kind === 'win';
   const pol = info.role === 'police';
-  const T = pol ? (win ? {frame: '#e5e4e2', edge: '#8e949a', strip: '#c9cdd1', box: '#f5f6f7', ink: '#1f2328', art: '#2b2f3a', art2: '#343947', dot: '#b9c0c7'}
-                       : {frame: '#8a8f94', edge: '#4a4f54', strip: '#a9adb1', box: '#d3d6d8', ink: '#1a1c1e', art: '#2a2d30', art2: '#34383c', dot: '#6f757a'})
+  const tier = pol && info.tier;
+  const T = tier ? tier
         : win ? {frame: '#f2cf45', edge: '#c79a12', strip: '#e8d27a', box: '#f7e9a8', ink: '#412402', art: '#2b2f3a', art2: '#343947', dot: '#d9a93a'}
                 : {frame: '#7fb2e5', edge: '#185fa5', strip: '#b5d4f4', box: '#e1eefb', ink: '#042c53', art: '#1d2b4a', art2: '#27406b', dot: '#378add'};
+  if (tier){ T.frame = tier.fr[0]; T.dot = tier.m[1]; }
   const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
-  g.fillStyle = T.frame; rrect(g, 0, 0, W, H, 38); g.fill();
+  g.fillStyle = tier ? lin(g, 0, 0, W, H, tier.fr) : T.frame; rrect(g, 0, 0, W, H, 38); g.fill();
   g.strokeStyle = T.edge; g.lineWidth = 6; rrect(g, 3, 3, W - 6, H - 6, 36); g.stroke();
+  if (tier && tier.dark){ g.strokeStyle = '#e8b53a55'; g.lineWidth = 2; rrect(g, 14, 14, W - 28, H - 28, 28); g.stroke(); }
   g.textBaseline = 'alphabetic'; g.fillStyle = T.ink;
 
   // title row: name on the left, score on the right
@@ -1180,6 +1203,7 @@ function renderCard(kind, info){
   g.save(); g.beginPath(); g.rect(AX, AY, AW, AH); g.clip();
   g.fillStyle = T.art; g.fillRect(AX, AY, AW, AH);
   g.strokeStyle = T.art2; g.lineWidth = 8; for (let k = -AH; k < AW; k += 28){ g.beginPath(); g.moveTo(AX + k, AY + AH); g.lineTo(AX + k + AH, AY); g.stroke(); }
+  if (tier){ const rg = g.createRadialGradient(AX + AW / 2, AY + AH / 2, 10, AX + AW / 2, AY + AH / 2, 320); rg.addColorStop(0, tier.m[1] + '66'); rg.addColorStop(1, '#0000'); g.fillStyle = rg; g.fillRect(AX, AY, AW, AH); }
   g.translate(AX + AW / 2, AY);
   if (info.photo){
     const im = info.photo, k = Math.max(AW / im.width, AH / im.height), dw = im.width * k, dh = im.height * k;
@@ -1187,7 +1211,7 @@ function renderCard(kind, info){
     g.drawImage(im, (AW - dw) / 2 - AW / 2, (AH - dh) / 2, dw, dh); g.filter = 'none';
   } else if (pol) person(g, 0, AH - 100, {dress: BLUE, skin: info.skin, hat: 'cap', legs: '#14284f', scale: 9, stick: true});
   else person(g, 0, AH - 100, {dress: WHITE, skin: info.skin, hat: 'band', scale: 9, flag: win});
-  g.save(); g.translate(0, info.photo ? AH - 100 : 80); g.rotate(-0.2);
+  g.save(); g.translate(0, info.photo || tier ? AH - 90 : 80); g.rotate(-0.2);
   const col = info.stampCol || (win ? '#27500a' : info.station ? '#c8102e' : '#5f5e5a');
   const label = info.stampLabel || (win ? 'VICTORY' : info.station ? 'DETAINED' : 'TIME UP');
   const sub = info.stampSub || (win ? 'HELD THE MINAR' : info.station ? info.station.toUpperCase() : 'DAY ' + MAX_DAY + ' ENDED');
@@ -1197,10 +1221,11 @@ function renderCard(kind, info){
   g.fillStyle = col; fitText(g, label, 440, 76, 'bold', 'system-ui'); g.fillText(label, 0, 12);
   fitText(g, sub, 440, 30, 'bold', 'system-ui'); g.fillText(sub, 0, 56);
   g.restore(); g.restore();
+  if (tier) rankMedal(g, tier, AX + 92, AY + 160, 1.15);
 
   // rank strip
-  g.fillStyle = T.strip; g.fillRect(AX, AY + AH + 14, AW, 40);
-  g.fillStyle = T.ink; g.textAlign = 'left'; g.font = 'bold 24px ' + BN_FONT; g.fillText(info.rankBn, AX + 14, AY + AH + 43);
+  g.fillStyle = tier ? lin(g, AX, 0, AX + AW, 0, [T.strip, tier.fr[0], T.strip]) : T.strip; g.fillRect(AX, AY + AH + 14, AW, 40);
+  g.fillStyle = T.ink; g.textAlign = 'left'; g.font = 'bold 24px ' + BN_FONT; g.fillText(tier ? info.rankBn + '  ·  ' + tier.metal.toUpperCase() : info.rankBn, AX + 14, AY + AH + 43);
   g.textAlign = 'right'; g.font = 'italic 20px system-ui'; g.fillText(info.dayText || 'Andolon · Day ' + info.day + ' of ' + MAX_DAY, AX + AW - 14, AY + AH + 42);
 
   // two "attack" rows: special tag, peak crowd
@@ -1208,10 +1233,10 @@ function renderCard(kind, info){
   g.fillStyle = T.box; g.strokeStyle = T.edge; g.lineWidth = 3; rrect(g, AX, BY, AW, 232, 12); g.fill(); g.stroke();
   const row = (y, title, value, desc, icon) => {
     g.fillStyle = '#fff'; g.strokeStyle = T.edge; g.lineWidth = 3; g.beginPath(); g.arc(AX + 38, y, 20, 0, 7); g.fill(); g.stroke();
-    g.fillStyle = T.ink;
+    g.fillStyle = tier && tier.dark ? '#2a1015' : T.ink;
     if (icon === 'star'){ starPath(g, AX + 38, y + 1, 12); g.fill(); }
     else { g.beginPath(); g.arc(AX + 31, y - 4, 5, 0, 7); g.arc(AX + 45, y - 4, 5, 0, 7); g.fill(); g.beginPath(); g.arc(AX + 31, y + 14, 9, Math.PI, 0); g.arc(AX + 45, y + 14, 9, Math.PI, 0); g.fill(); }
-    g.textAlign = 'left'; fitText(g, title, 360, 30, 'bold', 'system-ui'); g.fillText(title, AX + 74, y + 10);
+    g.fillStyle = T.ink; g.textAlign = 'left'; fitText(g, title, 360, 30, 'bold', 'system-ui'); g.fillText(title, AX + 74, y + 10);
     if (value != null){ g.textAlign = 'right'; g.font = 'bold 30px system-ui'; g.fillText(String(value), AX + AW - 24, y + 10); }
     g.textAlign = 'left'; fitText(g, desc, AW - 100, 21, 'normal', 'system-ui'); g.fillText(desc, AX + 74, y + 42);
   };
@@ -1305,7 +1330,7 @@ function end(won, info){
   const tag = outcome === 'timeout' ? pickRoast() : pickTag(won, outcome);
   const tagBn = tag.bn || tag.tag, tagDesc = tag.desc;
   const nxt = RANKS.find(r => r.min > score);
-  const nextText = nxt ? ['NEXT: ' + nxt.bn, (nxt.min - score).toLocaleString('en-US') + ' pts'] : ['NEXT RANK', 'Maxed'];
+  const nextText = nxt ? ['NEXT: ' + nxt.metal.toUpperCase(), (nxt.min - score).toLocaleString('en-US') + ' pts'] : ['NEXT RANK', 'Maxed'];
   let best = 0, newBest = false; try { best = +localStorage.getItem('da_best') || 0; if (score > best){ newBest = best > 0; localStorage.setItem('da_best', String(score)); best = score; } } catch (e) {}
   const cardInfo = {name: playerName, skin: player.skin, station: info.station, timeout: !!info.timeout, score, rankBn: rank.bn, tagBn, tagDesc, peak: st.peak, rings: st.rings, day: game.day, best, newBest, nextText};
   const build = () => renderCard(won ? 'win' : 'lose', Object.assign({photo: playerPhoto}, cardInfo));
