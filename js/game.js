@@ -1004,7 +1004,7 @@ function end(won, info){
     '<button id="share">Share card</button><button id="dl" class="alt">' + (IS_TOUCH ? 'Save to Photos' : 'Download') + '</button><button id="go">March again</button>' +
     (IS_TOUCH ? '<small>Tip: press and hold the card to save it to your Photos.</small><br>' : '') +
     (playerPhoto ? '<button id="nophoto" class="alt">Use default avatar</button>' : '') +
-    '<a href="#" class="aboutlink">About game</a><br>' +
+    '<a href="#" class="aboutlink">About &amp; Disclaimer</a><br>' +
     '<small>Your photo stays on your device. It is only drawn onto this card. Fictional game; characters and events are not real people or incidents.</small>';
   const text = won ? 'I held the Central Shaheed Minar in Andolon! ' + rank.en + ', ' + score.toLocaleString('en-US') + ' pts.'
     : outcome === 'timeout' ? 'Andolon called me "' + tagBn + '". Can you do better?'
