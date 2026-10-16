@@ -33,7 +33,10 @@ Open `index.html` in a browser (no build, no server needed). To share online, up
 ## Hunting rivals and rescues
 - Rival crowds (about 12, three per zone) now chase you when you are close in the same zone. They are slower than you, so run early. They still recruit bystanders, and equal-sized crowds go to the protesters.
 - About 1 in 4 rival crowds is **armed** (red ring and ARMED label). Within range and with no building in the way they give a short warning (!) and fire: a quarter of your crowd scatters and you lose morale.
-- People detained by police are held at a thana. An orange arrow, a dashed path and a minimap dot lead to it. Bring 8 people inside the dashed ring for 6 seconds to free them. Police nearby slow it down, and reinforcements come out. Freed people join your crowd and count as recruits. Held people also go free by themselves after 60 seconds.
+- People detained by police are held at a thana. An orange arrow, a dashed path and a minimap dot lead to it. Bring 8 people inside the dashed ring for 6 seconds to free them. A green card pops up when they are released. Freed people join your crowd and count as recruits. Held people also go free by themselves after 60 seconds.
+
+## Internet shutdown
+The grey dashed zones play radio static. Stay inside for 4 seconds and your crowd starts losing people, about 20% every 1.2 seconds, until you leave.
 
 ## Tuning
 Everything is at the top of `js/data.js`: gates per ring, barricade sizes, crowd needed, day length, bystander counts, rival limits, score weights, ranks, tags and roast lines. Police strength is in `strikePlayer()` in `js/game.js`.

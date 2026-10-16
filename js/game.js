@@ -86,6 +86,14 @@ function sfxWhack(){   // stick hitting: a noise crack plus a low thud
   og.gain.setValueAtTime(0.9, t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
   o.connect(og); og.connect(a.destination); o.start(t); o.stop(t + 0.22);
 }
+function sfxStatic(){   // short burst of radio static while the internet is shut down
+  if (muted) return; const a = ac(); if (!a) return; const t = a.currentTime;
+  const len = Math.floor(a.sampleRate * 0.4), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (i % 900 < 300 ? 1 : 0.35);
+  const src = a.createBufferSource(); src.buffer = buf; const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2200; bp.Q.value = 0.7;
+  const g = a.createGain(); g.gain.setValueAtTime(0.12, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+  src.connect(bp); bp.connect(g); g.connect(a.destination); src.start(t);
+}
 function sfxChime(){
   if (muted) return; const a = ac(); if (!a) return; const t = a.currentTime;
   [660, 880].forEach((f, i) => { const o = a.createOscillator(), g = a.createGain(); o.type = 'triangle'; o.frequency.value = f;
@@ -194,24 +202,27 @@ function blocked(x, y, margin){
   return false;
 }
 function genTown(){
-  const rng = mulberry(7771999), houses = [], occ = new Set(), mosques = NAMED_MOSQUES.slice(), coffee = NAMED_COFFEE.slice();
+  const rng = mulberry(7771999), houses = [], occ = new Set(), mosques = NAMED_MOSQUES.slice(), coffee = NAMED_COFFEE.slice(), temples = [], monasteries = [], churches = [];
   for (let i = 0; i < 40000 && houses.length < HOUSE_COUNT; i++){
     const a = rng() * 6.283, r = Math.sqrt(rng()) * MAP_R, x = Math.cos(a) * r, y = Math.sin(a) * r;
     if (blocked(x, y, 0)) continue;
     const key = Math.floor(x / 150) + ',' + Math.floor(y / 150); if (occ.has(key)) continue; occ.add(key);
     houses.push({x, y, w: 44 + rng() * 30, h: 36 + rng() * 28, c: ['#d8c9a8', '#c9a98f', '#b9b7a0', '#cfd2c4', '#d9b8a5', '#c4b69a'][Math.floor(rng() * 6)]});
   }
-  while (mosques.length < 15 || coffee.length < 13){
+  const WANT = {mosque: 7, coffee: 6, temple: 3, monastery: 2, church: 3};
+  while (mosques.length < WANT.mosque || coffee.length < WANT.coffee || temples.length < WANT.temple || monasteries.length < WANT.monastery || churches.length < WANT.church){
     const a = rng() * 6.283, r = Math.sqrt(rng()) * (MAP_R - 150), x = Math.cos(a) * r, y = Math.sin(a) * r;
     if (blocked(x, y, 10)) continue;
-    if (mosques.length < 15 && rng() < 0.5) mosques.push({name: '', x, y}); else if (coffee.length < 13) coffee.push({name: '', x, y});
+    const kinds = [['mosque', mosques], ['coffee', coffee], ['temple', temples], ['monastery', monasteries], ['church', churches]].filter(k => k[1].length < WANT[k[0]]);
+    const k = kinds[Math.floor(rng() * kinds.length)]; k[1].push({name: '', x, y});
   }
   // every building is solid: nobody walks over them
   const solids = houses.map(h => ({x: h.x, y: h.y, w: h.w, h: h.h}))
     .concat(mosques.map(m => ({x: m.x - 24, y: m.y - 14, w: 48, h: 32})))
     .concat(coffee.map(s => ({x: s.x - 18, y: s.y - 10, w: 36, h: 24})))
+    .concat(temples.concat(monasteries, churches).map(s => ({x: s.x - 20, y: s.y - 14, w: 40, h: 30})))
     .concat(HOSPITALS.map(h => ({x: h.x - 30, y: h.y - 22, w: 60, h: 44})));
-  return {houses, mosques, coffee, solids};
+  return {houses, mosques, coffee, temples, monasteries, churches, solids};
 }
 const TOWN = genTown();
 
@@ -238,7 +249,7 @@ function newGame(){
   }
   shutdowns.push({x: -900, y: -1100, r: 300}, {x: 700, y: 900, r: 260});
   player = {x: START.x, y: START.y, r: 12, morale: 100, injured: false, skin: pick(SKINS), moving: false, hidden: false};
-  game = {t: 0, day: 1, hold: 0, started: true, spawnT: 4, rivalSpawnT: 20, stats: {recruits: 0, peak: 1, rings: 0, clashWins: 0, beaten: 0, cures: 0, teas: 0, stallT: 0}, mode: 'play', msg: '', msgT: 0, viralT: 40 + rand(0, 20), detainees: [], rescue: {}, drain: 0, boost: 0, flash: 0, van: null, arrest: null, contested: false};
+  game = {t: 0, day: 1, hold: 0, started: true, spawnT: 4, rivalSpawnT: 20, stats: {recruits: 0, peak: 1, rings: 0, clashWins: 0, beaten: 0, cures: 0, teas: 0, stallT: 0}, mode: 'play', msg: '', msgT: 0, viralT: 40 + rand(0, 20), detainees: [], rescue: {}, shutT: 0, staticT: 0, shutLoseT: 0, drain: 0, boost: 0, flash: 0, van: null, arrest: null, contested: false};
   chant = {i: 0, timer: 3, phase: 0};
   for (let z = 0; z < 4; z++) for (let i = 0; i < 3; i++) mkRival(z, 60 + rand(0, 180));
   if ('ontouchstart' in window || navigator.maxTouchPoints > 0) say('Touch and hold a direction on the round pad to walk. Lift to stop.', 6);
@@ -376,6 +387,14 @@ function update(dt){
   }
 
   updateRescue(dt);
+  if (inShutdown()){   // internet shutdown: static on the radio, and the crowd drifts away after 4 seconds
+    if (game.shutT === 0) say('Internet shutdown! Leave within 4 seconds or you will lose your crowd.', 3);
+    game.shutT += dt; game.staticT -= dt; if (game.staticT <= 0){ sfxStatic(); game.staticT = 0.45; }
+    if (game.shutT >= 4 && followers.length){
+      game.shutLoseT -= dt;
+      if (game.shutLoseT <= 0){ game.shutLoseT = 1.2; const n = Math.max(1, Math.ceil(followers.length * 0.2)); for (let i = 0; i < n && followers.length; i++){ const f = followers.pop(); f.cool = 6; f.rcool = 10; f.vx = rand(-70, 70); f.vy = rand(-70, 70); f.wt = 1; neutrals.push(f); } say('No signal: ' + n + ' people lost contact and left. Get out of the shutdown zone!', 2.5); }
+    }
+  } else { game.shutT = 0; game.shutLoseT = 0; }
 
   // rivals (support the police, never struck by them)
   for (const r of rivals){
@@ -769,17 +788,15 @@ function updateRescue(dt){
     const held = heldAt(stn).length, R = game.rescue[stn.name] || (game.rescue[stn.name] = {p: 0, cd: 0});
     R.cd = Math.max(0, R.cd - dt);
     if (!held){ R.p = 0; continue; }
-    const crowd = followers.filter(f => dist(f, stn) < RESCUE_R).length, cops = patrols.filter(p => dist(p, stn) < RESCUE_R + 40).length;
-    const rate = crowd >= RESCUE_NEED ? 1 - 0.35 * cops : -0.5;
-    if (crowd >= RESCUE_NEED && R.cd <= 0 && R.p > 0){ R.cd = 30; for (let k = 0; k < 2; k++){ const p = mkPatrol(zoneOf(stn.x, stn.y)); p.x = stn.x + rand(-30, 30); p.y = stn.y + 30; p.life = 40; pickWaypoint(p); patrols.push(p); } say('Police reinforcements at ' + stn.name + '!', 2); }
+    const crowd = followers.filter(f => dist(f, stn) < RESCUE_R).length;
+    const rate = crowd >= RESCUE_NEED ? 1 : -0.5;
     R.p = Math.max(0, Math.min(RESCUE_TIME, R.p + rate * dt));
     if (R.p >= RESCUE_TIME){
       const out = game.detainees.filter(d => d.st === stn); game.detainees = game.detainees.filter(d => d.st !== stn); R.p = 0;
       for (const d of out){ const n = mkNeutral(stn.x + rand(-30, 30), stn.y + 40); n.skin = d.skin; followers.push(n); game.stats.recruits++; }
-      sfxJoin(); sfxChime(); say(out.length + ' released from ' + stn.name + '! They join your crowd.', 4);
+      sfxJoin(); sfxChime(); toasts.push({kind: 'released', station: stn.name, count: out.length, skin: out[0].skin, t: 5});
     }
   }
-  for (let i = patrols.length - 1; i >= 0; i--) if (patrols[i].life != null && (patrols[i].life -= dt) <= 0) patrols.splice(i, 1);
 }
 function startArrest(police){
   const dest = Math.random() < 0.3 ? AYNAGHOR : pick(nearestStations(player).slice(0, 3));
@@ -888,6 +905,25 @@ function drawMosque(c, m){
   c.fillStyle = '#2e8b57'; c.beginPath(); c.arc(m.x - 28, m.y - 34, 4, Math.PI, 0); c.arc(m.x + 28, m.y - 34, 4, Math.PI, 0); c.fill();
   label(c, m.name || 'Mosque', m.x, m.y + 32, '600 11px system-ui', '#2e5d44');
 }
+function drawTemple(c, t){   // stepped shikhara tower with a flag
+  c.fillStyle = '#f1dcc4'; c.strokeStyle = '#8a5a30'; c.lineWidth = 1.5; c.fillRect(t.x - 20, t.y - 4, 40, 20); c.strokeRect(t.x - 20, t.y - 4, 40, 20);
+  c.fillStyle = '#e07a2f'; c.beginPath(); c.moveTo(t.x - 14, t.y - 4); c.lineTo(t.x, t.y - 34); c.lineTo(t.x + 14, t.y - 4); c.closePath(); c.fill(); c.stroke();
+  c.strokeStyle = '#8a5a30'; c.beginPath(); c.moveTo(t.x, t.y - 34); c.lineTo(t.x, t.y - 44); c.stroke(); c.fillStyle = '#c8102e'; c.fillRect(t.x, t.y - 44, 9, 5);
+  label(c, 'Temple', t.x, t.y + 30, '600 11px system-ui', '#8a4a10');
+}
+function drawMonastery(c, m){   // golden-roofed hall with a stupa
+  c.fillStyle = '#f4ead0'; c.strokeStyle = '#8a7020'; c.lineWidth = 1.5; c.fillRect(m.x - 20, m.y - 4, 40, 20); c.strokeRect(m.x - 20, m.y - 4, 40, 20);
+  c.fillStyle = '#d9a82a'; c.beginPath(); c.moveTo(m.x - 26, m.y - 4); c.lineTo(m.x - 14, m.y - 18); c.lineTo(m.x + 14, m.y - 18); c.lineTo(m.x + 26, m.y - 4); c.closePath(); c.fill(); c.stroke();
+  c.fillStyle = '#fff'; c.beginPath(); c.arc(m.x, m.y - 22, 8, Math.PI, 0); c.fill(); c.stroke(); c.fillStyle = '#d9a82a'; c.fillRect(m.x - 1.5, m.y - 36, 3, 10);
+  label(c, 'Monastery', m.x, m.y + 30, '600 11px system-ui', '#7a5f10');
+}
+function drawChurch(c, s){   // gabled nave, bell tower and cross
+  c.fillStyle = '#f3f1ec'; c.strokeStyle = '#6a6a78'; c.lineWidth = 1.5; c.fillRect(s.x - 20, s.y - 4, 40, 20); c.strokeRect(s.x - 20, s.y - 4, 40, 20);
+  c.fillStyle = '#7a6a78'; c.beginPath(); c.moveTo(s.x - 22, s.y - 4); c.lineTo(s.x, s.y - 18); c.lineTo(s.x + 22, s.y - 4); c.closePath(); c.fill();
+  c.fillStyle = '#f3f1ec'; c.fillRect(s.x + 8, s.y - 30, 10, 26); c.strokeRect(s.x + 8, s.y - 30, 10, 26);
+  c.strokeStyle = '#333'; c.lineWidth = 2; c.beginPath(); c.moveTo(s.x + 13, s.y - 42); c.lineTo(s.x + 13, s.y - 32); c.moveTo(s.x + 9, s.y - 38); c.lineTo(s.x + 17, s.y - 38); c.stroke();
+  label(c, 'Church', s.x, s.y + 30, '600 11px system-ui', '#444458');
+}
 function drawCoffee(c, s){
   c.fillStyle = '#8b5a3c'; c.fillRect(s.x - 18, s.y - 10, 36, 24);
   for (let i = 0; i < 6; i++){ c.fillStyle = i % 2 ? '#fff' : '#c8102e'; c.fillRect(s.x - 20 + i * 7, s.y - 16, 7, 8); }
@@ -945,6 +981,9 @@ function draw(){
   for (const l of LANDMARKS) label(ctx, l.name, l.x, l.y, '600 14px system-ui', 'rgba(40,40,40,.65)');
   for (const m of TOWN.mosques) if (v(m)) drawMosque(ctx, m);
   for (const s of TOWN.coffee) if (v(s)) drawCoffee(ctx, s);
+  for (const s of TOWN.temples) if (v(s)) drawTemple(ctx, s);
+  for (const s of TOWN.monasteries) if (v(s)) drawMonastery(ctx, s);
+  for (const s of TOWN.churches) if (v(s)) drawChurch(ctx, s);
   for (const h of HOSPITALS) if (v(h)) drawHospital(ctx, h);
   for (const s of STATIONS.concat([AYNAGHOR])){
     const ay = s === AYNAGHOR;
@@ -1160,24 +1199,24 @@ function drawHUD(){
   ctx.fillStyle = '#fff'; ctx.fillText(ri >= 0 ? 'Next police barricade needs ' + GATE_NEEDS[ri] + ' people' : 'All barricades passed!', 20, y0 + 68);
   if (player.injured){ ctx.fillStyle = '#e53935'; ctx.font = 'bold 13px system-ui'; ctx.fillText('INJURED: find a hospital', 20, y0 + 96); }
 
-  const mr = 62, mx = vw - mr - 12, my = 12 + mr, ay = my + mr + 34, s = mr / MAP_R;   // map top right, red arrow under it
+  const mr = 80, mx = vw - mr - 12, my = 12 + mr, ay = my + mr + 34, s = mr / MAP_R;   // map top right, red arrow under it
   if (!inShutdown()){
     const a = Math.atan2(GOAL.y - player.y, GOAL.x - player.x);
     ctx.save(); ctx.translate(mx, ay); ctx.rotate(a);
     ctx.fillStyle = '#c8102e'; ctx.beginPath(); ctx.moveTo(24, 0); ctx.lineTo(-12, -14); ctx.lineTo(-6, 0); ctx.lineTo(-12, 14); ctx.fill(); ctx.restore();
-    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = '11px system-ui'; ctx.fillText((dist(player, GOAL) / 190).toFixed(1) + ' km', mx, ay + 34);
+    ctx.fillStyle = '#111'; ctx.textAlign = 'center'; ctx.font = 'bold 12px system-ui'; ctx.fillText((dist(player, GOAL) / 190).toFixed(1) + ' km', mx, ay + 34);
     if (player.injured){
       const h = nearestHospital(player), ha = Math.atan2(h.y - player.y, h.x - player.x);
       ctx.save(); ctx.translate(mx, ay + 78); ctx.rotate(ha);
       ctx.fillStyle = '#2e9e5b'; ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(-10, -11); ctx.lineTo(-5, 0); ctx.lineTo(-10, 11); ctx.fill(); ctx.restore();
-      ctx.fillStyle = '#fff'; ctx.font = '11px system-ui'; ctx.fillText('Hospital ' + (dist(player, h) / 190).toFixed(1) + ' km', mx, ay + 106);
+      ctx.fillStyle = '#111'; ctx.font = 'bold 12px system-ui'; ctx.fillText('Hospital ' + (dist(player, h) / 190).toFixed(1) + ' km', mx, ay + 106);
     }
     const hs = nearestHeld(player);
     if (hs){
       const oy = ay + (player.injured ? 150 : 78), ha2 = Math.atan2(hs.y - player.y, hs.x - player.x);
       ctx.save(); ctx.translate(mx, oy); ctx.rotate(ha2);
       ctx.fillStyle = '#ff8c00'; ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(-10, -11); ctx.lineTo(-5, 0); ctx.lineTo(-10, 11); ctx.fill(); ctx.restore();
-      ctx.fillStyle = '#fff'; ctx.font = '11px system-ui'; ctx.textAlign = 'center'; ctx.fillText(hs.name.replace(' Thana', '') + ' ' + (dist(player, hs) / 190).toFixed(1) + ' km', mx, oy + 28);
+      ctx.fillStyle = '#111'; ctx.font = 'bold 12px system-ui'; ctx.textAlign = 'center'; ctx.fillText(hs.name.replace(' Thana', '') + ' ' + (dist(player, hs) / 190).toFixed(1) + ' km', mx, oy + 28);
     }
     ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.beginPath(); ctx.arc(mx, my, mr, 0, 6.28); ctx.fill();
     ctx.strokeStyle = '#888'; ctx.lineWidth = 1; for (const r of RINGS){ ctx.beginPath(); ctx.arc(mx, my, r * s, 0, 6.28); ctx.stroke(); }
@@ -1187,7 +1226,7 @@ function drawHUD(){
     ctx.fillStyle = '#ff8c00'; for (const stn of STATIONS) if (heldAt(stn).length){ ctx.beginPath(); ctx.arc(mx + stn.x * s, my + stn.y * s, 4, 0, 6.28); ctx.fill(); }
     ctx.fillStyle = '#000'; ctx.strokeStyle = '#fff'; for (const r of rivals){ ctx.fillRect(mx + r.x * s - 2, my + r.y * s - 2, 5, 5); ctx.strokeRect(mx + r.x * s - 2, my + r.y * s - 2, 5, 5); }
     ctx.fillStyle = '#fff'; ctx.fillRect(mx + player.x * s - 2, my + player.y * s - 2, 5, 5);
-  } else { ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = 'bold 12px system-ui'; ctx.fillText('NO SIGNAL', mx, my + 4); }
+  } else { ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.beginPath(); ctx.arc(mx, my, mr, 0, 6.28); ctx.fill(); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = 'bold 12px system-ui'; ctx.fillText('NO SIGNAL', mx, my + 4); }
 
   ctx.textAlign = 'center';
   if (game.contested){ ctx.fillStyle = '#fff'; ctx.font = 'bold 16px system-ui'; ctx.fillText('A bigger rival crowd is in the square. Out-recruit them.', vw / 2, barY + 18); }
@@ -1211,8 +1250,10 @@ function drawHUD(){
     ctx.save(); ctx.globalAlpha = Math.min(1, t.t);
     ctx.fillStyle = '#fff'; ctx.fillRect(x, y, 100, 108); ctx.fillStyle = '#d7d3c8'; ctx.fillRect(x + 6, y + 6, 88, 66);
     person(ctx, x + 50, y + 62, {dress: WHITE, skin: t.skin, scale: 2.2});
-    ctx.fillStyle = '#c8102e'; ctx.font = 'bold 12px system-ui'; ctx.textAlign = 'center'; ctx.fillText('DETAINED', x + 50, y + 88);
-    ctx.fillStyle = '#222'; ctx.font = '11px ' + BN_FONT; ctx.fillText(t.name + ' · ' + t.station.replace(' Thana', ''), x + 50, y + 102);
+    const rel = t.kind === 'released';
+    ctx.fillStyle = rel ? '#1b8a3e' : '#c8102e'; ctx.font = 'bold 12px system-ui'; ctx.textAlign = 'center'; ctx.fillText(rel ? 'RELEASED' : 'DETAINED', x + 50, y + 88);
+    ctx.fillStyle = '#222'; ctx.font = '11px ' + BN_FONT; ctx.fillText(rel ? t.count + ' freed · ' + t.station.replace(' Thana', '') : t.name + ' · ' + t.station.replace(' Thana', ''), x + 50, y + 102);
+    if (rel){ ctx.strokeStyle = '#1b8a3e'; ctx.lineWidth = 5; ctx.strokeRect(x + 2.5, y + 2.5, 95, 103); ctx.fillStyle = 'rgba(27,138,62,.18)'; ctx.fillRect(x + 6, y + 6, 88, 66); }
     ctx.restore();
   });
   if (game.flash > 0){ ctx.fillStyle = 'rgba(200,0,0,' + (game.flash * 0.9) + ')'; ctx.fillRect(0, 0, vw, vh); }
