@@ -1371,7 +1371,7 @@ if (document.getElementById('role-prot')){
 }
 const rulesEl = document.getElementById('rules'); if (rulesEl && innerWidth > 640) rulesEl.open = true;
 const rules2El = document.getElementById('rules2'); if (rules2El && innerWidth > 640) rules2El.open = true;   // rules start folded on phones
-document.getElementById('photo').onchange = e => loadPhoto(e.target.files[0]);
+const photoEl = document.getElementById('photo'); if (photoEl) photoEl.onchange = e => loadPhoto(e.target.files[0]);   // the photo is chosen on the final card
 cv.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
 cv.addEventListener('mousedown', e => { if (role === 'police' && e.button === 0){ input.strike = true; doStrike(); } });
 addEventListener('mouseup', () => { input.strike = false; });

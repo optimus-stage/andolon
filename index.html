@@ -4,18 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Andolon</title>
-<link rel="stylesheet" href="css/style.css?v=7">
+<link rel="stylesheet" href="css/style.css?v=8">
 </head>
 <body>
 <canvas id="c"></canvas>
 <button id="mute" aria-label="Toggle sound">🔊</button>
 <div id="ticker"><b>ব্রেকিং নিউজ</b><div id="tkwrap"><span id="tk"></span></div></div>
 <div id="menu"><div id="card">
-  <h1><span>আন্দোলন</span></h1>
+  <h1 style="text-align:center"><span>আন্দোলন</span></h1>
   <p><b>Andolon</b> is a single-player game. You can play as an <b>Andolonkari</b> (protester) or as a <b>Police</b> officer. Select a character and proceed.</p>
   <div id="roles"><button id="role-prot" class="role sel" type="button">Andolonkari<small>Lead the march</small></button><button id="role-pol" class="role" type="button">Police<small>Hold the line</small></button></div>
   <label>Your name <input id="pname" maxlength="24" placeholder="Protester"></label>
-  <label>Your photo for the final card (optional) <input id="photo" type="file" accept="image/*"></label>
+  <button id="go">Start marching</button>
   <div id="rules">
     <div class="goal"><b>Goal:</b> gather a crowd in white, get through the police barricades, and hold the <b>কেন্দ্রীয় শহীদ মিনার</b> (Central Shaheed Minar) with <b>15 people for 10 seconds</b>.</div>
     <h3 class="how">How to play as an Andolonkari</h3>
@@ -42,7 +42,6 @@
       <li>Two crowds that meet join into a bigger one, so break them up early. Press <b>M</b> (or tap the speaker) to mute sound.</li>
     </ul>
   </div>
-  <button id="go">Start marching</button>
   <small>Fictional game. Characters and events are not real people or incidents. Map is stylised.</small>
   <a href="#" class="aboutlink">About & Disclaimer</a>
 </div></div>
@@ -59,7 +58,7 @@
   <p><b>Lastly, enjoy the game and share with your friends.</b></p>
   <p>Contact me at <b>bizwithsabbir@gmail.com</b></p>
 </div></div>
-<script src="js/data.js?v=7"></script>
-<script src="js/game.js?v=7"></script>
+<script src="js/data.js?v=8"></script>
+<script src="js/game.js?v=8"></script>
 </body>
 </html>
