@@ -116,11 +116,12 @@ const NAMES = ['রাফি', 'তানভীর', 'সাদিয়া', '�
 const DISPERSE_GOAL = 10;   // crowds to disperse to win as police
 const MARCH_MAX = 40;       // largest AI protester crowd
 const PRANKS = [
-  {min: 0,    bn: 'কনস্টেবল',       en: 'Constable'},
-  {min: 600,  bn: 'নায়েক',         en: 'Naik'},
-  {min: 1500, bn: 'উপ-পরিদর্শক',    en: 'Sub-Inspector'},
-  {min: 3000, bn: 'পরিদর্শক',       en: 'Inspector'},
-  {min: 5000, bn: 'পুলিশ সুপার',     en: 'Superintendent'},
+  {min: 0,    bn: 'কনস্টেবল',       en: 'Constable',      metal: 'Bronze',   stars: 1, fr: ['#d9966a','#a85f33'], edge: '#6b3517', strip: '#e6b48f', box: '#f6e3d3', ink: '#3a1c0a', art: '#2b2420', art2: '#352c27', m: ['#e8a070','#b8693a','#7a3d1c'], ribbon: ['#a85a2c','#d98a55']},
+  {min: 600,  bn: 'নায়েক',         en: 'Naik',           metal: 'Silver',   stars: 2, fr: ['#e4e9ef','#a2acb8'], edge: '#5d6672', strip: '#cfd6de', box: '#f1f4f7', ink: '#1d232b', art: '#272b33', art2: '#30353f', m: ['#eef2f7','#aab4c2','#6c7685'], ribbon: ['#8d9bb0','#c5d0de']},
+  {min: 1500, bn: 'উপ-পরিদর্শক',    en: 'Sub-Inspector',  metal: 'Gold',     stars: 3, fr: ['#ffe27a','#d49a14'], edge: '#8a5f05', strip: '#f1d77a', box: '#fbf0bf', ink: '#412402', art: '#2b2a22', art2: '#35342a', m: ['#fff1a6','#f0b72a','#b07a08'], ribbon: ['#c8861a','#ffd24d']},
+  {min: 3000, bn: 'পরিদর্শক',       en: 'Inspector',      metal: 'Platinum', stars: 4, fr: ['#dff3ff','#7fb4de'], edge: '#2d6a9e', strip: '#b9dcf5', box: '#eaf6fd', ink: '#0b2b47', art: '#1d2b3d', art2: '#263a52', m: ['#f2fbff','#9fd0f0','#4d8fc4'], ribbon: ['#3f7fb8','#8cc4ee'], wings: true},
+  {min: 5000, bn: 'পুলিশ সুপার',     en: 'Superintendent', metal: 'Diamond',  stars: 5, fr: ['#b8f1ff','#7a6cf0'], edge: '#3b2fa8', strip: '#c9c2ff', box: '#ecebff', ink: '#171044', art: '#1b1b3a', art2: '#26264d', m: ['#e6fbff','#6fd6f5','#6a5be0'], ribbon: ['#4a3fc9','#79d4f5'], wings: true, glow: true},
+  {min: 7500, bn: 'কমিশনার',        en: 'Commissioner',   metal: 'Legend',   stars: 5, fr: ['#3a0d14','#14070a'], edge: '#e8b53a', strip: '#6e1a26', box: '#2a1015', ink: '#ffe9b0', art: '#120a0c', art2: '#1e1013', m: ['#fff0b0','#e8b53a','#a8300f'], ribbon: ['#8d1a2c','#e8b53a'], wings: true, glow: true, dark: true},
 ];
 const PTAGS = {
   calm:        {bn: 'ঠান্ডা মাথা',      en: 'Cool Head',       desc: 'Kept order with very little force.'},
