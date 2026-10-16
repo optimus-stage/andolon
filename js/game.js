@@ -92,6 +92,15 @@ function sfxChime(){
     g.gain.setValueAtTime(0.0001, t + i * 0.1); g.gain.exponentialRampToValueAtTime(0.25, t + i * 0.1 + 0.02); g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.1 + 0.25);
     o.connect(g); g.connect(a.destination); o.start(t + i * 0.1); o.stop(t + i * 0.1 + 0.3); });
 }
+let lastJoin = 0;
+function sfxJoin(){   // two quick rising blips; the pitch climbs a little as the crowd grows
+  if (muted) return; const a = ac(); if (!a) return; const t = a.currentTime;
+  if (t - lastJoin < 0.08) return; lastJoin = t;
+  const base = 520 + Math.min(followers.length, 30) * 14;
+  [base, base * 1.5].forEach((f, i) => { const o = a.createOscillator(), g = a.createGain(); o.type = 'triangle'; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t + i * 0.07); g.gain.exponentialRampToValueAtTime(0.3, t + i * 0.07 + 0.015); g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.07 + 0.16);
+    o.connect(g); g.connect(a.destination); o.start(t + i * 0.07); o.stop(t + i * 0.07 + 0.2); });
+}
 function sfxGunshot(){   // sharp crack plus a short pop
   if (muted) return; const a = ac(); if (!a) return; const t = a.currentTime;
   const len = Math.floor(a.sampleRate * 0.2), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
@@ -234,7 +243,7 @@ function newGame(){
   player = {x: START.x, y: START.y, r: 12, morale: 100, injured: false, skin: pick(SKINS), moving: false, hidden: false};
   game = {t: 0, day: 1, hold: 0, started: true, spawnT: 4, rivalSpawnT: 60, stats: {recruits: 0, peak: 1, rings: 0, clashWins: 0, beaten: 0, cures: 0, teas: 0, stallT: 0}, mode: 'play', msg: '', msgT: 0, viralT: 40 + rand(0, 20), drain: 0, boost: 0, flash: 0, van: null, arrest: null, contested: false};
   chant = {i: 0, timer: 3, phase: 0};
-  if ('ontouchstart' in window || navigator.maxTouchPoints > 0) say('Touch and hold the screen to walk. Lift your finger to stop.', 6);
+  if ('ontouchstart' in window || navigator.maxTouchPoints > 0) say('Touch and hold a direction on the round pad to walk. Lift to stop.', 6);
 }
 function mkNeutral(x, y){
   const tones = ['#c9a27a', '#7a9cc9', '#c97a8f', '#8fc97a', '#c9b97a', '#9a7ac9'];
@@ -313,6 +322,7 @@ function update(dt){
 
   // player
   game.boost = Math.max(0, game.boost - dt);
+  if (pad.id !== null && (pad.ux || pad.uy)){ mouse.x = (player.x + pad.ux * 200 - cam.x) * Z; mouse.y = (player.y + pad.uy * 200 - cam.y) * Z; }   // pad: head exactly the way the thumb points
   const mw = {x: mouse.x / Z + cam.x, y: mouse.y / Z + cam.y};
   const dx = mw.x - player.x, dy = mw.y - player.y, d = Math.hypot(dx, dy);
   const speed = Math.max(110, 210 - Math.min(followers.length, 40) * 2) * (player.injured ? 0.75 : 1) * (game.boost > 0 ? 1.4 : 1);
@@ -327,7 +337,7 @@ function update(dt){
     n.cool -= dt; n.wt -= dt; n.rcool = Math.max(0, (n.rcool || 0) - dt);
     if (n.wt <= 0){ const a = rand(0, 6.28), s = rand(0, 25); n.vx = Math.cos(a) * s; n.vy = Math.sin(a) * s; n.wt = rand(1, 3); }
     n.x += n.vx * dt; n.y += n.vy * dt; collide(n, 7);
-    if (n.cool <= 0 && dist(n, player) < RECRUIT_R){ followers.push(n); neutrals.splice(i, 1); game.stats.recruits++; }
+    if (n.cool <= 0 && dist(n, player) < RECRUIT_R){ followers.push(n); neutrals.splice(i, 1); game.stats.recruits++; sfxJoin(); }
   }
 
   // police: slow, short-range chase, strike with sticks
@@ -409,6 +419,7 @@ function update(dt){
     game.viralT = 40 + rand(0, 20);
     let c = 0;
     for (let i = neutrals.length - 1; i >= 0; i--) if (dist(neutrals[i], player) < 380 && neutrals[i].cool <= 0){ followers.push(neutrals[i]); neutrals.splice(i, 1); c++; }
+    if (c) sfxJoin();
     say('A video goes viral. ' + c + ' more people join you!');
   }
 
@@ -438,6 +449,7 @@ function clash(r){
     if (Math.random() < 0.4){ const n = mkNeutral(m.x, m.y); n.skin = m.skin; followers.push(n); switched++; game.stats.recruits++; }   // persuaded to join the protesters
     else { const n = mkNeutral(m.x, m.y); n.skin = m.skin; n.cool = 6; n.rcool = 25; n.vx = rand(-70, 70); n.vy = rand(-70, 70); n.wt = 1; neutrals.push(n); }   // goes home for a while
   }
+  if (switched) sfxJoin();
   if (dmgR > dmgP) game.stats.clashWins++;
   if (!r.members.length) r.dead = true;
   player.morale = Math.max(0, player.morale - 4);
@@ -741,6 +753,7 @@ function draw(){
   }
   ctx.restore();
   drawHUD();
+  drawPad();
 }
 
 function inShutdown(){ return shutdowns.some(s => dist(s, player) < s.r); }
@@ -748,7 +761,7 @@ function inShutdown(){ return shutdowns.some(s => dist(s, player) < s.r); }
 function drawHUD(){
   // draw the HUD on a virtual screen that shrinks on small displays so nothing overlaps
   const k = Math.max(0.6, Math.min(1, innerWidth / 760, innerHeight / 540)), vw = innerWidth / k, vh = innerHeight / k;
-  const barY = vw < 800 ? vh - 170 : 20, bannerY = vw < 800 ? Math.round(vh * 0.5) : 70;
+  const barY = vw < 800 ? Math.round(vh * 0.62) : 20, bannerY = vw < 800 ? Math.round(vh * 0.5) : 70;
   ctx.save(); ctx.scale(k, k);
   ctx.textAlign = 'left';
   const ph = 58;
@@ -769,18 +782,18 @@ function drawHUD(){
   ctx.fillStyle = '#fff'; ctx.fillText(ri >= 0 ? 'Next police barricade needs ' + GATE_NEEDS[ri] + ' people' : 'All barricades passed!', 20, y0 + 68);
   if (player.injured){ ctx.fillStyle = '#e53935'; ctx.font = 'bold 13px system-ui'; ctx.fillText('INJURED: find a hospital', 20, y0 + 96); }
 
+  const mr = 62, mx = vw - mr - 12, my = 12 + mr, ay = my + mr + 34, s = mr / MAP_R;   // map top right, red arrow under it
   if (!inShutdown()){
     const a = Math.atan2(GOAL.y - player.y, GOAL.x - player.x);
-    ctx.save(); ctx.translate(vw - 50, 50); ctx.rotate(a);
+    ctx.save(); ctx.translate(mx, ay); ctx.rotate(a);
     ctx.fillStyle = '#c8102e'; ctx.beginPath(); ctx.moveTo(24, 0); ctx.lineTo(-12, -14); ctx.lineTo(-6, 0); ctx.lineTo(-12, 14); ctx.fill(); ctx.restore();
-    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = '11px system-ui'; ctx.fillText((dist(player, GOAL) / 190).toFixed(1) + ' km', vw - 50, 84);
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = '11px system-ui'; ctx.fillText((dist(player, GOAL) / 190).toFixed(1) + ' km', mx, ay + 34);
     if (player.injured){
       const h = nearestHospital(player), ha = Math.atan2(h.y - player.y, h.x - player.x);
-      ctx.save(); ctx.translate(vw - 50, 130); ctx.rotate(ha);
+      ctx.save(); ctx.translate(mx, ay + 78); ctx.rotate(ha);
       ctx.fillStyle = '#2e9e5b'; ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(-10, -11); ctx.lineTo(-5, 0); ctx.lineTo(-10, 11); ctx.fill(); ctx.restore();
-      ctx.fillStyle = '#fff'; ctx.font = '11px system-ui'; ctx.fillText('Hospital ' + (dist(player, h) / 190).toFixed(1) + ' km', vw - 50, 158);
+      ctx.fillStyle = '#fff'; ctx.font = '11px system-ui'; ctx.fillText('Hospital ' + (dist(player, h) / 190).toFixed(1) + ' km', mx, ay + 106);
     }
-    const mr = 62, mx = vw - mr - 12, my = vh - mr - 44, s = mr / MAP_R;
     ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.beginPath(); ctx.arc(mx, my, mr, 0, 6.28); ctx.fill();
     ctx.strokeStyle = '#888'; ctx.lineWidth = 1; for (const r of RINGS){ ctx.beginPath(); ctx.arc(mx, my, r * s, 0, 6.28); ctx.stroke(); }
     ctx.fillStyle = '#4caf50'; ctx.fillRect(mx - 3, my - 3, 6, 6);
@@ -788,7 +801,7 @@ function drawHUD(){
     ctx.fillStyle = '#4a8bff'; for (const p of patrols) ctx.fillRect(mx + p.x * s - 1, my + p.y * s - 1, 3, 3);
     ctx.fillStyle = '#000'; ctx.strokeStyle = '#fff'; for (const r of rivals){ ctx.fillRect(mx + r.x * s - 2, my + r.y * s - 2, 5, 5); ctx.strokeRect(mx + r.x * s - 2, my + r.y * s - 2, 5, 5); }
     ctx.fillStyle = '#fff'; ctx.fillRect(mx + player.x * s - 2, my + player.y * s - 2, 5, 5);
-  } else { ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = 'bold 12px system-ui'; ctx.fillText('NO SIGNAL', vw - 50, 54); }
+  } else { ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = 'bold 12px system-ui'; ctx.fillText('NO SIGNAL', mx, my + 4); }
 
   ctx.textAlign = 'center';
   if (game.contested){ ctx.fillStyle = '#fff'; ctx.font = 'bold 16px system-ui'; ctx.fillText('A bigger rival crowd is in the square. Out-recruit them.', vw / 2, barY + 18); }
@@ -803,8 +816,9 @@ function drawHUD(){
     let mf = 17; ctx.font = 'bold ' + mf + 'px ' + BN_FONT;
     while (textW(ctx, game.msg) + 30 > vw - 16 && mf > 11){ mf -= 1; ctx.font = 'bold ' + mf + 'px ' + BN_FONT; }
     const w = textW(ctx, game.msg) + 30;
-    ctx.fillStyle = 'rgba(0,0,0,.72)'; ctx.fillRect(vw / 2 - w / 2, vh - 110, w, 34);
-    ctx.fillStyle = '#fff'; ctx.fillText(game.msg, vw / 2, vh - 87);
+    ctx.fillStyle = 'rgba(0,0,0,.72)'; const my0 = IS_TOUCH ? Math.round(vh * 0.72) : vh - 110;
+    ctx.fillRect(vw / 2 - w / 2, my0, w, 34);
+    ctx.fillStyle = '#fff'; ctx.fillText(game.msg, vw / 2, my0 + 23);
   }
   toasts.forEach((t, i) => {
     const x = 12, y = vh - 60 - (i + 1) * 118;
@@ -1004,12 +1018,48 @@ const mb = document.getElementById('mute'); if (mb) mb.onclick = toggleMute;
 const rulesEl = document.getElementById('rules'); if (rulesEl && innerWidth > 640) rulesEl.open = true;   // rules start folded on phones
 document.getElementById('photo').onchange = e => loadPhoto(e.target.files[0]);
 cv.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
-// touch: walk toward your finger, lift to stop (preventDefault also blocks emulated mouse events)
-const touchPos = e => { const t = e.touches[0]; if (t){ mouse.x = t.clientX; mouse.y = t.clientY; } e.preventDefault(); };
-const touchStop = () => { mouse.x = vw / 2; mouse.y = vh / 2; };
-cv.addEventListener('touchstart', touchPos, {passive: false});
-cv.addEventListener('touchmove', touchPos, {passive: false});
-cv.addEventListener('touchend', touchStop); cv.addEventListener('touchcancel', touchStop);
+// touch: a round pad at the bottom right. Touch and hold a direction on it to walk that way; lift to stop.
+// (touching anywhere else on the screen still walks toward the finger)
+const IS_TOUCH = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+const pad = {id: null, kx: 0, ky: 0, ux: 0, uy: 0};
+const padGeom = () => { const R = Math.max(46, Math.min(66, innerWidth * 0.16)); return {x: innerWidth - R - 14, y: innerHeight - R - 46, R}; };
+const stopWalk = () => { mouse.x = vw / 2; mouse.y = vh / 2; };
+function padSet(t){
+  const g = padGeom(); let dx = t.clientX - g.x, dy = t.clientY - g.y; const d = Math.hypot(dx, dy);
+  if (d > g.R){ dx = dx / d * g.R; dy = dy / d * g.R; }
+  pad.kx = dx; pad.ky = dy;
+  if (d > g.R * 0.2){ pad.ux = dx / Math.hypot(dx, dy); pad.uy = dy / Math.hypot(dx, dy); } else { pad.ux = pad.uy = 0; stopWalk(); }
+}
+const onPad = t => { const g = padGeom(); return Math.hypot(t.clientX - g.x, t.clientY - g.y) < g.R * 1.5; };
+const screenWalk = t => { mouse.x = t.clientX; mouse.y = t.clientY; };
+const touchGo = e => {
+  for (const t of e.changedTouches){
+    if (pad.id === t.identifier) padSet(t);
+    else if (pad.id === null && e.type === 'touchstart' && onPad(t)){ pad.id = t.identifier; padSet(t); }
+    else if (pad.id === null) screenWalk(t);
+  }
+  e.preventDefault();
+};
+const touchEnd = e => {
+  for (const t of e.changedTouches){
+    if (t.identifier === pad.id){ pad.id = null; pad.kx = pad.ky = pad.ux = pad.uy = 0; stopWalk(); }
+    else if (pad.id === null) stopWalk();
+  }
+};
+cv.addEventListener('touchstart', touchGo, {passive: false});
+cv.addEventListener('touchmove', touchGo, {passive: false});
+cv.addEventListener('touchend', touchEnd); cv.addEventListener('touchcancel', touchEnd);
+function drawPad(){
+  if (!IS_TOUCH || !game || !game.started || game.mode === 'arrest') return;
+  const g = padGeom(), on = pad.id !== null;
+  ctx.save(); ctx.translate(g.x, g.y);
+  ctx.fillStyle = on ? 'rgba(0,0,0,.5)' : 'rgba(0,0,0,.38)'; ctx.beginPath(); ctx.arc(0, 0, g.R, 0, 6.283); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,.75)';
+  for (let i = 0; i < 4; i++){ ctx.save(); ctx.rotate(i * Math.PI / 2); ctx.beginPath(); ctx.moveTo(g.R - 10, 0); ctx.lineTo(g.R - 22, -8); ctx.lineTo(g.R - 22, 8); ctx.fill(); ctx.restore(); }
+  ctx.fillStyle = on ? '#fff' : 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.arc(pad.kx * 0.75, pad.ky * 0.75, g.R * 0.36, 0, 6.283); ctx.fill();
+  ctx.restore();
+}
 // breaking news: one long line that scrolls by itself (the text is doubled so the loop is seamless)
 const tk = document.getElementById('tk');
 function setupTicker(){
