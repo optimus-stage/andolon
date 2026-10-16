@@ -236,15 +236,11 @@ function newGame(){
     for (let i = 0; i < (z === 0 ? 2 : 1); i++){ const p = spawnIn(Math.max(r0, 220), r1); teas.push({x: p.x, y: p.y, cd: 0}); }
     for (let i = 0; i < POLICE_PER_ZONE[z]; i++) patrols.push(mkPatrol(z));   // fewer police in the outer zones
   }
-  [[2, 3, 180], [3, 3, 140]].forEach(([z, n, delay]) => {
-    const p = spawnIn(ZR[z + 1] + 100, ZR[z] - 100), r = {x: p.x, y: p.y, members: [], delay, moving: false};
-    for (let i = 0; i < n; i++) r.members.push({x: r.x + rand(-30, 30), y: r.y + rand(-30, 30), skin: pick(SKINS)});
-    rivals.push(r);
-  });
   shutdowns.push({x: -900, y: -1100, r: 300}, {x: 700, y: 900, r: 260});
   player = {x: START.x, y: START.y, r: 12, morale: 100, injured: false, skin: pick(SKINS), moving: false, hidden: false};
-  game = {t: 0, day: 1, hold: 0, started: true, spawnT: 4, rivalSpawnT: 60, stats: {recruits: 0, peak: 1, rings: 0, clashWins: 0, beaten: 0, cures: 0, teas: 0, stallT: 0}, mode: 'play', msg: '', msgT: 0, viralT: 40 + rand(0, 20), drain: 0, boost: 0, flash: 0, van: null, arrest: null, contested: false};
+  game = {t: 0, day: 1, hold: 0, started: true, spawnT: 4, rivalSpawnT: 20, stats: {recruits: 0, peak: 1, rings: 0, clashWins: 0, beaten: 0, cures: 0, teas: 0, stallT: 0}, mode: 'play', msg: '', msgT: 0, viralT: 40 + rand(0, 20), detainees: [], rescue: {}, drain: 0, boost: 0, flash: 0, van: null, arrest: null, contested: false};
   chant = {i: 0, timer: 3, phase: 0};
+  for (let z = 0; z < 4; z++) for (let i = 0; i < 3; i++) mkRival(z, 60 + rand(0, 180));
   if ('ontouchstart' in window || navigator.maxTouchPoints > 0) say('Touch and hold a direction on the round pad to walk. Lift to stop.', 6);
 }
 function mkNeutral(x, y){
@@ -264,12 +260,29 @@ function spawnBystander(){   // slow refill so the map never runs empty
   if (Math.hypot(p.x - player.x, p.y - player.y) < 450) return;
   neutrals.push(mkNeutral(p.x, p.y));
 }
-function spawnRival(){   // a new small rival crowd appears after one gives up
-  const z = Math.random() < 0.5 ? 1 : 2, p = spawnIn(ZR[z + 1] + 100, ZR[z] - 100);
-  if (Math.hypot(p.x - player.x, p.y - player.y) < 600) return false;
-  const r = {x: p.x, y: p.y, members: [], delay: game.t + 40, moving: false};
-  for (let i = 0; i < 3; i++) r.members.push({x: r.x + rand(-30, 30), y: r.y + rand(-30, 30), skin: pick(SKINS)});
+function mkRival(z, delay){   // a small rival crowd; about 1 in 4 is armed
+  let p, ok = false; const ref = player || START;
+  for (let i = 0; i < 20 && !ok; i++){ p = spawnIn(Math.max(ZR[z + 1] + 100, 100), ZR[z] - 100); ok = Math.hypot(p.x - ref.x, p.y - ref.y) > 700; }
+  if (!ok) return false;
+  const r = {x: p.x, y: p.y, members: [], delay: game ? game.t + delay : delay, moving: false, armed: Math.random() < RIVAL_ARMED_CHANCE, patrol: Math.random() < 0.7, hunt: false, gunCd: 0, aim: 0};
+  for (let i = 0, n = 2 + Math.floor(Math.random() * 3); i < n; i++) r.members.push({x: r.x + rand(-30, 30), y: r.y + rand(-30, 30), skin: pick(SKINS)});
   rivals.push(r); return true;
+}
+function spawnRival(){ return mkRival(Math.floor(Math.random() * 4), 30); }
+function clearShot(a, b){   // no building between the two points
+  const n = Math.ceil(dist(a, b) / 16);
+  for (let i = 1; i < n; i++){
+    const x = a.x + (b.x - a.x) * i / n, y = a.y + (b.y - a.y) * i / n;
+    for (const s of TOWN.solids) if (x > s.x && x < s.x + s.w && y > s.y && y < s.y + s.h) return false;
+  }
+  return true;
+}
+function rivalFire(r){   // an armed crowd shoots: part of your crowd scatters
+  r.gunCd = GUN_CD; r.aim = 0; sfxGunshot(); addFx((r.x + player.x) / 2, (r.y + player.y) / 2 - 10, 'shot'); game.flash = 0.3;
+  const n = Math.min(followers.length, Math.ceil((followers.length + 1) * 0.25));
+  for (let i = 0; i < n; i++){ const f = followers.pop(); f.cool = 6; f.rcool = 15; f.vx = rand(-90, 90); f.vy = rand(-90, 90); f.wt = 1; neutrals.push(f); }
+  player.morale = Math.max(0, player.morale - 20);
+  say('Armed rivals fired! ' + (n ? n + ' people scattered. ' : '') + 'Get out of their range!', 3);
 }
 
 // ---------- collision ----------
@@ -362,23 +375,37 @@ function update(dt){
     }
   }
 
+  updateRescue(dt);
+
   // rivals (support the police, never struck by them)
   for (const r of rivals){
     r.moving = false;
     const z = zoneOf(r.x, r.y);
+    const pz = zoneOf(player.x, player.y), pd = dist(r, player);
+    if (r.hunt){ if (pd > RIVAL_LOSE || pz !== z || player.hidden) r.hunt = false; }
+    else if (pd < RIVAL_HUNT && pz === z && !player.hidden) r.hunt = true;
     let tgt = null, best = 1e9;
-    if (r.members.length < RIVAL_MAX) for (const n of neutrals){ const dd = dist(n, r); if (n.cool <= 0 && !(n.rcool > 0) && dd < best && dd < 600 && zoneOf(n.x, n.y) === z){ best = dd; tgt = n; } }
-    if (!tgt && game.t > r.delay){
-      const dr = Math.hypot(r.x, r.y), ri = RINGS.findIndex(rr => rr < dr - 20);
-      if (ri >= 0){
-        const g = gates.filter(g => g.ring === ri).sort((a, b) => dist(a, r) - dist(b, r))[0];
-        tgt = g.open >= 1 ? polar(g.ang, g.r - 90) : polar(g.ang, g.r + 70);
-      } else tgt = {x: 0, y: 0};
+    if (r.hunt) tgt = player;
+    else {
+      if (r.members.length < RIVAL_MAX) for (const n of neutrals){ const dd = dist(n, r); if (n.cool <= 0 && !(n.rcool > 0) && dd < best && dd < 600 && zoneOf(n.x, n.y) === z){ best = dd; tgt = n; } }
+      if (!tgt && r.patrol){
+        if (!r.wp || dist(r, r.wp) < 24 || game.t > (r.wpT || 0)){ r.wp = spawnIn(Math.max(ZR[z + 1] + 100, 100), ZR[z] - 100); r.wpT = game.t + 25; }
+        tgt = r.wp;
+      } else if (!tgt && game.t > r.delay){
+        const dr = Math.hypot(r.x, r.y), ri = RINGS.findIndex(rr => rr < dr - 20);
+        if (ri >= 0){
+          const g = gates.filter(g => g.ring === ri).sort((a, b) => dist(a, r) - dist(b, r))[0];
+          tgt = g.open >= 1 ? polar(g.ang, g.r - 90) : polar(g.ang, g.r + 70);
+        } else tgt = {x: 0, y: 0};
+      }
     }
     if (tgt){
       const tdx = tgt.x - r.x, tdy = tgt.y - r.y, td = Math.hypot(tdx, tdy);
-      if (td > 6){ const s = Math.max(40, 70 - r.members.length); r.x += tdx / td * s * dt; r.y += tdy / td * s * dt; r.moving = true; }
+      if (td > 6){ const s = r.hunt ? RIVAL_HUNT_SPEED : Math.max(40, 70 - r.members.length); r.x += tdx / td * s * dt; r.y += tdy / td * s * dt; r.moving = true; }
     }
+    // armed crowds: a short warning, then a shot if you are in range and no building is in the way
+    r.gunCd = Math.max(0, (r.gunCd || 0) - dt);
+    if (r.armed && r.members.length && r.gunCd <= 0 && pd < GUN_RANGE && !player.hidden && clearShot(r, player)){ r.aim += dt; if (r.aim >= GUN_AIM) rivalFire(r); } else r.aim = 0;
     collide(r, 12);
     followRing(r.members, r, dt);
     r.recT = (r.recT || 0) - dt;   // rivals recruit slowly and never beyond their cap
@@ -389,7 +416,7 @@ function update(dt){
     if (r.fightT <= 0 && r.members.length && (dist(r, player) < 110 || followers.some(f => dist(f, r) < 55))){ r.fightT = 1.3; clash(r); }
   }
   const nRiv = rivals.length; rivals = rivals.filter(r => !r.dead); if (rivals.length < nRiv) say('A rival crowd gave up and left', 3);
-  if (rivals.length < 2){ game.rivalSpawnT -= dt; if (game.rivalSpawnT <= 0 && spawnRival()) game.rivalSpawnT = 60; }
+  if (rivals.length < RIVAL_TARGET){ game.rivalSpawnT -= dt; if (game.rivalSpawnT <= 0 && spawnRival()) game.rivalSpawnT = 20; }
 
   // police barricades
   for (const g of gates){
@@ -705,7 +732,7 @@ function clash(r){
   if (!r.members.length) r.dead = true;
   player.morale = Math.max(0, player.morale - 4);
   fightSfx((r.x + player.x) / 2, (r.y + player.y) / 2);
-  say('Clash with a rival crowd! You lost ' + dmgP + ', they lost ' + dmgR + (switched ? ' (' + switched + ' switched sides)' : ''), 2.5);
+  say((pP === pR ? 'Equal crowds: the protesters win the clash! ' : 'Clash with a rival crowd! ') + 'You lost ' + dmgP + ', they lost ' + dmgR + (switched ? ' (' + switched + ' switched sides)' : ''), 2.5);
 }
 
 // ---------- police strikes ----------
@@ -726,9 +753,33 @@ function strikeFollower(p, idx){
   say('Police beat back part of your crowd', 2);
 }
 function detainFollower(f){
-  const st = nearestStations(f)[0].name;
-  toasts.push({name: pick(NAMES), station: st, skin: f.skin, t: 4});
-  say('Someone from your crowd was detained at ' + st);
+  const stn = nearestStations(f)[0];
+  game.detainees.push({st: stn, skin: f.skin, t: DETAIN_HOLD});
+  toasts.push({name: pick(NAMES), station: stn.name, skin: f.skin, t: 4});
+  say('Someone from your crowd was detained at ' + stn.name + '. Rescue them!');
+}
+const heldAt = stn => game.detainees.filter(d => d.st === stn);
+function nearestHeld(p){ let b = null; for (const d of game.detainees) if (!b || dist(d.st, p) < dist(b, p)) b = d.st; return b; }
+function updateRescue(dt){
+  for (let i = game.detainees.length - 1; i >= 0; i--){   // held people are let go on their own after a while
+    const d = game.detainees[i]; d.t -= dt;
+    if (d.t <= 0){ game.detainees.splice(i, 1); const n = mkNeutral(d.st.x + rand(-40, 40), d.st.y + 40); n.skin = d.skin; n.cool = 6; neutrals.push(n); }
+  }
+  for (const stn of STATIONS){
+    const held = heldAt(stn).length, R = game.rescue[stn.name] || (game.rescue[stn.name] = {p: 0, cd: 0});
+    R.cd = Math.max(0, R.cd - dt);
+    if (!held){ R.p = 0; continue; }
+    const crowd = followers.filter(f => dist(f, stn) < RESCUE_R).length, cops = patrols.filter(p => dist(p, stn) < RESCUE_R + 40).length;
+    const rate = crowd >= RESCUE_NEED ? 1 - 0.35 * cops : -0.5;
+    if (crowd >= RESCUE_NEED && R.cd <= 0 && R.p > 0){ R.cd = 30; for (let k = 0; k < 2; k++){ const p = mkPatrol(zoneOf(stn.x, stn.y)); p.x = stn.x + rand(-30, 30); p.y = stn.y + 30; p.life = 40; pickWaypoint(p); patrols.push(p); } say('Police reinforcements at ' + stn.name + '!', 2); }
+    R.p = Math.max(0, Math.min(RESCUE_TIME, R.p + rate * dt));
+    if (R.p >= RESCUE_TIME){
+      const out = game.detainees.filter(d => d.st === stn); game.detainees = game.detainees.filter(d => d.st !== stn); R.p = 0;
+      for (const d of out){ const n = mkNeutral(stn.x + rand(-30, 30), stn.y + 40); n.skin = d.skin; followers.push(n); game.stats.recruits++; }
+      sfxJoin(); sfxChime(); say(out.length + ' released from ' + stn.name + '! They join your crowd.', 4);
+    }
+  }
+  for (let i = patrols.length - 1; i >= 0; i--) if (patrols[i].life != null && (patrols[i].life -= dt) <= 0) patrols.splice(i, 1);
 }
 function startArrest(police){
   const dest = Math.random() < 0.3 ? AYNAGHOR : pick(nearestStations(player).slice(0, 3));
@@ -901,6 +952,19 @@ function draw(){
     ctx.fillStyle = '#fff'; ctx.fillRect(s.x - 4, s.y - 2, 8, 12);
     label(ctx, s.name, s.x, s.y - 16, 'bold 12px system-ui', ay ? '#7a1a1a' : '#12306b');
   }
+  if (role !== 'police' && game.detainees){
+    const tgt = nearestHeld(player);
+    if (tgt){ ctx.save(); ctx.strokeStyle = 'rgba(255,140,0,.75)'; ctx.lineWidth = 5; ctx.setLineDash([16, 12]); ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(tgt.x, tgt.y); ctx.stroke(); ctx.restore(); }
+    for (const stn of STATIONS){
+      const n = heldAt(stn).length; if (!n) continue;
+      const R = game.rescue[stn.name] || {p: 0};
+      ctx.save(); ctx.strokeStyle = 'rgba(255,140,0,.8)'; ctx.lineWidth = 3; ctx.setLineDash([8, 8]); ctx.beginPath(); ctx.arc(stn.x, stn.y, RESCUE_R, 0, 6.28); ctx.stroke(); ctx.setLineDash([]);
+      if (R.p > 0){ ctx.lineWidth = 8; ctx.strokeStyle = '#4caf50'; ctx.beginPath(); ctx.arc(stn.x, stn.y, RESCUE_R, -Math.PI / 2, -Math.PI / 2 + 6.283 * R.p / RESCUE_TIME); ctx.stroke(); }
+      ctx.fillStyle = '#ff8c00'; ctx.beginPath(); ctx.arc(stn.x + 24, stn.y - 22, 13, 0, 6.28); ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = 'bold 15px system-ui'; ctx.textAlign = 'center'; ctx.fillText(String(n), stn.x + 24, stn.y - 17);
+      label(ctx, n + ' held · bring ' + RESCUE_NEED + ' people', stn.x, stn.y + 34, 'bold 12px system-ui', '#b35900');
+      ctx.restore();
+    }
+  }
   for (const s of shutdowns){
     ctx.fillStyle = 'rgba(60,60,90,.28)'; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.28); ctx.fill();
     ctx.strokeStyle = '#334'; ctx.lineWidth = 2; ctx.setLineDash([10, 8]); ctx.stroke(); ctx.setLineDash([]);
@@ -939,7 +1003,8 @@ function draw(){
   }
   for (const r of rivals){
     r.members.forEach(m => { if (v(m)) list.push([m.y, () => person(ctx, m.x, m.y, {dress: BLACK, skin: m.skin, hat: 'helmet', moving: r.moving})]); });
-    list.push([r.y, () => { person(ctx, r.x, r.y, {dress: BLACK, skin: SKINS[1], hat: 'helmet', scale: 1.25, moving: r.moving}); label(ctx, 'RIVAL ' + (r.members.length + 1), r.x, r.y - 28, 'bold 11px system-ui', '#111'); }]);
+    list.push([r.y, () => { person(ctx, r.x, r.y, {dress: BLACK, skin: SKINS[1], hat: 'helmet', scale: 1.25, moving: r.moving}); label(ctx, (r.armed ? 'ARMED ' : 'RIVAL ') + (r.members.length + 1), r.x, r.y - 28, 'bold 11px system-ui', r.armed ? '#c8102e' : '#111');
+    if (r.armed){ ctx.strokeStyle = r.aim > 0 ? '#ff1744' : 'rgba(200,16,46,.6)'; ctx.lineWidth = r.aim > 0 ? 4 : 2; ctx.beginPath(); ctx.arc(r.x, r.y, 34, 0, 6.28); ctx.stroke(); if (r.aim > 0) label(ctx, '!', r.x, r.y - 46, 'bold 22px system-ui', '#ff1744'); } }]);
   }
   if (!player.hidden) list.push([player.y, () => {
     if (role === 'police') person(ctx, player.x, player.y, {dress: BLUE, skin: player.skin, hat: 'cap', legs: '#14284f', scale: 1.4, moving: player.moving, stick: true, swing: player.swing / 0.35});
@@ -1107,11 +1172,19 @@ function drawHUD(){
       ctx.fillStyle = '#2e9e5b'; ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(-10, -11); ctx.lineTo(-5, 0); ctx.lineTo(-10, 11); ctx.fill(); ctx.restore();
       ctx.fillStyle = '#fff'; ctx.font = '11px system-ui'; ctx.fillText('Hospital ' + (dist(player, h) / 190).toFixed(1) + ' km', mx, ay + 106);
     }
+    const hs = nearestHeld(player);
+    if (hs){
+      const oy = ay + (player.injured ? 150 : 78), ha2 = Math.atan2(hs.y - player.y, hs.x - player.x);
+      ctx.save(); ctx.translate(mx, oy); ctx.rotate(ha2);
+      ctx.fillStyle = '#ff8c00'; ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(-10, -11); ctx.lineTo(-5, 0); ctx.lineTo(-10, 11); ctx.fill(); ctx.restore();
+      ctx.fillStyle = '#fff'; ctx.font = '11px system-ui'; ctx.textAlign = 'center'; ctx.fillText(hs.name.replace(' Thana', '') + ' ' + (dist(player, hs) / 190).toFixed(1) + ' km', mx, oy + 28);
+    }
     ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.beginPath(); ctx.arc(mx, my, mr, 0, 6.28); ctx.fill();
     ctx.strokeStyle = '#888'; ctx.lineWidth = 1; for (const r of RINGS){ ctx.beginPath(); ctx.arc(mx, my, r * s, 0, 6.28); ctx.stroke(); }
     ctx.fillStyle = '#4caf50'; ctx.fillRect(mx - 3, my - 3, 6, 6);
     ctx.fillStyle = '#ff5252'; for (const h of HOSPITALS) ctx.fillRect(mx + h.x * s - 2, my + h.y * s - 2, 4, 4);
     ctx.fillStyle = '#4a8bff'; for (const p of patrols) ctx.fillRect(mx + p.x * s - 1, my + p.y * s - 1, 3, 3);
+    ctx.fillStyle = '#ff8c00'; for (const stn of STATIONS) if (heldAt(stn).length){ ctx.beginPath(); ctx.arc(mx + stn.x * s, my + stn.y * s, 4, 0, 6.28); ctx.fill(); }
     ctx.fillStyle = '#000'; ctx.strokeStyle = '#fff'; for (const r of rivals){ ctx.fillRect(mx + r.x * s - 2, my + r.y * s - 2, 5, 5); ctx.strokeRect(mx + r.x * s - 2, my + r.y * s - 2, 5, 5); }
     ctx.fillStyle = '#fff'; ctx.fillRect(mx + player.x * s - 2, my + player.y * s - 2, 5, 5);
   } else { ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = 'bold 12px system-ui'; ctx.fillText('NO SIGNAL', mx, my + 4); }
