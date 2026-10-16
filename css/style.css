@@ -51,3 +51,17 @@ button.role#role-pol.sel{background:#2f4a7a}
 h3.how{margin:14px 0 2px;font-size:21px;color:#0b6b3a}
 #rules2 h3.how{color:#2f4a7a}
 @media (max-width:640px){.goal{font-size:16px}h3.how{font-size:19px}}
+
+.support{margin-top:10px}
+.supportbtn{background:#8a5a1e;color:#fff;font-size:15px;padding:9px 14px}
+.supportpanel{display:none;margin-top:8px;text-align:center}
+.supportpanel.open{display:block}
+.waqr{display:block;margin:6px auto;width:200px;max-width:70%;border-radius:8px;background:#fff}
+.wtext{font-size:14px;margin:4px 0}
+.wabtn{display:inline-block;margin:6px 0;font-size:14px;color:#0b6b3a;text-decoration:underline}
+.supportbtn.wa{background:#1b8a3e}
+.bknum{font-size:15px;margin:4px 0}
+.coffeelink{display:inline-block;margin:6px 0;font-size:14px;color:#0b6b3a;text-decoration:underline}
+.supportpanel small{display:block;opacity:.75}
+#aboutbox .support{text-align:center}
+.copybtn{display:inline-block;width:auto;margin:0 0 0 6px;padding:4px 12px;font-size:13px;vertical-align:middle}

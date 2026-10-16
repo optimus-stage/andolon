@@ -137,3 +137,9 @@ const PTAGS = {
   slow:        {bn: 'দেরিতে সাড়া',     en: 'Slow Response',   desc: 'A crowd reached the Minar before you could stop it.'},
   outnumbered: {bn: 'সংখ্যায় কম',      en: 'Outnumbered',     desc: 'Too few officers to hold the line.'},
 };
+
+// Optional support ("Buy your Neta a cha"). Leave all empty to hide it everywhere.
+// bkashNumber: shown with a Copy button.
+const SUPPORT = {bkashNumber: ''};
+// Optional WhatsApp group for game updates. qr: path to your QR image, e.g. 'img/whatsapp-qr.png'. link: the group invite link (lets phone users tap instead of scan).
+const WHATSAPP = {qr: '', link: ''};

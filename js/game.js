@@ -714,7 +714,7 @@ function endPolice(won, why){
     '<button id="share">Share card</button><button id="dl" class="alt">' + (IS_TOUCH ? 'Save to Photos' : 'Download') + '</button><button id="go">Patrol again</button>' +
     (IS_TOUCH ? '<small>Tip: press and hold the card to save it to your Photos.</small><br>' : '') +
     (playerPhoto ? '<button id="nophoto" class="alt">Use default avatar</button>' : '') +
-    '<a href="#" class="aboutlink">About &amp; Disclaimer</a><br>' +
+    supportHTML() + '<a href="#" class="aboutlink">About &amp; Disclaimer</a><br>' +
     '<small>Your photo stays on your device. It is only drawn onto this card. Fictional game; characters and events are not real people or incidents.</small>';
   const text = won ? 'I led the police squad in Andolon and dispersed ' + st.dispersed + ' crowds. ' + rank.en + ', ' + score.toLocaleString('en-US') + ' pts.'
     : 'The crowds beat my police squad in Andolon. ' + score.toLocaleString('en-US') + ' pts. Can you do better?';
@@ -1460,7 +1460,7 @@ function end(won, info){
     '<button id="share">Share card</button><button id="dl" class="alt">' + (IS_TOUCH ? 'Save to Photos' : 'Download') + '</button><button id="go">March again</button>' +
     (IS_TOUCH ? '<small>Tip: press and hold the card to save it to your Photos.</small><br>' : '') +
     (playerPhoto ? '<button id="nophoto" class="alt">Use default avatar</button>' : '') +
-    '<a href="#" class="aboutlink">About &amp; Disclaimer</a><br>' +
+    supportHTML() + '<a href="#" class="aboutlink">About &amp; Disclaimer</a><br>' +
     '<small>Your photo stays on your device. It is only drawn onto this card. Fictional game; characters and events are not real people or incidents.</small>';
   const text = won ? 'I held the Central Shaheed Minar in Andolon! ' + rank.en + ', ' + score.toLocaleString('en-US') + ' pts.'
     : outcome === 'timeout' ? 'Andolon called me "' + tagBn + '". Can you do better?'
@@ -1594,6 +1594,34 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(setupTicke
 try { const n = localStorage.getItem('da_name'); if (n){ playerName = n; document.getElementById('pname').value = n; } } catch (e) {}
 mouse.x = innerWidth / 2; mouse.y = innerHeight / 2;
 requestAnimationFrame(frame);
+
+// ---------- optional support line: "Buy your Neta a cha" ----------
+const hasSupport = () => !!SUPPORT.bkashNumber;
+const hasWhatsapp = () => !!(WHATSAPP.qr || WHATSAPP.link);
+function supportHTML(){
+  if (!hasSupport() && !hasWhatsapp()) return '';
+  return (hasSupport() ? coffeeHTML() : '') + (hasWhatsapp() ? whatsappHTML() : '');
+}
+function whatsappHTML(){
+  let p = '<div class="wtext">New updates are coming. Join the WhatsApp group to hear first' + (WHATSAPP.qr ? ': scan the QR code.' : '.') + '</div>';
+  if (WHATSAPP.qr) p += '<img class="waqr" alt="WhatsApp group QR code" src="' + WHATSAPP.qr + '">';
+  if (WHATSAPP.link) p += '<a class="wabtn" href="' + WHATSAPP.link + '" target="_blank" rel="noopener">Open WhatsApp group</a>';
+  return '<div class="support"><button type="button" class="supportbtn wa alt">Get game updates on WhatsApp</button><div class="supportpanel">' + p + '</div></div>';
+}
+function coffeeHTML(){
+  let p = '';
+  if (SUPPORT.bkashNumber) p += '<div class="bknum">bKash (Send Money): <b>' + SUPPORT.bkashNumber + '</b> <button type="button" class="copybtn alt" data-num="' + SUPPORT.bkashNumber + '">Copy</button></div>';
+  p += '<small>Optional and non-refundable. It does not unlock anything in the game.</small>';
+  return '<div class="support"><button type="button" class="supportbtn alt">Enjoyed the game? Buy your Neta a চা ☕</button><div class="supportpanel">' + p + '</div></div>';
+}
+document.addEventListener('click', e => {
+  const c = e.target.closest && e.target.closest('.copybtn'); if (!c) return;
+  const num = c.dataset.num, done = () => { c.textContent = 'Copied ✓'; setTimeout(() => { c.textContent = 'Copy'; }, 1800); };
+  const fallback = () => { const t = document.createElement('textarea'); t.value = num; t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); done(); } catch (er) {} t.remove(); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(num).then(done, fallback); else fallback();
+});
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('.supportbtn'); if (b) b.nextElementSibling.classList.toggle('open'); });
+(function(){ const slot = document.getElementById('supportslot'); if (slot) slot.innerHTML = supportHTML(); })();
 
 // ---------- about game pop-up ----------
 (function(){
