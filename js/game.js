@@ -906,17 +906,37 @@ function renderCard(kind, info){
   const foot = [[info.nextText[0], info.nextText[1]], [info.newBest ? 'NEW BEST' : 'BEST SCORE', info.best.toLocaleString('en-US')], ['BARRICADES', info.rings + ' of ' + RINGS.length]];
   g.textAlign = 'center';
   foot.forEach((f, i) => { const x = AX + cw * i + cw / 2; g.fillStyle = T.ink; g.font = '17px system-ui'; g.fillText(f[0], x, FY); g.font = 'bold 28px system-ui'; g.fillText(f[1], x, FY + 32); });
-  g.font = '16px system-ui'; g.textAlign = 'left'; g.fillText('Fictional game · Play Andolon' + (location.protocol.startsWith('http') ? ' · ' + location.host : ''), AX, H - 22);
+  g.font = '16px system-ui'; g.textAlign = 'left'; g.fillText('Fictional game · Play Andolon' + (location.protocol.startsWith('http') ? ' · ' + location.host + location.pathname.replace(/index\.html$/, '').replace(/\/$/, '') : ''), AX, H - 22);
   g.textAlign = 'right'; g.fillText(String(info.day).padStart(3, '0') + '/' + String(MAX_DAY).padStart(3, '0'), AX + AW, H - 22);
   return c;
 }
-async function shareCard(canvas, text){
-  const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+const cardBlob = canvas => new Promise(r => canvas.toBlob(r, 'image/png'));
+// On phones the share sheet is the way into the gallery ("Save Image" / "Save to Photos"); a plain download goes to Files on iPhone.
+async function shareCard(canvas, text, saveMode){
+  const blob = await cardBlob(canvas);
   const file = new File([blob], 'andolon.png', {type: 'image/png'});
-  if (navigator.canShare && navigator.canShare({files: [file]})){ try { await navigator.share({files: [file], text, title: 'Andolon'}); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
-  downloadCard(canvas);
+  if (navigator.canShare && navigator.canShare({files: [file]})){
+    try { await navigator.share(text ? {files: [file], text, title: 'Andolon'} : {files: [file]}); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  downloadCard(canvas, blob);
 }
-function downloadCard(canvas){ const a = document.createElement('a'); a.download = 'andolon.png'; a.href = canvas.toDataURL('image/png'); a.click(); }
+async function downloadCard(canvas, blob){
+  blob = blob || await cardBlob(canvas);
+  if (IS_TOUCH && !blob.__tried){   // phone: share sheet first
+    const file = new File([blob], 'andolon.png', {type: 'image/png'});
+    if (navigator.canShare && navigator.canShare({files: [file]})){ try { await navigator.share({files: [file]}); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+    saveOverlay(canvas); return;      // no share sheet: show the picture so it can be pressed and held
+  }
+  const a = document.createElement('a'); a.download = 'andolon.png'; a.href = URL.createObjectURL(blob);
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+function saveOverlay(canvas){
+  const o = document.createElement('div');
+  o.style.cssText = 'position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:12px;color:#fff;font:16px system-ui;text-align:center';
+  o.innerHTML = '<div>Press and hold the card, then tap <b>Save to Photos</b> (or Save Image).</div><img alt="Your card" style="max-width:100%;max-height:70vh;border-radius:10px" src="' + canvas.toDataURL('image/png') + '"><button style="padding:10px 24px;font-size:16px;border-radius:8px;border:0">Close</button>';
+  o.querySelector('button').onclick = () => o.remove();
+  document.body.appendChild(o);
+}
 
 // ---------- player photo (optional, stays in the browser) ----------
 let playerPhoto = null;
@@ -981,7 +1001,8 @@ function end(won, info){
   else head = '<h1>Detained at <span>' + info.station + '</span></h1><p>You were caught by the police and taken by van. The game is over.</p>';
   box.innerHTML = head + '<img id="cardimg" alt="Photo card" src="' + canvas.toDataURL('image/png') + '">' +
     '<label>Put your own photo on the card (optional)<input id="photo2" type="file" accept="image/*"></label>' +
-    '<button id="share">Share card</button><button id="dl" class="alt">Download</button><button id="go">March again</button>' +
+    '<button id="share">Share card</button><button id="dl" class="alt">' + (IS_TOUCH ? 'Save to Photos' : 'Download') + '</button><button id="go">March again</button>' +
+    (IS_TOUCH ? '<small>Tip: press and hold the card to save it to your Photos.</small><br>' : '') +
     (playerPhoto ? '<button id="nophoto" class="alt">Use default avatar</button>' : '') +
     '<a href="#" class="aboutlink">About game</a><br>' +
     '<small>Your photo stays on your device. It is only drawn onto this card. Fictional game; characters and events are not real people or incidents.</small>';
