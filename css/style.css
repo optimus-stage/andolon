@@ -30,3 +30,12 @@ summary{font-size:21px;font-weight:700;color:#0b6b3a;cursor:pointer;margin:10px 
 #tk{display:inline-block;white-space:nowrap;animation:tickerscroll 60s linear infinite;will-change:transform}
 @keyframes tickerscroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @media (prefers-reduced-motion:reduce){#tk{animation-duration:240s}}
+
+.aboutlink{display:inline-block;margin-top:10px;font-size:14px;color:#0b6b3a;text-decoration:underline;cursor:pointer}
+#about{position:fixed;inset:0;z-index:50;display:none;background:rgba(10,20,15,.85);overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+#about.open{display:flex}
+#aboutbox{position:relative;background:#f6f1e3;color:#222;max-width:560px;width:calc(100% - 24px);margin:auto;padding:24px 22px 18px;border-radius:14px;box-shadow:0 10px 40px #0008;line-height:1.55}
+#aboutbox h2{margin:0 0 10px;font-size:22px;color:#0b6b3a}
+#aboutbox p{margin:0 0 10px;font-size:15px}
+#aboutx{position:absolute;right:8px;top:6px;width:40px;height:40px;border:0;border-radius:50%;background:transparent;color:#444;font-size:30px;line-height:1;cursor:pointer;padding:0;margin:0}
+#aboutx:hover{background:rgba(0,0,0,.08)}
