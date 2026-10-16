@@ -714,7 +714,7 @@ function endPolice(won, why){
     '<button id="share">Share card</button><button id="dl" class="alt">' + (IS_TOUCH ? 'Save to Photos' : 'Download') + '</button><button id="go">Patrol again</button>' +
     (IS_TOUCH ? '<small>Tip: press and hold the card to save it to your Photos.</small><br>' : '') +
     (playerPhoto ? '<button id="nophoto" class="alt">Use default avatar</button>' : '') +
-    '<a href="#" class="aboutlink">About &amp; Disclaimer</a><br>' +
+    supportHTML() + '<a href="#" class="aboutlink">About &amp; Disclaimer</a><br>' +
     '<small>Your photo stays on your device. It is only drawn onto this card. Fictional game; characters and events are not real people or incidents.</small>';
   const text = won ? 'I led the police squad in Andolon and dispersed ' + st.dispersed + ' crowds. ' + rank.en + ', ' + score.toLocaleString('en-US') + ' pts.'
     : 'The crowds beat my police squad in Andolon. ' + score.toLocaleString('en-US') + ' pts. Can you do better?';
@@ -1460,7 +1460,7 @@ function end(won, info){
     '<button id="share">Share card</button><button id="dl" class="alt">' + (IS_TOUCH ? 'Save to Photos' : 'Download') + '</button><button id="go">March again</button>' +
     (IS_TOUCH ? '<small>Tip: press and hold the card to save it to your Photos.</small><br>' : '') +
     (playerPhoto ? '<button id="nophoto" class="alt">Use default avatar</button>' : '') +
-    '<a href="#" class="aboutlink">About &amp; Disclaimer</a><br>' +
+    supportHTML() + '<a href="#" class="aboutlink">About &amp; Disclaimer</a><br>' +
     '<small>Your photo stays on your device. It is only drawn onto this card. Fictional game; characters and events are not real people or incidents.</small>';
   const text = won ? 'I held the Central Shaheed Minar in Andolon! ' + rank.en + ', ' + score.toLocaleString('en-US') + ' pts.'
     : outcome === 'timeout' ? 'Andolon called me "' + tagBn + '". Can you do better?'
@@ -1594,6 +1594,20 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(setupTicke
 try { const n = localStorage.getItem('da_name'); if (n){ playerName = n; document.getElementById('pname').value = n; } } catch (e) {}
 mouse.x = innerWidth / 2; mouse.y = innerHeight / 2;
 requestAnimationFrame(frame);
+
+// ---------- optional support line: "Buy your Neta a cha" ----------
+const hasSupport = () => !!(SUPPORT.bkashQr || SUPPORT.bkashNumber || SUPPORT.coffeeUrl);
+function supportHTML(){
+  if (!hasSupport()) return '';
+  let p = '';
+  if (SUPPORT.bkashQr) p += '<img class="bkqr" alt="bKash QR" src="' + SUPPORT.bkashQr + '">';
+  if (SUPPORT.bkashNumber) p += '<div class="bknum">bKash (Send Money): <b>' + SUPPORT.bkashNumber + '</b></div>';
+  if (SUPPORT.coffeeUrl) p += '<a class="coffeelink" href="' + SUPPORT.coffeeUrl + '" target="_blank" rel="noopener">Coffee link</a>';
+  p += '<small>Optional and non-refundable. It does not unlock anything in the game.</small>';
+  return '<div class="support"><button type="button" class="supportbtn alt">Enjoyed the game? Buy your Neta a চা ☕</button><div class="supportpanel">' + p + '</div></div>';
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('.supportbtn'); if (b) b.nextElementSibling.classList.toggle('open'); });
+(function(){ const slot = document.getElementById('supportslot'); if (slot) slot.innerHTML = supportHTML(); })();
 
 // ---------- about game pop-up ----------
 (function(){

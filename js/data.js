@@ -137,3 +137,7 @@ const PTAGS = {
   slow:        {bn: 'দেরিতে সাড়া',     en: 'Slow Response',   desc: 'A crowd reached the Minar before you could stop it.'},
   outnumbered: {bn: 'সংখ্যায় কম',      en: 'Outnumbered',     desc: 'Too few officers to hold the line.'},
 };
+
+// Optional support ("Buy your Neta a cha"). Leave all three empty to hide it everywhere.
+// bkashQr: path to a QR image you add, e.g. 'img/bkash-qr.png'. bkashNumber: shown under the QR. coffeeUrl: a Buy Me a Coffee / Ko-fi page.
+const SUPPORT = {bkashQr: '', bkashNumber: '', coffeeUrl: ''};

@@ -51,3 +51,13 @@ button.role#role-pol.sel{background:#2f4a7a}
 h3.how{margin:14px 0 2px;font-size:21px;color:#0b6b3a}
 #rules2 h3.how{color:#2f4a7a}
 @media (max-width:640px){.goal{font-size:16px}h3.how{font-size:19px}}
+
+.support{margin-top:10px}
+.supportbtn{background:#8a5a1e;color:#fff;font-size:15px;padding:9px 14px}
+.supportpanel{display:none;margin-top:8px;text-align:center}
+.supportpanel.open{display:block}
+.bkqr{display:block;margin:6px auto;width:180px;max-width:70%;border-radius:8px;background:#fff}
+.bknum{font-size:15px;margin:4px 0}
+.coffeelink{display:inline-block;margin:6px 0;font-size:14px;color:#0b6b3a;text-decoration:underline}
+.supportpanel small{display:block;opacity:.75}
+#aboutbox .support{text-align:center}
