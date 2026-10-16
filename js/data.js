@@ -28,21 +28,21 @@ const RANKS = [
 ];
 // Special tags shown on the final card
 const TAGS = {
-  fast:        {bn: 'ঝড়ের গতি',            en: 'Storm Speed'},
-  unbreakable: {bn: 'অদম্য',                en: 'Unbreakable'},
-  mass:        {bn: 'জনসমুদ্র',              en: 'Sea of People'},
-  laststand:   {bn: 'শেষ লড়াই',            en: 'Last Stand'},
-  breaker:     {bn: 'ব্যারিকেড ভাঙনকারী',    en: 'Barricade Breaker'},
-  first:       {bn: 'প্রথম হুংকার',          en: 'First Roar'},
-  mid:         {bn: 'অকুতোভয়',              en: 'Fearless'},
-  inner:       {bn: 'দুর্জয়',                en: 'Indomitable'},
+  fast:        {bn: 'ঝড়ের গতি',            en: 'Storm Speed', desc: 'Held the Minar in record time.'},
+  unbreakable: {bn: 'অদম্য',                en: 'Unbreakable', desc: 'Won without a single beating.'},
+  mass:        {bn: 'জনসমুদ্র',              en: 'Sea of People', desc: 'Marched with a huge crowd.'},
+  laststand:   {bn: 'শেষ লড়াই',            en: 'Last Stand', desc: 'Won after a trip to the hospital.'},
+  breaker:     {bn: 'ব্যারিকেড ভাঙনকারী',    en: 'Barricade Breaker', desc: 'Broke through every barricade.'},
+  first:       {bn: 'প্রথম হুংকার',          en: 'First Roar', desc: 'Took the first step toward the Minar.'},
+  mid:         {bn: 'অকুতোভয়',              en: 'Fearless', desc: 'Kept marching past the barricades.'},
+  inner:       {bn: 'দুর্জয়',                en: 'Indomitable', desc: 'Pushed deep into the inner ring.'},
 };
 // Friendly roasts when Day 30 ends without holding the Shaheed Minar
 const ROASTS = {
-  biriyani: {tag: 'বিরিয়ানি বিপ্লবী',        line: '৩০ দিন পার, বিরিয়ানির লাইনেই দিন শেষ!'},
-  alone:    {tag: 'একলা চলো রে',             line: 'একাই একশো ভাবলেন, কিন্তু গুনে দেখি ১!'},
-  afraid:   {tag: 'ব্যারিকেডের ভয়ে ঘরমুখো',   line: 'ব্যারিকেড দেখেই ঘরের পথ ধরলেন?'},
-  fb:       {tag: 'ফেসবুক বিপ্লবী',           line: 'পোস্ট তো অনেক করলেন, রাজপথে এলেন কই?'},
+  biriyani: {tag: 'বিরিয়ানি বিপ্লবী',        line: '৩০ দিন পার, বিরিয়ানির লাইনেই দিন শেষ!', en: 'Biriyani Revolutionary', desc: 'Spent more time at the stall than the march.'},
+  alone:    {tag: 'একলা চলো রে',             line: 'একাই একশো ভাবলেন, কিন্তু গুনে দেখি ১!', en: 'Lone Walker', desc: 'Marched with almost nobody.'},
+  afraid:   {tag: 'ব্যারিকেডের ভয়ে ঘরমুখো',   line: 'ব্যারিকেড দেখেই ঘরের পথ ধরলেন?', en: 'Barricade Dodger', desc: 'Never got past the first barricade.'},
+  fb:       {tag: 'ফেসবুক বিপ্লবী',           line: 'পোস্ট তো অনেক করলেন, রাজপথে এলেন কই?', en: 'Facebook Revolutionary', desc: 'Posted plenty, marched little.'},
 };
 const START = {x: -300, y: -2900};     // north edge (Uttara side)
 

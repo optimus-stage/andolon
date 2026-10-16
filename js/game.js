@@ -824,48 +824,76 @@ function fitText(g, text, maxW, size, weight, family){
   let s = size; g.font = weight + ' ' + s + 'px ' + family;
   while (textW(g, text) > maxW && s > 14){ s -= 2; g.font = weight + ' ' + s + 'px ' + family; }
 }
+function rrect(g, x, y, w, h, r){ g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+function starPath(g, cx, cy, R){ g.beginPath(); for (let i = 0; i < 10; i++){ const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? R * 0.45 : R; g.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r); } g.closePath(); }
+// trading-card layout: gold when the player wins, blue when detained or out of time
 function renderCard(kind, info){
-  const c = document.createElement('canvas'); c.width = 720; c.height = 960; const g = c.getContext('2d');
-  const grad = g.createLinearGradient(0, 0, 0, 960); grad.addColorStop(0, kind === 'win' ? '#0b6b3a' : '#2a1414'); grad.addColorStop(1, '#0f2a1c');
-  g.fillStyle = grad; g.fillRect(0, 0, 720, 960);
-  g.textAlign = 'center'; g.fillStyle = '#fff'; g.font = 'bold 56px ' + BN_FONT; g.fillText('আন্দোলন', 360, 84);
-  g.font = '20px system-ui'; g.fillStyle = '#cfe3d6'; g.fillText('ANDOLON', 360, 116);
+  const W = 720, H = 1000, win = kind === 'win';
+  const T = win ? {frame: '#f2cf45', edge: '#c79a12', strip: '#e8d27a', box: '#f7e9a8', ink: '#412402', art: '#2b2f3a', art2: '#343947', dot: '#d9a93a'}
+                : {frame: '#7fb2e5', edge: '#185fa5', strip: '#b5d4f4', box: '#e1eefb', ink: '#042c53', art: '#1d2b4a', art2: '#27406b', dot: '#378add'};
+  const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
+  g.fillStyle = T.frame; rrect(g, 0, 0, W, H, 38); g.fill();
+  g.strokeStyle = T.edge; g.lineWidth = 6; rrect(g, 3, 3, W - 6, H - 6, 36); g.stroke();
+  g.textBaseline = 'alphabetic'; g.fillStyle = T.ink;
 
-  // polaroid: photo area on top, text strip below, nothing overlaps
-  g.save(); g.translate(360, 480); g.rotate(-0.03);
-  g.fillStyle = '#f7f4ea'; g.shadowColor = 'rgba(0,0,0,.5)'; g.shadowBlur = 24; g.fillRect(-290, -330, 580, 680); g.shadowBlur = 0;
-  const PX = -262, PY = -302, PW = 524, PH = 440;                    // photo box
-  g.fillStyle = kind === 'win' ? '#cfe6d6' : '#c9c5bb'; g.fillRect(PX, PY, PW, PH);
-  g.fillStyle = 'rgba(0,0,0,.08)'; for (let y = PY; y < PY + PH; y += 44) g.fillRect(PX, y, PW, 2);
-  g.save(); g.beginPath(); g.rect(PX, PY, PW, PH); g.clip();
-  if (info.photo){   // uploaded photo replaces the avatar, cropped to fill the frame
-    const im = info.photo, k = Math.max(PW / im.width, PH / im.height), dw = im.width * k, dh = im.height * k;
-    if (kind !== 'win') g.filter = 'grayscale(0.7)';
-    g.drawImage(im, PX + (PW - dw) / 2, PY + (PH - dh) / 2, dw, dh); g.filter = 'none';
-  } else person(g, 0, PY + PH - 100, {dress: WHITE, skin: info.skin, hat: 'band', scale: 9, flag: kind === 'win'});   // feet end ~10px above the photo's bottom
-  // stamp inside the photo, two lines in one box (lower on the photo so it doesn't cover a face)
-  g.save(); g.translate(0, info.photo ? PY + PH - 100 : PY + 80); g.rotate(-0.2);
-  const col = kind === 'win' ? '#0b6b3a' : '#c8102e'; g.strokeStyle = col; g.fillStyle = col; g.lineWidth = 7; g.globalAlpha = 0.9;
-  const label1 = kind === 'win' ? 'HELD THE SQUARE' : (info.station ? 'DETAINED' : 'TIME UP');
-  fitText(g, label1, 440, 70, 'bold', 'system-ui');
-  const bw = Math.max(g.measureText(label1).width + 40, 240), sub = kind === 'win' ? 'শহীদ মিনার' : (info.station ? 'আটক' : 'সময় শেষ');
-  const bh = sub ? 138 : 92;
-  g.fillStyle = 'rgba(247,244,234,.78)'; g.fillRect(-bw / 2, -50, bw, bh); g.strokeRect(-bw / 2, -50, bw, bh);
-  g.fillStyle = col; g.textAlign = 'center'; g.fillText(label1, 0, 8);
-  if (sub){ g.font = 'bold 40px ' + BN_FONT; g.fillText(sub, 0, 62); }
-  g.restore();
-  g.restore();
-  // text strip: name, rank (or roast tag), special tag (or roast), detail, score
-  const y1 = PY + PH;
+  // title row: name on the left, score on the right
+  g.textAlign = 'left'; fitText(g, info.name, 330, 46, 'bold', BN_FONT); g.fillText(info.name, 44, 76);
+  g.textAlign = 'right'; g.fillStyle = T.dot; g.strokeStyle = T.edge; g.lineWidth = 3; g.beginPath(); g.arc(W - 62, 60, 24, 0, 7); g.fill(); g.stroke();
+  g.fillStyle = T.ink; starPath(g, W - 62, 61, 14); g.fill();
+  g.font = 'bold 46px system-ui'; g.fillText(info.score.toLocaleString('en-US'), W - 98, 76);
+  const sw = g.measureText(info.score.toLocaleString('en-US')).width;
+  g.font = 'bold 20px system-ui'; g.fillText('SCORE', W - 98 - sw - 10, 76);
+
+  // art window: photo or avatar, with the stamp on top
+  const AX = 36, AY = 100, AW = 648, AH = 440;
+  g.fillStyle = '#e8e6dc'; rrect(g, AX - 8, AY - 8, AW + 16, AH + 16, 8); g.fill();
+  g.save(); g.beginPath(); g.rect(AX, AY, AW, AH); g.clip();
+  g.fillStyle = T.art; g.fillRect(AX, AY, AW, AH);
+  g.strokeStyle = T.art2; g.lineWidth = 8; for (let k = -AH; k < AW; k += 28){ g.beginPath(); g.moveTo(AX + k, AY + AH); g.lineTo(AX + k + AH, AY); g.stroke(); }
+  g.translate(AX + AW / 2, AY);
+  if (info.photo){
+    const im = info.photo, k = Math.max(AW / im.width, AH / im.height), dw = im.width * k, dh = im.height * k;
+    if (!win) g.filter = 'grayscale(0.7)';
+    g.drawImage(im, (AW - dw) / 2 - AW / 2, (AH - dh) / 2, dw, dh); g.filter = 'none';
+  } else person(g, 0, AH - 100, {dress: WHITE, skin: info.skin, hat: 'band', scale: 9, flag: win});
+  g.save(); g.translate(0, info.photo ? AH - 100 : 80); g.rotate(-0.2);
+  const col = win ? '#27500a' : info.station ? '#c8102e' : '#5f5e5a';
+  const label = win ? 'VICTORY' : info.station ? 'DETAINED' : 'TIME UP';
+  const sub = win ? 'HELD THE MINAR' : info.station ? info.station.toUpperCase() : 'DAY ' + MAX_DAY + ' ENDED';
+  g.textAlign = 'center'; fitText(g, label, 440, 76, 'bold', 'system-ui'); const lw = g.measureText(label).width;
+  fitText(g, sub, 440, 30, 'bold', 'system-ui'); const sbw = g.measureText(sub).width, bw = Math.max(lw, sbw, 240) + 44;
+  g.fillStyle = 'rgba(247,244,234,.8)'; g.strokeStyle = col; g.lineWidth = 8; g.globalAlpha = 0.92; g.fillRect(-bw / 2, -62, bw, 140); g.strokeRect(-bw / 2, -62, bw, 140);
+  g.fillStyle = col; fitText(g, label, 440, 76, 'bold', 'system-ui'); g.fillText(label, 0, 12);
+  fitText(g, sub, 440, 30, 'bold', 'system-ui'); g.fillText(sub, 0, 56);
+  g.restore(); g.restore();
+
+  // rank strip
+  g.fillStyle = T.strip; g.fillRect(AX, AY + AH + 14, AW, 40);
+  g.fillStyle = T.ink; g.textAlign = 'left'; g.font = 'bold 22px system-ui'; g.fillText(info.rankEn.toUpperCase(), AX + 14, AY + AH + 42);
+  g.textAlign = 'right'; g.font = 'italic 20px system-ui'; g.fillText('Andolon · Day ' + info.day + ' of ' + MAX_DAY, AX + AW - 14, AY + AH + 42);
+
+  // two "attack" rows: special tag, peak crowd
+  const BY = AY + AH + 68;
+  g.fillStyle = T.box; g.strokeStyle = T.edge; g.lineWidth = 3; rrect(g, AX, BY, AW, 232, 12); g.fill(); g.stroke();
+  const row = (y, title, value, desc, icon) => {
+    g.fillStyle = '#fff'; g.strokeStyle = T.edge; g.lineWidth = 3; g.beginPath(); g.arc(AX + 38, y, 20, 0, 7); g.fill(); g.stroke();
+    g.fillStyle = T.ink;
+    if (icon === 'star'){ starPath(g, AX + 38, y + 1, 12); g.fill(); }
+    else { g.beginPath(); g.arc(AX + 31, y - 4, 5, 0, 7); g.arc(AX + 45, y - 4, 5, 0, 7); g.fill(); g.beginPath(); g.arc(AX + 31, y + 14, 9, Math.PI, 0); g.arc(AX + 45, y + 14, 9, Math.PI, 0); g.fill(); }
+    g.textAlign = 'left'; fitText(g, title, 360, 30, 'bold', 'system-ui'); g.fillText(title, AX + 74, y + 10);
+    if (value != null){ g.textAlign = 'right'; g.font = 'bold 30px system-ui'; g.fillText(String(value), AX + AW - 24, y + 10); }
+    g.textAlign = 'left'; fitText(g, desc, AW - 100, 21, 'normal', 'system-ui'); g.fillText(desc, AX + 74, y + 42);
+  };
+  row(BY + 42, info.tagEn, null, info.tagDesc, 'star');
+  row(BY + 144, 'Peak crowd', info.peak, 'Most people marching with you at once.', 'crowd');
+
+  // footer stats
+  const FY = BY + 232 + 26, cw = AW / 3;
+  const foot = [[info.nextText[0], info.nextText[1]], [info.newBest ? 'NEW BEST' : 'BEST SCORE', info.best.toLocaleString('en-US')], ['BARRICADES', info.rings + ' of ' + RINGS.length]];
   g.textAlign = 'center';
-  g.fillStyle = '#111'; fitText(g, info.name, 500, 36, 'bold', BN_FONT); g.fillText(info.name, 0, y1 + 44);
-  g.fillStyle = col; fitText(g, info.line1, 500, 30, 'bold', BN_FONT); g.fillText(info.line1, 0, y1 + 82);
-  g.fillStyle = '#333'; fitText(g, info.line2, 500, 22, 'bold', BN_FONT); g.fillText(info.line2, 0, y1 + 112);
-  g.fillStyle = '#555'; fitText(g, info.detail, 500, 19, 'normal', BN_FONT); g.fillText(info.detail, 0, y1 + 140);
-  g.fillStyle = '#111'; fitText(g, info.line3, 500, 22, 'bold', 'system-ui'); g.fillText(info.line3, 0, y1 + 170);
-  g.restore();
-  g.fillStyle = '#cfe3d6'; g.font = '20px system-ui'; g.textAlign = 'center';
-  g.fillText('Fictional game · Play Andolon' + (location.protocol.startsWith('http') ? ' · ' + location.host : ''), 360, 925);
+  foot.forEach((f, i) => { const x = AX + cw * i + cw / 2; g.fillStyle = T.ink; g.font = '17px system-ui'; g.fillText(f[0], x, FY); g.font = 'bold 28px system-ui'; g.fillText(f[1], x, FY + 32); });
+  g.font = '16px system-ui'; g.textAlign = 'left'; g.fillText('Fictional game · Play Andolon' + (location.protocol.startsWith('http') ? ' · ' + location.host : ''), AX, H - 22);
+  g.textAlign = 'right'; g.fillText(String(info.day).padStart(3, '0') + '/' + String(MAX_DAY).padStart(3, '0'), AX + AW, H - 22);
   return c;
 }
 async function shareCard(canvas, text){
@@ -923,28 +951,27 @@ function end(won, info){
   game.started = false;
   const outcome = won ? 'win' : info.timeout ? 'timeout' : 'detained', st = game.stats, crowd = followers.length + 1;
   const score = computeScore(won, outcome), rank = rankFor(score);
-  let line1, line2, detail;
-  if (outcome === 'timeout'){ const r = pickRoast(); line1 = r.tag; line2 = r.line; detail = 'Day ' + MAX_DAY + ' ended before the Minar was held'; }
-  else { const t = pickTag(won, outcome); line1 = rank.bn + ' · ' + rank.en; line2 = t.bn + ' · ' + t.en; detail = won ? 'Held the Central Shaheed Minar with ' + crowd + ' people' : 'Taken to ' + info.station; }
-  const line3 = 'Score ' + score.toLocaleString('en-US') + ' · Day ' + game.day + ' · ' + (won ? 'Crowd ' + crowd : 'Peak crowd ' + st.peak);
+  const tag = outcome === 'timeout' ? pickRoast() : pickTag(won, outcome);
+  const tagEn = tag.en, tagDesc = tag.desc;
+  const nxt = RANKS.find(r => r.min > score);
+  const nextText = nxt ? ['NEXT: ' + nxt.en.toUpperCase(), (nxt.min - score).toLocaleString('en-US') + ' pts'] : ['NEXT RANK', 'Maxed'];
   let best = 0, newBest = false; try { best = +localStorage.getItem('da_best') || 0; if (score > best){ newBest = best > 0; localStorage.setItem('da_best', String(score)); best = score; } } catch (e) {}
-  const cardInfo = {name: playerName, skin: player.skin, station: info.station, timeout: !!info.timeout, line1, line2, line3, detail};
+  const cardInfo = {name: playerName, skin: player.skin, station: info.station, timeout: !!info.timeout, score, rankEn: rank.en, tagEn, tagDesc, peak: st.peak, rings: st.rings, day: game.day, best, newBest, nextText};
   const build = () => renderCard(won ? 'win' : 'lose', Object.assign({photo: playerPhoto}, cardInfo));
   let canvas = build();
   const box = document.getElementById('card');
   let head;
   if (won) head = '<h1>Shaheed Minar <span>held!</span></h1><p>Your crowd of <b>' + crowd + '</b> held the square on <b>Day ' + game.day + '</b>.</p>';
-  else if (outcome === 'timeout') head = '<h1>Day ' + MAX_DAY + ' <span>is over</span></h1><p><b>' + line1 + '</b>: ' + line2 + '</p>';
+  else if (outcome === 'timeout') head = '<h1>Day ' + MAX_DAY + ' <span>is over</span></h1><p>You are a <b>' + tagEn + '</b>. ' + tagDesc + '</p>';
   else if (info.aynaghor) head = '<h1>Taken to <span>Aynaghor</span></h1><p>The police van took you to Aynaghor. The game is over.</p>';
   else head = '<h1>Detained at <span>' + info.station + '</span></h1><p>You were caught by the police and taken by van. The game is over.</p>';
-  const summary = '<p>Score <b>' + score.toLocaleString('en-US') + '</b>' + (outcome === 'timeout' ? '' : ' · <b>' + rank.bn + '</b> (' + rank.en + ') · ' + line2) + (newBest ? ' · <b>New best!</b>' : best ? ' · Best ' + best.toLocaleString('en-US') : '') + '</p>';
-  box.innerHTML = head + summary + '<img id="cardimg" alt="Photo card" src="' + canvas.toDataURL('image/png') + '">' +
+  box.innerHTML = head + '<img id="cardimg" alt="Photo card" src="' + canvas.toDataURL('image/png') + '">' +
     '<label>Put your own photo on the card (optional)<input id="photo2" type="file" accept="image/*"></label>' +
     '<button id="share">Share card</button><button id="dl" class="alt">Download</button><button id="go">March again</button>' +
     (playerPhoto ? '<button id="nophoto" class="alt">Use default avatar</button>' : '') +
     '<small>Your photo stays on your device. It is only drawn onto this card. Fictional game; characters and events are not real people or incidents.</small>';
   const text = won ? 'I held the Central Shaheed Minar in Andolon! ' + rank.en + ', ' + score.toLocaleString('en-US') + ' pts.'
-    : outcome === 'timeout' ? 'Andolon called me "' + line1 + '". Can you do better?'
+    : outcome === 'timeout' ? 'Andolon called me "' + tagEn + '". Can you do better?'
     : 'I was detained at ' + info.station + ' in Andolon. ' + score.toLocaleString('en-US') + ' pts.';
   const refresh = () => { canvas = build(); document.getElementById('cardimg').src = canvas.toDataURL('image/png'); const b = document.getElementById('nophoto'); if (!b && playerPhoto){ const n = document.createElement('button'); n.id = 'nophoto'; n.className = 'alt'; n.textContent = 'Use default avatar'; n.onclick = () => { playerPhoto = null; n.remove(); refresh(); }; document.getElementById('go').after(n); } };
   document.getElementById('photo2').onchange = e => loadPhoto(e.target.files[0], refresh);
