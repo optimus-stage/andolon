@@ -140,6 +140,6 @@ const PTAGS = {
 
 // Optional support ("Buy your Neta a cha"). Leave all empty to hide it everywhere.
 // bkashNumber: shown with a Copy button.
-const SUPPORT = {bkashNumber: ''};
+const SUPPORT = {bkashNumber: '01833183700'};
 // Optional WhatsApp group for game updates. qr: path to your QR image, e.g. 'img/whatsapp-qr.png'. link: the group invite link (lets phone users tap instead of scan).
-const WHATSAPP = {qr: '', link: ''};
+const WHATSAPP = {qr: 'img/whatsapp-qr.png', link: ''};
