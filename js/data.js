@@ -142,4 +142,4 @@ const PTAGS = {
 // bkashNumber: shown with a Copy button.
 const SUPPORT = {bkashNumber: '01833183700'};
 // Optional WhatsApp group for game updates. qr: path to your QR image, e.g. 'img/whatsapp-qr.png'. link: the group invite link (lets phone users tap instead of scan).
-const WHATSAPP = {qr: 'img/whatsapp-qr.png', link: ''};
+const WHATSAPP = {qr: 'img/whatsapp-qr.png', link: 'https://chat.whatsapp.com/F3ihSA2kTBEL7egenBkNZL'};
