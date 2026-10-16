@@ -869,7 +869,7 @@ function renderCard(kind, info){
 
   // rank strip
   g.fillStyle = T.strip; g.fillRect(AX, AY + AH + 14, AW, 40);
-  g.fillStyle = T.ink; g.textAlign = 'left'; g.font = 'bold 22px system-ui'; g.fillText(info.rankEn.toUpperCase(), AX + 14, AY + AH + 42);
+  g.fillStyle = T.ink; g.textAlign = 'left'; g.font = 'bold 24px ' + BN_FONT; g.fillText(info.rankBn, AX + 14, AY + AH + 43);
   g.textAlign = 'right'; g.font = 'italic 20px system-ui'; g.fillText('Andolon · Day ' + info.day + ' of ' + MAX_DAY, AX + AW - 14, AY + AH + 42);
 
   // two "attack" rows: special tag, peak crowd
@@ -884,7 +884,7 @@ function renderCard(kind, info){
     if (value != null){ g.textAlign = 'right'; g.font = 'bold 30px system-ui'; g.fillText(String(value), AX + AW - 24, y + 10); }
     g.textAlign = 'left'; fitText(g, desc, AW - 100, 21, 'normal', 'system-ui'); g.fillText(desc, AX + 74, y + 42);
   };
-  row(BY + 42, info.tagEn, null, info.tagDesc, 'star');
+  row(BY + 42, info.tagBn, null, info.tagDesc, 'star');
   row(BY + 144, 'Peak crowd', info.peak, 'Most people marching with you at once.', 'crowd');
 
   // footer stats
@@ -952,17 +952,17 @@ function end(won, info){
   const outcome = won ? 'win' : info.timeout ? 'timeout' : 'detained', st = game.stats, crowd = followers.length + 1;
   const score = computeScore(won, outcome), rank = rankFor(score);
   const tag = outcome === 'timeout' ? pickRoast() : pickTag(won, outcome);
-  const tagEn = tag.en, tagDesc = tag.desc;
+  const tagBn = tag.bn || tag.tag, tagDesc = tag.desc;
   const nxt = RANKS.find(r => r.min > score);
-  const nextText = nxt ? ['NEXT: ' + nxt.en.toUpperCase(), (nxt.min - score).toLocaleString('en-US') + ' pts'] : ['NEXT RANK', 'Maxed'];
+  const nextText = nxt ? ['NEXT: ' + nxt.bn, (nxt.min - score).toLocaleString('en-US') + ' pts'] : ['NEXT RANK', 'Maxed'];
   let best = 0, newBest = false; try { best = +localStorage.getItem('da_best') || 0; if (score > best){ newBest = best > 0; localStorage.setItem('da_best', String(score)); best = score; } } catch (e) {}
-  const cardInfo = {name: playerName, skin: player.skin, station: info.station, timeout: !!info.timeout, score, rankEn: rank.en, tagEn, tagDesc, peak: st.peak, rings: st.rings, day: game.day, best, newBest, nextText};
+  const cardInfo = {name: playerName, skin: player.skin, station: info.station, timeout: !!info.timeout, score, rankBn: rank.bn, tagBn, tagDesc, peak: st.peak, rings: st.rings, day: game.day, best, newBest, nextText};
   const build = () => renderCard(won ? 'win' : 'lose', Object.assign({photo: playerPhoto}, cardInfo));
   let canvas = build();
   const box = document.getElementById('card');
   let head;
   if (won) head = '<h1>Shaheed Minar <span>held!</span></h1><p>Your crowd of <b>' + crowd + '</b> held the square on <b>Day ' + game.day + '</b>.</p>';
-  else if (outcome === 'timeout') head = '<h1>Day ' + MAX_DAY + ' <span>is over</span></h1><p>You are a <b>' + tagEn + '</b>. ' + tagDesc + '</p>';
+  else if (outcome === 'timeout') head = '<h1>Day ' + MAX_DAY + ' <span>is over</span></h1><p>You are a <b>' + tagBn + '</b>. ' + tagDesc + '</p>';
   else if (info.aynaghor) head = '<h1>Taken to <span>Aynaghor</span></h1><p>The police van took you to Aynaghor. The game is over.</p>';
   else head = '<h1>Detained at <span>' + info.station + '</span></h1><p>You were caught by the police and taken by van. The game is over.</p>';
   box.innerHTML = head + '<img id="cardimg" alt="Photo card" src="' + canvas.toDataURL('image/png') + '">' +
@@ -971,7 +971,7 @@ function end(won, info){
     (playerPhoto ? '<button id="nophoto" class="alt">Use default avatar</button>' : '') +
     '<small>Your photo stays on your device. It is only drawn onto this card. Fictional game; characters and events are not real people or incidents.</small>';
   const text = won ? 'I held the Central Shaheed Minar in Andolon! ' + rank.en + ', ' + score.toLocaleString('en-US') + ' pts.'
-    : outcome === 'timeout' ? 'Andolon called me "' + tagEn + '". Can you do better?'
+    : outcome === 'timeout' ? 'Andolon called me "' + tagBn + '". Can you do better?'
     : 'I was detained at ' + info.station + ' in Andolon. ' + score.toLocaleString('en-US') + ' pts.';
   const refresh = () => { canvas = build(); document.getElementById('cardimg').src = canvas.toDataURL('image/png'); const b = document.getElementById('nophoto'); if (!b && playerPhoto){ const n = document.createElement('button'); n.id = 'nophoto'; n.className = 'alt'; n.textContent = 'Use default avatar'; n.onclick = () => { playerPhoto = null; n.remove(); refresh(); }; document.getElementById('go').after(n); } };
   document.getElementById('photo2').onchange = e => loadPhoto(e.target.files[0], refresh);
