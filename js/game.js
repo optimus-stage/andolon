@@ -1601,11 +1601,17 @@ function supportHTML(){
   if (!hasSupport()) return '';
   let p = '';
   if (SUPPORT.bkashQr) p += '<img class="bkqr" alt="bKash QR" src="' + SUPPORT.bkashQr + '">';
-  if (SUPPORT.bkashNumber) p += '<div class="bknum">bKash (Send Money): <b>' + SUPPORT.bkashNumber + '</b></div>';
+  if (SUPPORT.bkashNumber) p += '<div class="bknum">bKash (Send Money): <b>' + SUPPORT.bkashNumber + '</b> <button type="button" class="copybtn alt" data-num="' + SUPPORT.bkashNumber + '">Copy</button></div>';
   if (SUPPORT.coffeeUrl) p += '<a class="coffeelink" href="' + SUPPORT.coffeeUrl + '" target="_blank" rel="noopener">Coffee link</a>';
   p += '<small>Optional and non-refundable. It does not unlock anything in the game.</small>';
   return '<div class="support"><button type="button" class="supportbtn alt">Enjoyed the game? Buy your Neta a চা ☕</button><div class="supportpanel">' + p + '</div></div>';
 }
+document.addEventListener('click', e => {
+  const c = e.target.closest && e.target.closest('.copybtn'); if (!c) return;
+  const num = c.dataset.num, done = () => { c.textContent = 'Copied ✓'; setTimeout(() => { c.textContent = 'Copy'; }, 1800); };
+  const fallback = () => { const t = document.createElement('textarea'); t.value = num; t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); done(); } catch (er) {} t.remove(); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(num).then(done, fallback); else fallback();
+});
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('.supportbtn'); if (b) b.nextElementSibling.classList.toggle('open'); });
 (function(){ const slot = document.getElementById('supportslot'); if (slot) slot.innerHTML = supportHTML(); })();
 
