@@ -969,6 +969,7 @@ function end(won, info){
     '<label>Put your own photo on the card (optional)<input id="photo2" type="file" accept="image/*"></label>' +
     '<button id="share">Share card</button><button id="dl" class="alt">Download</button><button id="go">March again</button>' +
     (playerPhoto ? '<button id="nophoto" class="alt">Use default avatar</button>' : '') +
+    '<a href="#" class="aboutlink">About game</a><br>' +
     '<small>Your photo stays on your device. It is only drawn onto this card. Fictional game; characters and events are not real people or incidents.</small>';
   const text = won ? 'I held the Central Shaheed Minar in Andolon! ' + rank.en + ', ' + score.toLocaleString('en-US') + ' pts.'
     : outcome === 'timeout' ? 'Andolon called me "' + tagBn + '". Can you do better?'
@@ -1022,3 +1023,14 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(setupTicke
 try { const n = localStorage.getItem('da_name'); if (n){ playerName = n; document.getElementById('pname').value = n; } } catch (e) {}
 mouse.x = innerWidth / 2; mouse.y = innerHeight / 2;
 requestAnimationFrame(frame);
+
+// ---------- about game pop-up ----------
+(function(){
+  const box = document.getElementById('about'); if (!box) return;
+  const open = () => { box.classList.add('open'); document.getElementById('aboutx').focus(); };
+  const close = () => box.classList.remove('open');
+  document.addEventListener('click', e => { if (e.target.closest && e.target.closest('.aboutlink')){ e.preventDefault(); open(); } });
+  document.getElementById('aboutx').onclick = close;
+  box.addEventListener('click', e => { if (e.target === box) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+})();
