@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Andolon</title>
-<link rel="stylesheet" href="css/style.css?v=6">
+<link rel="stylesheet" href="css/style.css?v=7">
 </head>
 <body>
 <canvas id="c"></canvas>
@@ -12,31 +12,36 @@
 <div id="ticker"><b>ব্রেকিং নিউজ</b><div id="tkwrap"><span id="tk"></span></div></div>
 <div id="menu"><div id="card">
   <h1><span>আন্দোলন</span></h1>
-  <p><b>Andolon</b> is a single-player march game. Gather a crowd in white, get through the police barricades, and hold the <b>কেন্দ্রীয় শহীদ মিনার</b> (Central Shaheed Minar) with 15 people for 10 seconds.</p>
+  <p><b>Andolon</b> is a single-player game. You can play as an <b>Andolonkari</b> (protester) or as a <b>Police</b> officer. Select a character and proceed.</p>
   <div id="roles"><button id="role-prot" class="role sel" type="button">Andolonkari<small>Lead the march</small></button><button id="role-pol" class="role" type="button">Police<small>Hold the line</small></button></div>
-  <details id="rules"><summary>How to play</summary>
-  <ul>
-    <li><b>Move the mouse</b> to walk. Walk into bystanders to bring them along.</li>
-    <li><b>Police barricades</b> (6 on the outer ring, 2 on each inner ring) open when your crowd is big enough: 6, then 14, then 25 people. Stand near one and wait.</li>
-    <li><b>Police (blue)</b> carry sticks, in every zone. Each hit costs you morale. If they hit you when your morale is nearly gone, a police van takes you to a thana or Aynaghor and the game is over.</li>
-    <li><b>Hospitals</b> restore your morale after a beating. <b>বিরিয়ানি</b> stalls restore morale too, and <b>মামার টঙের চা</b> gives a quick boost.</li>
-    <li><b>Rivals</b> (black clothes) support the police and fight your crowd when you meet. The bigger crowd wins the clash, and a tie goes to the protesters. Some beaten rivals switch to your side. A bigger rival crowd standing in the square stops you holding it. Expect gunshot and blast sounds during fights.</li>
-    <li>Buildings are solid, so walk around them on the roads.</li>
-    <li>You have <b>30 days</b> (about 4 minutes). Your score comes from crowd size, barricades passed, fights won and speed, and your card shows a rank and a tag. If time runs out you get a friendly roast. Press <b>M</b> (or tap the speaker) to mute sound. On a phone, touch and hold a direction on the round pad at the bottom right to walk.</li>
-  </ul>
-  </details>
-  <details id="rules2" style="display:none"><summary>How to play as police</summary>
-  <ul>
-    <li>You lead the police. <b>Protester crowds are AI</b>: they gather people and march toward the <b>কেন্দ্রীয় শহীদ মিনার</b>. You are faster than any crowd, so run them down.</li>
-    <li><b>Win</b> by dispersing 10 crowds. <b>Lose</b> if a crowd of 15 holds the Minar for 10 seconds, or if public anger reaches 100.</li>
-    <li><b>Recruit officers</b>: walk into the blue officers on the streets and they join your squad. A bigger squad scatters more people per hit.</li>
-    <li><b>Strike</b> (click or Space) scatters people close to you. <b>Smoke grenade</b> (G) makes a cloud that slows and breaks up crowds. <b>Warning shots</b> (F) scatter people in front of you. Nobody is hurt: people just run away.</li>
-    <li>Using force raises <b>public anger</b>, and angry crowds grow faster. Anger falls slowly when you hold back. Smoke and rounds come back over time.</li>
-    <li>On a phone, use the round pad to walk and the STRIKE, SMOKE and FIRE buttons on the left.</li>
-  </ul>
-  </details>
   <label>Your name <input id="pname" maxlength="24" placeholder="Protester"></label>
   <label>Your photo for the final card (optional) <input id="photo" type="file" accept="image/*"></label>
+  <div id="rules">
+    <div class="goal"><b>Goal:</b> gather a crowd in white, get through the police barricades, and hold the <b>কেন্দ্রীয় শহীদ মিনার</b> (Central Shaheed Minar) with <b>15 people for 10 seconds</b>.</div>
+    <h3 class="how">How to play as an Andolonkari</h3>
+    <ul>
+      <li><b>Move the mouse</b> to walk. On a phone, touch and hold a direction on the round pad at the bottom right. Walk into bystanders to bring them along.</li>
+      <li><b>Police barricades</b> (6 on the outer ring, 2 on each inner ring) open when your crowd is big enough: 6, then 14, then 25 people. Stand near one and wait.</li>
+      <li><b>Police (blue)</b> carry sticks. Each hit costs you morale. If they hit you when your morale is nearly gone, a police van takes you to a thana or Aynaghor and the game is over.</li>
+      <li><b>Hospitals</b> restore your morale after a beating. <b>বিরিয়ানি</b> stalls restore morale too, and <b>মামার টঙের চা</b> gives a quick boost.</li>
+      <li><b>Rivals</b> (black clothes) support the police and fight your crowd when you meet. The bigger crowd wins, and a tie goes to the protesters. A bigger rival crowd standing in the square stops you holding it.</li>
+      <li>Buildings are solid, so walk around them on the roads.</li>
+      <li>You have <b>30 days</b> (about 4 minutes). Your score comes from crowd size, barricades passed, fights won and speed. Press <b>M</b> (or tap the speaker) to mute sound.</li>
+    </ul>
+  </div>
+  <div id="rules2" style="display:none">
+    <div class="goal police"><b>Goal:</b> stop the protester crowds. <b>Disperse 10 crowds</b> before one of them holds the <b>কেন্দ্রীয় শহীদ মিনার</b> (15 people for 10 seconds), and keep <b>public anger</b> below 100.</div>
+    <h3 class="how">How to play as Police</h3>
+    <ul>
+      <li>The protesters are AI. They gather people and march toward the Minar. <b>You are faster than any crowd</b> and can walk through barricades, so run them down.</li>
+      <li><b>Move the mouse</b> to walk. On a phone, use the round pad at the bottom right.</li>
+      <li><b>Recruit officers:</b> walk into the blue officers on the streets and they join your squad (up to 14). A bigger squad scatters more people per hit.</li>
+      <li><b>Strike</b> (click or Space, or the STRIKE button) scatters people close to you. <b>Smoke grenade</b> (G or SMOKE) makes a cloud that slows and breaks up crowds. <b>Warning shots</b> (F or FIRE) scatter people in front of you. Nobody is hurt: people just run away. Smoke and rounds come back over time.</li>
+      <li>A crowd with nobody left is dispersed after a couple more hits or a few seconds in smoke.</li>
+      <li>Using force raises <b>public anger</b>, and angry crowds grow faster. Anger falls slowly when you hold back. If it reaches 100 you are pulled back and the game is over.</li>
+      <li>Two crowds that meet join into a bigger one, so break them up early. Press <b>M</b> (or tap the speaker) to mute sound.</li>
+    </ul>
+  </div>
   <button id="go">Start marching</button>
   <small>Fictional game. Characters and events are not real people or incidents. Map is stylised.</small>
   <a href="#" class="aboutlink">About & Disclaimer</a>
@@ -54,7 +59,7 @@
   <p><b>Lastly, enjoy the game and share with your friends.</b></p>
   <p>Contact me at <b>bizwithsabbir@gmail.com</b></p>
 </div></div>
-<script src="js/data.js?v=6"></script>
-<script src="js/game.js?v=6"></script>
+<script src="js/data.js?v=7"></script>
+<script src="js/game.js?v=7"></script>
 </body>
 </html>

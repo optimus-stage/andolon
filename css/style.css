@@ -45,3 +45,9 @@ button.role{margin:0 !important;width:auto !important;padding:12px 8px;backgroun
 button.role small{display:block;margin-top:4px;font-weight:400;font-size:13px;color:#555}
 button.role.sel{background:#0b6b3a;color:#fff;border-color:#ffd54f} button.role.sel small{color:#d7ead9}
 button.role#role-pol.sel{background:#2f4a7a}
+
+.goal{background:#e4efe6;border-radius:10px;padding:10px 14px;margin:14px 0 0;font-size:18px;line-height:1.45;color:#1d3a27}
+.goal.police{background:#e3e9f3;color:#1c2e4d}
+h3.how{margin:14px 0 2px;font-size:21px;color:#0b6b3a}
+#rules2 h3.how{color:#2f4a7a}
+@media (max-width:640px){.goal{font-size:16px}h3.how{font-size:19px}}
