@@ -30,6 +30,11 @@ Open `index.html` in a browser (no build, no server needed). To share online, up
 - If Day 30 ends without a win you get a friendly roast tag instead of a rank: বিরিয়ানি বিপ্লবী, একলা চলো রে, ব্যারিকেডের ভয়ে ঘরমুখো or ফেসবুক বিপ্লবী.
 - End screens produce a shareable PNG photo card (Web Share on phones, download on desktop). You can upload your own photo on the start screen or on the card screen; it replaces the avatar and never leaves your device. Your best score is saved in your browser. Press M to mute sound.
 
+## Hunting rivals and rescues
+- Rival crowds (about 12, three per zone) now chase you when you are close in the same zone. They are slower than you, so run early. They still recruit bystanders, and equal-sized crowds go to the protesters.
+- About 1 in 4 rival crowds is **armed** (red ring and ARMED label). Within range and with no building in the way they give a short warning (!) and fire: a quarter of your crowd scatters and you lose morale.
+- People detained by police are held at a thana. An orange arrow, a dashed path and a minimap dot lead to it. Bring 8 people inside the dashed ring for 6 seconds to free them. Police nearby slow it down, and reinforcements come out. Freed people join your crowd and count as recruits. Held people also go free by themselves after 60 seconds.
+
 ## Tuning
 Everything is at the top of `js/data.js`: gates per ring, barricade sizes, crowd needed, day length, bystander counts, rival limits, score weights, ranks, tags and roast lines. Police strength is in `strikePlayer()` in `js/game.js`.
 

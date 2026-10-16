@@ -15,7 +15,11 @@ const MAX_DAY = 30, DAY_SECONDS = 8;     // 30 days x 8 seconds = 4 minutes
 const TIME_PAR = 180;                   // winning faster than this earns a speed bonus
 const BYSTANDERS = [180, 150, 120, 90]; // starting bystanders per zone, outer to centre
 const RECRUIT_R = 32;                   // how close you must get to bring a bystander along
-const RIVAL_MAX = 12, RIVAL_BLOCK = 8, RIVAL_RECRUIT_EVERY = 4;   // rival crowd size cap, size that can block the square, seconds between recruits
+const RIVAL_MAX = 14, RIVAL_BLOCK = 8, RIVAL_RECRUIT_EVERY = 4;   // rival crowd size cap, size that can block the square, seconds between recruits
+const RIVAL_TARGET = 12;                // rival crowds kept on the map (about 3 per zone)
+const RIVAL_HUNT = 450, RIVAL_LOSE = 700, RIVAL_HUNT_SPEED = 100;   // chase range, give-up range, chase speed (you are always faster)
+const RIVAL_ARMED_CHANCE = 0.25, GUN_RANGE = 260, GUN_CD = 5, GUN_AIM = 0.6;   // armed rival crowds: share, range, seconds between shots, warning time
+const RESCUE_NEED = 8, RESCUE_TIME = 6, RESCUE_R = 140, DETAIN_HOLD = 60;   // people needed, seconds, ring radius, seconds before detainees are freed anyway
 const SCORE = {recruit: 5, crowd: 10, ring: 300, clash: 20, win: 2000, speed: 5, detained: 0.6, timeout: 0.8};
 
 // Ranks by score (Bengali + English)
