@@ -32,3 +32,13 @@ Open `index.html` in a browser (no build, no server needed). To share online, up
 
 ## Tuning
 Everything is at the top of `js/data.js`: gates per ring, barricade sizes, crowd needed, day length, bystander counts, rival limits, score weights, ranks, tags and roast lines. Police strength is in `strikePlayer()` in `js/game.js`.
+
+## Playing as police
+
+Choose **Police** on the start screen. You lead the police and the protester crowds are AI. They gather people and march toward the Central Shaheed Minar. You are faster than any crowd.
+
+- Win by dispersing 10 crowds. Lose if a crowd of 15 holds the Minar for 10 seconds, or if public anger reaches 100.
+- Walk into the blue officers on the streets to add them to your squad (up to 14).
+- **Strike** (click, Space or the STRIKE button), **smoke grenade** (G or SMOKE) and **warning shots** (F or FIRE) scatter people. Nobody is hurt.
+- Force raises **public anger**; angry crowds recruit faster. Smoke and rounds come back over time.
+- Tuning constants live in `js/data.js` (`DISPERSE_GOAL`, `MARCH_MAX`) and the top of the police section in `js/game.js`.

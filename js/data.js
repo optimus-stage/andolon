@@ -111,3 +111,24 @@ const HEADLINES = [
 
 // Fictional names for other detained people (shown in small photo cards)
 const NAMES = ['রাফি', 'তানভীর', 'সাদিয়া', 'নুসরাত', 'মেহেদী', 'আরিফ', 'ফারিহা', 'শিহাব', 'তামিম', 'জেরিন'];
+
+// ---- Police side ----
+const DISPERSE_GOAL = 10;   // crowds to disperse to win as police
+const MARCH_MAX = 40;       // largest AI protester crowd
+const PRANKS = [
+  {min: 0,    bn: 'কনস্টেবল',       en: 'Constable'},
+  {min: 600,  bn: 'নায়েক',         en: 'Naik'},
+  {min: 1500, bn: 'উপ-পরিদর্শক',    en: 'Sub-Inspector'},
+  {min: 3000, bn: 'পরিদর্শক',       en: 'Inspector'},
+  {min: 5000, bn: 'পুলিশ সুপার',     en: 'Superintendent'},
+];
+const PTAGS = {
+  calm:        {bn: 'ঠান্ডা মাথা',      en: 'Cool Head',       desc: 'Kept order with very little force.'},
+  swift:       {bn: 'বিদ্যুৎ বাহিনী',    en: 'Lightning Squad', desc: 'Cleared the streets in record time.'},
+  full:        {bn: 'পূর্ণ বাহিনী',      en: 'Full Force',      desc: 'Led a big squad to the finish.'},
+  smoke:       {bn: 'ধোঁয়াশা-ওস্তাদ',   en: 'Smoke Master',    desc: 'Used smoke to clear the way.'},
+  steady:      {bn: 'অবিচল',          en: 'Steady Hands',    desc: 'Held the line to the end.'},
+  overreach:   {bn: 'বাড়াবাড়ি',       en: 'Overreach',       desc: 'Too much force turned the public against you.'},
+  slow:        {bn: 'দেরিতে সাড়া',     en: 'Slow Response',   desc: 'A crowd reached the Minar before you could stop it.'},
+  outnumbered: {bn: 'সংখ্যায় কম',      en: 'Outnumbered',     desc: 'Too few officers to hold the line.'},
+};

@@ -218,9 +218,11 @@ const TOWN = genTown();
 // ---------- state ----------
 let gates, neutrals, followers, patrols, rivals, stalls, teas, shutdowns, player, game, chant, bubbles, toasts;
 let mouse = {x: 0, y: 0}, cam = {x: 0, y: 0}, playerName = 'Protester';
+let role = 'protester', marchers = [], smokes = [];   // role: 'protester' or 'police'
+const input = {strike: false};
 
 function newGame(){
-  gates = []; stalls = []; teas = []; shutdowns = []; bubbles = []; toasts = []; fx = [];
+  gates = []; stalls = []; teas = []; shutdowns = []; bubbles = []; toasts = []; fx = []; marchers = []; smokes = [];
   RINGS.forEach((r, i) => {
     const n = GATES_PER_RING[i], base = rand(-Math.PI, Math.PI);
     for (let k = 0; k < n; k++){ const ang = base + k * 2 * Math.PI / n, p = polar(ang, r); gates.push({r, ring: i, ang, x: p.x, y: p.y, need: GATE_NEEDS[i], open: 0}); }
@@ -250,7 +252,7 @@ function mkNeutral(x, y){
   return {x, y, vx: 0, vy: 0, wt: 0, cool: 0, skin: pick(SKINS), dress: pick(tones)};
 }
 function mkPatrol(z){
-  const p = {x: 0, y: 0, z, tx: 0, ty: 0, skin: pick(SKINS), moving: true, swing: 0, cool: 0, ftimer: 0};
+  const p = {x: 0, y: 0, z, tx: 0, ty: 0, skin: pick(SKINS), moving: true, swing: 0, cool: 0, ftimer: 0, police: role === 'police'};
   const s = spawnIn(ZR[z + 1] + 70, ZR[z] - 70); p.x = s.x; p.y = s.y; pickWaypoint(p); return p;
 }
 function pickWaypoint(p){ const s = spawnIn(Math.max(ZR[p.z + 1] + 70, 60), ZR[p.z] - 70); p.tx = s.x; p.ty = s.y; }
@@ -282,6 +284,7 @@ function resolveRect(o, r, rad){
 function collide(o, rad){
   let d = Math.hypot(o.x, o.y) || 0.001;
   for (let i = 0; i < RINGS.length; i++){
+    if (o.police) break;   // police walk through their own barricades
     const r = RINGS[i], off = d - r;
     if (Math.abs(off) < rad + 15){
       const ang = Math.atan2(o.y, o.x);
@@ -312,6 +315,7 @@ function nearestHospital(p){ return HOSPITALS.reduce((b, h) => !b || dist(h, p) 
 
 // ---------- update ----------
 function update(dt){
+  if (role === 'police'){ updatePolice(dt); return; }
   game.t += dt; game.msgT -= dt; game.flash = Math.max(0, game.flash - dt);
   for (let i = fx.length - 1; i >= 0; i--){ fx[i].t += dt; if (fx[i].t > (fx[i].kind === 'boom' ? 1.1 : fx[i].kind === 'dust' ? 0.9 : 0.3)) fx.splice(i, 1); }
   game.day = Math.min(MAX_DAY, 1 + Math.floor(game.t / DAY_SECONDS));
@@ -435,6 +439,253 @@ function update(dt){
   game.contested = pIn && !!rivalAhead;
   if (pIn && followers.length + 1 >= NEED_CROWD && !rivalAhead) game.hold += dt; else game.hold = Math.max(0, game.hold - dt);
   if (game.hold >= NEED_HOLD) end(true);
+}
+
+// ---------- police side: you lead the police, the protesters are AI ----------
+const P_SPEED = 235, HIT_BASE = 70, SQUAD_MAX = 14;
+function newPoliceGame(){
+  gates = []; stalls = []; teas = []; shutdowns = []; bubbles = []; toasts = []; fx = []; smokes = []; marchers = []; rivals = [];
+  RINGS.forEach((r, i) => {
+    const n = GATES_PER_RING[i], base = rand(-Math.PI, Math.PI);
+    for (let k = 0; k < n; k++){ const ang = base + k * 2 * Math.PI / n, p = polar(ang, r); gates.push({r, ring: i, ang, x: p.x, y: p.y, need: GATE_NEEDS[i], open: 0}); }
+  });
+  neutrals = []; followers = []; patrols = [];
+  for (let z = 0; z < 4; z++){
+    const r0 = ZR[z + 1] + 70, r1 = ZR[z] - 70;
+    for (let i = 0; i < BYSTANDERS[z]; i++){ const p = spawnIn(Math.max(r0, 60), r1); neutrals.push(mkNeutral(p.x, p.y)); }
+    for (let i = 0; i < 2; i++){ const p = spawnIn(Math.max(r0, 220), r1); stalls.push({x: p.x, y: p.y, r: 55}); }
+    for (let i = 0; i < POLICE_PER_ZONE[z]; i++) patrols.push(mkPatrol(z));   // officers waiting to join you
+  }
+  player = {x: -57, y: -320, r: 12, morale: 100, injured: false, skin: pick(SKINS), moving: false, hidden: false, swing: 0, fx: 0, fy: 1, police: true};
+  game = {t: 0, day: 1, hold: 0, started: true, mode: 'play', msg: '', msgT: 0, flash: 0, van: null, arrest: null, contested: false,
+    anger: 0, lastForce: 0, smoke: 3, gun: 6, refSmoke: 18, refGun: 12, cdS: 0, cdG: 0, cdSm: 0, spawnT: 3, bystT: 4, reinT: 30, chantT: 6, cone: null, hit: null,
+    stats: {dispersed: 0, squadPeak: 1, smokes: 0, shots: 0, strikes: 0}};
+  for (let i = 0; i < 5; i++){ const p = spawnIn(2400, 2900); marchers.push(mkCrowd(p.x, p.y, 3, 10 + i * 3)); }
+  say(IS_TOUCH ? 'Use STRIKE, SMOKE and FIRE. Walk into officers to recruit them.' : 'Click or Space: strike. G: smoke. F: fire. Walk into officers to recruit them.', 6);
+}
+function mkCrowd(x, y, n, delay){
+  const c = {x, y, members: [], delay, moving: false, hp: 2, smokeT: 0, recT: 0, stun: 0, holdT: 0};
+  for (let i = 0; i < n; i++) c.members.push({x: x + rand(-30, 30), y: y + rand(-30, 30), skin: pick(SKINS)});
+  return c;
+}
+function addAnger(n){ game.anger = Math.min(100, game.anger + n); game.lastForce = 0; }
+function scatter(r, k, ox, oy){   // members run away and stay out of the march for a while
+  let c = 0;
+  for (let i = 0; i < k && r.members.length; i++){
+    const m = r.members.pop(), a = Math.atan2(m.y - oy, m.x - ox), nb = mkNeutral(m.x, m.y);
+    nb.skin = m.skin; nb.cool = 9; nb.rcool = 14; nb.vx = Math.cos(a) * 90; nb.vy = Math.sin(a) * 90; nb.wt = 1.5; neutrals.push(nb); c++;
+  }
+  return c;
+}
+function disperse(r){
+  if (r.dead) return; r.dead = true;
+  const nb = mkNeutral(r.x, r.y); nb.cool = 9; nb.rcool = 14; nb.vx = rand(-90, 90); nb.vy = rand(-90, 90); nb.wt = 1.5; neutrals.push(nb);
+  game.stats.dispersed++; sfxChime(); say('Crowd dispersed! ' + game.stats.dispersed + ' of ' + DISPERSE_GOAL, 2.5);
+}
+function canAct(){ return role === 'police' && game && game.started && game.mode === 'play'; }
+function doStrike(){
+  if (!canAct() || game.cdS > 0) return;
+  game.cdS = 0.5; player.swing = 0.35; followers.forEach(f => f.swing = 0.35); sfxWhack(); game.hit = {x: player.x, y: player.y, t: 0}; game.stats.strikes++;
+  let hit = false; const k = 2 + Math.floor(followers.length / 2);
+  for (const r of marchers){
+    if (r.dead) continue;
+    if (dist(player, r) < HIT_BASE + Math.min(60, 11 * Math.sqrt(r.members.length))){
+      hit = true;
+      if (r.members.length) scatter(r, k, player.x, player.y); else { r.hp--; r.stun = 1; if (r.hp <= 0) disperse(r); }
+    }
+  }
+  if (hit) addAnger(3);
+}
+function doSmoke(){
+  if (!canAct() || game.cdSm > 0) return;
+  if (game.smoke <= 0){ say('Out of smoke grenades. One comes back every few seconds.', 2); return; }
+  game.cdSm = 1.2; game.smoke--; game.stats.smokes++; addAnger(10); sfxGrenade();
+  smokes.push({x: player.x + player.fx * 90, y: player.y + player.fy * 90, t: 0, life: 5.5, r: 110 + Math.min(40, followers.length * 4)});
+}
+function doGun(){
+  if (!canAct() || game.cdG > 0) return;
+  if (game.gun <= 0){ say('Out of rounds. One comes back every few seconds.', 2); return; }
+  game.cdG = 0.45; game.gun--; game.stats.shots++; addAnger(12); sfxGunshot();
+  const ang = Math.atan2(player.fy, player.fx);
+  addFx(player.x + player.fx * 26, player.y + player.fy * 26 - 10, 'shot');
+  game.cone = {x: player.x, y: player.y, ang, t: 0};
+  for (const r of marchers){   // warning shots scatter people; nobody is hurt
+    if (r.dead) continue;
+    const d = dist(player, r); if (d > 300) continue;
+    const diff = Math.abs(wrap(Math.atan2(r.y - player.y, r.x - player.x) - ang));
+    if (diff < 0.5 + (22 + 11 * Math.sqrt(r.members.length)) / Math.max(60, d)){
+      if (r.members.length) scatter(r, 3 + Math.floor(followers.length / 4), player.x, player.y); else { r.hp--; r.stun = 2; if (r.hp <= 0) disperse(r); }
+    }
+  }
+}
+function doAction(id){ if (id === 'strike'){ input.strike = true; doStrike(); } else if (id === 'smoke') doSmoke(); else if (id === 'gun') doGun(); }
+function crowdNeed(r){ const dr = Math.hypot(r.x, r.y), ri = RINGS.findIndex(rr => rr < dr - 20); return ri >= 0 ? GATE_NEEDS[ri] : NEED_CROWD; }
+function spawnCrowd(){
+  const z = Math.random() < 0.65 ? 0 : 1, p = spawnIn(ZR[z + 1] + 100, ZR[z] - 120);
+  if (Math.hypot(p.x - player.x, p.y - player.y) < 700) return false;
+  marchers.push(mkCrowd(p.x, p.y, 3, game.t + 8)); return true;
+}
+function updateCrowds(dt){
+  const G = game;
+  for (const r of marchers){
+    if (r.dead) continue;
+    r.moving = false; r.stun = Math.max(0, r.stun - dt);
+    const smoke = smokes.find(s => dist(s, r) < s.r);
+    if (smoke){
+      r.smk = (r.smk || 0) - dt;
+      if (r.smk <= 0 && r.members.length){ r.smk = 0.9; scatter(r, 1, smoke.x, smoke.y); }
+      if (!r.members.length){ r.smokeT += dt; if (r.smokeT > 2.2){ disperse(r); continue; } }
+    }
+    const n = r.members.length, need = crowdNeed(r), z = zoneOf(r.x, r.y);
+    let tgt = null, best = 1e9;
+    if (n < Math.max(need, 6) && n < MARCH_MAX) for (const nb of neutrals){ const dd = dist(nb, r); if (nb.cool <= 0 && !(nb.rcool > 0) && dd < best && dd < 800 && zoneOf(nb.x, nb.y) === z){ best = dd; tgt = nb; } }
+    if (!tgt && n < need && G.t > r.delay){   // nobody left to recruit nearby: join the nearest other crowd
+      let o = null, bd = 1e9; for (const q of marchers) if (q !== r && !q.dead){ const dd = dist(q, r); if (dd < bd){ bd = dd; o = q; } }
+      if (o) tgt = o;
+    }
+    if (!tgt && G.t > r.delay){
+      const dr = Math.hypot(r.x, r.y), ri = RINGS.findIndex(rr => rr < dr - 20);
+      if (ri >= 0){
+        const g = gates.filter(g => g.ring === ri).sort((a, b) => dist(a, r) - dist(b, r))[0];
+        tgt = g.open >= 1 ? polar(g.ang, g.r - 90) : polar(g.ang, g.r + 70);
+      } else tgt = {x: 0, y: 0};
+    }
+    if (tgt && r.stun <= 0){
+      const tdx = tgt.x - r.x, tdy = tgt.y - r.y, td = Math.hypot(tdx, tdy);
+      if (td > 6){ const sp = Math.max(38, 82 - n * 1.2) * (smoke ? 0.35 : 1); r.x += tdx / td * sp * dt; r.y += tdy / td * sp * dt; r.moving = true; }
+    }
+    collide(r, 12);
+    followRing(r.members, r, dt);
+    // recruiting: quicker when public anger is high
+    r.recT -= dt;
+    if (r.recT <= 0 && r.members.length < MARCH_MAX){
+      const rr = 24 + G.anger * 0.25, ri2 = neutrals.findIndex(nb => nb.cool <= 0 && !(nb.rcool > 0) && dist(nb, r) < rr);
+      if (ri2 >= 0){ const nb = neutrals.splice(ri2, 1)[0]; r.members.push({x: nb.x, y: nb.y, skin: nb.skin}); r.recT = 1.1 / (1 + G.anger / 50); }
+    }
+    // two crowds that meet join up
+    for (const q of marchers){
+      if (q === r || q.dead || r.dead) continue;
+      if (dist(q, r) < 45 && (r.members.length > q.members.length || (r.members.length === q.members.length && marchers.indexOf(r) < marchers.indexOf(q)))){
+        r.members.push(...q.members.slice(0, Math.max(0, MARCH_MAX - r.members.length)), {x: q.x, y: q.y, skin: SKINS[0]}); q.dead = true;
+      }
+    }
+    for (const g of gates) if (g.open < 1 && dist(r, g) < 130 && r.members.length >= g.need) g.open = Math.min(1, g.open + dt / 3);
+    if (dist(r, GOAL) < GOAL.r && r.members.length + 1 >= NEED_CROWD) r.holdT += dt; else r.holdT = Math.max(0, r.holdT - dt);
+  }
+  marchers = marchers.filter(r => !r.dead);
+  G.hold = marchers.reduce((m, r) => Math.max(m, r.holdT), 0);
+}
+function updatePolice(dt){
+  const G = game; if (!G.started) return;
+  G.t += dt; G.msgT -= dt; G.flash = Math.max(0, G.flash - dt); G.day = 1 + Math.floor(G.t / DAY_SECONDS);
+  for (let i = fx.length - 1; i >= 0; i--){ fx[i].t += dt; if (fx[i].t > (fx[i].kind === 'boom' ? 1.1 : fx[i].kind === 'dust' ? 0.9 : 0.3)) fx.splice(i, 1); }
+  for (let i = smokes.length - 1; i >= 0; i--){ smokes[i].t += dt; if (smokes[i].t > smokes[i].life) smokes.splice(i, 1); }
+  if (G.cone){ G.cone.t += dt; if (G.cone.t > 0.2) G.cone = null; }
+  if (G.hit){ G.hit.t += dt; if (G.hit.t > 0.25) G.hit = null; }
+  updateBubbles(dt);
+  player.swing = Math.max(0, player.swing - dt); followers.forEach(f => f.swing = Math.max(0, (f.swing || 0) - dt));
+  G.cdS = Math.max(0, G.cdS - dt); G.cdG = Math.max(0, G.cdG - dt); G.cdSm = Math.max(0, G.cdSm - dt);
+  if (G.smoke < 3){ G.refSmoke -= dt; if (G.refSmoke <= 0){ G.smoke++; G.refSmoke = 18; } }
+  if (G.gun < 6){ G.refGun -= dt; if (G.refGun <= 0){ G.gun++; G.refGun = 12; } }
+  G.lastForce += dt; if (G.lastForce > 3) G.anger = Math.max(0, G.anger - 1.4 * dt);
+  if (G.anger >= 100){ endPolice(false, 'anger'); return; }
+
+  // you: faster than any crowd
+  if (pad.id !== null && (pad.ux || pad.uy)){ mouse.x = (player.x + pad.ux * 200 - cam.x) * Z; mouse.y = (player.y + pad.uy * 200 - cam.y) * Z; }
+  const mw = {x: mouse.x / Z + cam.x, y: mouse.y / Z + cam.y}, dx = mw.x - player.x, dy = mw.y - player.y, d = Math.hypot(dx, dy);
+  const speed = Math.max(170, P_SPEED - followers.length * 3);
+  player.moving = d > 8;
+  if (player.moving){ player.x += dx / d * speed * dt; player.y += dy / d * speed * dt; player.fx = dx / d; player.fy = dy / d; }
+  collide(player, player.r);
+  followRing(followers, player, dt);
+  if (input.strike) doStrike();
+
+  // bystanders wander; crowds recruit them
+  for (const n of neutrals){
+    n.cool -= dt; n.wt -= dt; n.rcool = Math.max(0, (n.rcool || 0) - dt);
+    if (n.wt <= 0){ const a = rand(0, 6.28), sp = rand(0, 25); n.vx = Math.cos(a) * sp; n.vy = Math.sin(a) * sp; n.wt = rand(1, 3); }
+    n.x += n.vx * dt; n.y += n.vy * dt; collide(n, 7);
+  }
+  G.bystT -= dt; if (G.bystT <= 0){ G.bystT = 4; spawnBystander(); }
+
+  // officers waiting on the streets join your squad when you walk up to them
+  for (let i = patrols.length - 1; i >= 0; i--){
+    const p = patrols[i], ddx = p.tx - p.x, ddy = p.ty - p.y, dd = Math.hypot(ddx, ddy);
+    if (dd < 10) pickWaypoint(p); else { p.x += ddx / dd * 40 * dt; p.y += ddy / dd * 40 * dt; }
+    collide(p, 14);
+    if (followers.length < SQUAD_MAX && dist(p, player) < 42){
+      patrols.splice(i, 1); followers.push({x: p.x, y: p.y, skin: p.skin, swing: 0, police: true}); G.stats.squadPeak = Math.max(G.stats.squadPeak, followers.length + 1);
+      sfxJoin(); say('An officer joins your squad (' + (followers.length + 1) + ')', 2);
+    }
+  }
+  G.reinT -= dt; if (G.reinT <= 0){ G.reinT = 30; if (patrols.length < 6) patrols.push(mkPatrol(Math.floor(Math.random() * 4))); }
+
+  // crowds
+  updateCrowds(dt);
+  G.spawnT -= dt; if (G.spawnT <= 0){ G.spawnT = Math.max(8, 18 - G.day * 0.3); if (marchers.length < 8) spawnCrowd(); }
+  G.chantT -= dt;
+  if (G.chantT <= 0){
+    G.chantT = 5;
+    const near = marchers.filter(r => dist(r, player) < 520 && r.members.length >= 2);
+    if (near.length){ const r = pick(near), c = pick(CHANTS); bubble(r, c.call[0], c.call[1], 1.6); }
+  }
+  // gates: open for a big enough crowd, close again when nobody is there
+  for (const g of gates){
+    if (g.open >= 1) continue;
+    if (!marchers.some(r => dist(r, g) < 130 && r.members.length >= g.need)) g.open = Math.max(0, g.open - dt * 0.5);
+  }
+  for (const g of gates) if (g.open >= 1 && !g.broken){ g.broken = true; if (dist(player, g) < 1200){ sfxWallBreak(); addFx(g.x, g.y, 'dust'); } }
+  if (G.hold >= NEED_HOLD){ endPolice(false, 'held'); return; }
+  if (G.stats.dispersed >= DISPERSE_GOAL) endPolice(true);
+}
+function policeScore(won, live){
+  const st = game.stats; let sc = st.dispersed * 100 + st.squadPeak * 10;
+  if (won) sc += 1000 + Math.max(0, Math.round((420 - game.t) * 3)) + Math.round((100 - game.anger) * 4);
+  else if (!live) sc = Math.round(sc * 0.7);
+  return Math.round(sc);
+}
+function endPolice(won, why){
+  stopSiren(); game.started = false; input.strike = false;
+  const st = game.stats, score = policeScore(won), rank = PRANKS.reduce((b, r) => score >= r.min ? r : b, PRANKS[0]);
+  let tag;
+  if (won) tag = game.anger < 25 ? PTAGS.calm : game.t < 260 ? PTAGS.swift : st.squadPeak >= 10 ? PTAGS.full : st.smokes >= 5 ? PTAGS.smoke : PTAGS.steady;
+  else tag = why === 'anger' ? PTAGS.overreach : st.squadPeak < 5 ? PTAGS.outnumbered : PTAGS.slow;
+  const nxt = PRANKS.find(r => r.min > score);
+  const nextText = nxt ? ['NEXT: ' + nxt.bn, (nxt.min - score).toLocaleString('en-US') + ' pts'] : ['NEXT RANK', 'Maxed'];
+  let best = 0, newBest = false; try { best = +localStorage.getItem('da_best_police') || 0; if (score > best){ newBest = best > 0; localStorage.setItem('da_best_police', String(score)); best = score; } } catch (e) {}
+  const cardInfo = {role: 'police', name: playerName, skin: player.skin, score, rankBn: rank.bn, tagBn: tag.bn, tagDesc: tag.desc, day: game.day, best, newBest, nextText,
+    stampLabel: won ? 'ORDER HELD' : why === 'anger' ? 'STOOD DOWN' : 'LINE BROKEN', stampSub: won ? 'SQUARE SECURED' : why === 'anger' ? 'TOO MUCH FORCE' : 'MINAR HELD',
+    stampCol: won ? '#1f4e79' : '#a32d2d', dayText: 'Andolon · Day ' + game.day,
+    row2Title: 'Crowds dispersed', row2Value: st.dispersed, row2Desc: 'Marches broken up before the Minar.', foot3: ['SQUAD PEAK', String(st.squadPeak)]};
+  const build = () => renderCard(won ? 'win' : 'lose', Object.assign({photo: playerPhoto}, cardInfo));
+  let canvas = build();
+  const box = document.getElementById('card');
+  const head = won ? '<h1>Order <span>restored!</span></h1><p>Your squad dispersed <b>' + st.dispersed + '</b> crowds by <b>Day ' + game.day + '</b>.</p>'
+    : why === 'anger' ? '<h1>Stood <span>down</span></h1><p>Too much force: public anger reached its limit and you were pulled back.</p>'
+    : '<h1>The Minar <span>was held</span></h1><p>A crowd held the Shaheed Minar. Break up marches sooner next time.</p>';
+  box.innerHTML = head + '<img id="cardimg" alt="Photo card" src="' + canvas.toDataURL('image/png') + '">' +
+    '<label>Put your own photo on the card (optional)<input id="photo2" type="file" accept="image/*"></label>' +
+    '<button id="share">Share card</button><button id="dl" class="alt">' + (IS_TOUCH ? 'Save to Photos' : 'Download') + '</button><button id="go">Patrol again</button>' +
+    (IS_TOUCH ? '<small>Tip: press and hold the card to save it to your Photos.</small><br>' : '') +
+    (playerPhoto ? '<button id="nophoto" class="alt">Use default avatar</button>' : '') +
+    '<a href="#" class="aboutlink">About &amp; Disclaimer</a><br>' +
+    '<small>Your photo stays on your device. It is only drawn onto this card. Fictional game; characters and events are not real people or incidents.</small>';
+  const text = won ? 'I led the police squad in Andolon and dispersed ' + st.dispersed + ' crowds. ' + rank.en + ', ' + score.toLocaleString('en-US') + ' pts.'
+    : 'The crowds beat my police squad in Andolon. ' + score.toLocaleString('en-US') + ' pts. Can you do better?';
+  const refresh = () => { canvas = build(); document.getElementById('cardimg').src = canvas.toDataURL('image/png'); const b = document.getElementById('nophoto'); if (!b && playerPhoto){ const n = document.createElement('button'); n.id = 'nophoto'; n.className = 'alt'; n.textContent = 'Use default avatar'; n.onclick = () => { playerPhoto = null; n.remove(); refresh(); }; document.getElementById('go').after(n); } };
+  document.getElementById('photo2').onchange = e => loadPhoto(e.target.files[0], refresh);
+  const np = document.getElementById('nophoto'); if (np) np.onclick = () => { playerPhoto = null; np.remove(); refresh(); };
+  document.getElementById('share').onclick = () => shareCard(canvas, text);
+  document.getElementById('dl').onclick = () => downloadCard(canvas);
+  document.getElementById('go').onclick = start;
+  addSwitch();
+  document.getElementById('menu').style.display = 'flex';
+}
+function addSwitch(){   // button on the result screen to play the other side
+  const go = document.getElementById('go'); if (!go) return;
+  const b = document.createElement('button'); b.className = 'alt'; b.textContent = role === 'police' ? 'Play as Andolonkari' : 'Play as Police';
+  b.onclick = () => { role = role === 'police' ? 'protester' : 'police'; try { localStorage.setItem('da_role', role); } catch (e) {} start(); };
+  go.after(b);
 }
 
 // ---------- rival clash ----------
@@ -679,13 +930,20 @@ function draw(){
   // people (depth-sorted)
   const list = [];
   for (const n of neutrals) if (v(n)) list.push([n.y, () => person(ctx, n.x, n.y, {dress: n.dress, skin: n.skin, moving: Math.abs(n.vx) + Math.abs(n.vy) > 4})]);
-  followers.forEach((f, i) => { if (v(f)) list.push([f.y, () => person(ctx, f.x, f.y, {dress: WHITE, skin: f.skin, moving: player.moving, flag: i % 6 === 0, hat: i % 4 === 0 ? 'band' : null})]); });
+  followers.forEach((f, i) => { if (v(f)) list.push([f.y, () => role === 'police'
+    ? person(ctx, f.x, f.y, {dress: BLUE, skin: f.skin, hat: 'cap', legs: '#14284f', scale: 1.3, moving: player.moving, stick: true, swing: (f.swing || 0) / 0.35})
+    : person(ctx, f.x, f.y, {dress: WHITE, skin: f.skin, moving: player.moving, flag: i % 6 === 0, hat: i % 4 === 0 ? 'band' : null})]); });
+  for (const r of marchers){   // AI protester crowds (police side)
+    r.members.forEach((m, i) => { if (v(m)) list.push([m.y, () => person(ctx, m.x, m.y, {dress: WHITE, skin: m.skin, moving: r.moving, flag: i % 6 === 0, hat: i % 4 === 0 ? 'band' : null})]); });
+    list.push([r.y, () => { person(ctx, r.x, r.y, {dress: WHITE, skin: SKINS[1], hat: 'band', scale: 1.25, moving: r.moving, flag: true}); label(ctx, 'CROWD ' + (r.members.length + 1), r.x, r.y - 30, 'bold 11px system-ui', '#0b6b3a'); }]);
+  }
   for (const r of rivals){
     r.members.forEach(m => { if (v(m)) list.push([m.y, () => person(ctx, m.x, m.y, {dress: BLACK, skin: m.skin, hat: 'helmet', moving: r.moving})]); });
     list.push([r.y, () => { person(ctx, r.x, r.y, {dress: BLACK, skin: SKINS[1], hat: 'helmet', scale: 1.25, moving: r.moving}); label(ctx, 'RIVAL ' + (r.members.length + 1), r.x, r.y - 28, 'bold 11px system-ui', '#111'); }]);
   }
   if (!player.hidden) list.push([player.y, () => {
-    person(ctx, player.x, player.y, {dress: WHITE, skin: player.skin, hat: 'band', scale: 1.35, moving: player.moving, flag: true});
+    if (role === 'police') person(ctx, player.x, player.y, {dress: BLUE, skin: player.skin, hat: 'cap', legs: '#14284f', scale: 1.4, moving: player.moving, stick: true, swing: player.swing / 0.35});
+    else person(ctx, player.x, player.y, {dress: WHITE, skin: player.skin, hat: 'band', scale: 1.35, moving: player.moving, flag: true});
     // name tag above the head so you can find yourself
     ctx.save(); ctx.translate(player.x, player.y - 36); ctx.scale(zf, zf);   // keeps the tag readable when zoomed out
     ctx.font = 'bold 14px ' + BN_FONT; const nb = inkBounds(ctx.font, playerName), w = textW(ctx, playerName) + 18;
@@ -700,6 +958,16 @@ function draw(){
     person(ctx, p.x, p.y, {dress: BLUE, skin: p.skin, hat: 'cap', legs: '#14284f', scale: 1.3, moving: true, stick: true, swing: p.swing / 0.35});
   }
   if (game.van) drawVan(ctx, game.van);
+  if (role === 'police'){   // smoke clouds, the warning-shot cone and the strike ring
+    for (const sm of smokes){
+      const k = sm.t / sm.life, a = 0.5 * (1 - k * k);
+      ctx.fillStyle = 'rgba(210,210,210,' + (a * 0.55) + ')'; ctx.beginPath(); ctx.arc(sm.x, sm.y, sm.r, 0, 6.28); ctx.fill();
+      ctx.fillStyle = 'rgba(235,235,235,' + a + ')';
+      for (let i = 0; i < 8; i++){ const an = i * 0.785 + sm.t * 0.35, rr = sm.r * (0.5 + 0.12 * Math.sin(sm.t * 2 + i)); ctx.beginPath(); ctx.arc(sm.x + Math.cos(an) * rr * 0.8, sm.y + Math.sin(an) * rr * 0.8, sm.r * 0.34, 0, 6.28); ctx.fill(); }
+    }
+    if (game.cone){ const c = game.cone, a = 0.35 * (1 - c.t / 0.2); ctx.fillStyle = 'rgba(255,230,120,' + a + ')'; ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.arc(c.x, c.y, 300, c.ang - 0.5, c.ang + 0.5); ctx.closePath(); ctx.fill(); }
+    if (game.hit){ const h = game.hit, k = h.t / 0.25; ctx.strokeStyle = 'rgba(255,255,255,' + (0.8 * (1 - k)) + ')'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(h.x, h.y, HIT_BASE * (0.5 + k * 0.6), 0, 6.28); ctx.stroke(); }
+  }
   for (const e of fx){   // gunshot flashes and grenade blasts (smoke and light, nothing graphic)
     if (e.kind === 'shot'){
       const a = 1 - e.t / 0.3; ctx.globalAlpha = a; ctx.fillStyle = '#fff6b0'; ctx.beginPath();
@@ -758,7 +1026,52 @@ function draw(){
 
 function inShutdown(){ return shutdowns.some(s => dist(s, player) < s.r); }
 
+function drawHUDPolice(){
+  const k = Math.max(0.6, Math.min(1, innerWidth / 760, innerHeight / 540)), vw = innerWidth / k, vh = innerHeight / k, G = game, st = G.stats;
+  const barY = vw < 800 ? Math.round(vh * 0.62) : 20;
+  ctx.save(); ctx.scale(k, k); ctx.textAlign = 'left';
+  ctx.fillStyle = 'rgba(0,0,0,.68)'; ctx.fillRect(10, 10, 300, 58);
+  ctx.fillStyle = '#ffd54f'; ctx.font = 'bold 34px system-ui'; ctx.fillText('Day ' + G.day, 22, 52);
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 17px system-ui'; ctx.textAlign = 'right'; ctx.fillText('Dispersed ' + st.dispersed + '/' + DISPERSE_GOAL, 300, 49); ctx.textAlign = 'left';
+  const y0 = 78; ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(10, y0, 240, IS_TOUCH ? 84 : 104);
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 16px system-ui'; ctx.fillText('Squad: ' + (followers.length + 1), 20, y0 + 22);
+  ctx.font = '12px system-ui'; ctx.fillText('Anger', 20, y0 + 44);
+  ctx.fillStyle = '#444'; ctx.fillRect(70, y0 + 35, 170, 10);
+  ctx.fillStyle = G.anger > 70 ? '#e53935' : G.anger > 40 ? '#ffb300' : '#4caf50'; ctx.fillRect(70, y0 + 35, 1.7 * G.anger, 10);
+  ctx.fillStyle = '#fff'; ctx.fillText('Smoke ' + G.smoke + '/3     Rounds ' + G.gun + '/6', 20, y0 + 68);
+  if (!IS_TOUCH){ ctx.fillStyle = '#cfd8dc'; ctx.fillText('Click/Space strike · G smoke · F fire', 20, y0 + 92); }
+  // map top right, arrow to the nearest crowd under it
+  const mr = 62, mx = vw - mr - 12, my = 12 + mr, ay = my + mr + 34, s = mr / MAP_R;
+  ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.beginPath(); ctx.arc(mx, my, mr, 0, 6.28); ctx.fill();
+  ctx.strokeStyle = '#888'; ctx.lineWidth = 1; for (const r of RINGS){ ctx.beginPath(); ctx.arc(mx, my, r * s, 0, 6.28); ctx.stroke(); }
+  ctx.fillStyle = '#4caf50'; ctx.fillRect(mx - 3, my - 3, 6, 6);
+  ctx.fillStyle = '#4a8bff'; for (const p of patrols) ctx.fillRect(mx + p.x * s - 1, my + p.y * s - 1, 3, 3);
+  ctx.fillStyle = '#fff'; ctx.strokeStyle = '#e53935'; for (const r of marchers){ const q = 3 + Math.min(4, r.members.length / 6); ctx.fillRect(mx + r.x * s - q / 2, my + r.y * s - q / 2, q, q); ctx.strokeRect(mx + r.x * s - q / 2, my + r.y * s - q / 2, q, q); }
+  ctx.fillStyle = '#4fc3f7'; ctx.fillRect(mx + player.x * s - 2, my + player.y * s - 2, 5, 5);
+  const near = marchers.reduce((b, r) => !b || dist(r, player) < dist(b, player) ? r : b, null);
+  if (near){
+    const a = Math.atan2(near.y - player.y, near.x - player.x);
+    ctx.save(); ctx.translate(mx, ay); ctx.rotate(a); ctx.fillStyle = '#c8102e'; ctx.beginPath(); ctx.moveTo(24, 0); ctx.lineTo(-12, -14); ctx.lineTo(-6, 0); ctx.lineTo(-12, 14); ctx.fill(); ctx.restore();
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = '11px system-ui'; ctx.fillText((dist(player, near) / 190).toFixed(1) + ' km · ' + (near.members.length + 1) + ' people', mx, ay + 34);
+  }
+  ctx.textAlign = 'center';
+  if (G.hold > 0){
+    ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(vw / 2 - 150, barY, 300, 26);
+    ctx.fillStyle = '#e53935'; ctx.fillRect(vw / 2 - 150, barY, 300 * G.hold / NEED_HOLD, 26);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 14px system-ui'; ctx.fillText('A CROWD IS HOLDING THE MINAR', vw / 2, barY + 18);
+  }
+  if (G.msgT > 0){
+    let mf = 17; ctx.font = 'bold ' + mf + 'px ' + BN_FONT;
+    while (textW(ctx, G.msg) + 30 > vw - 16 && mf > 11){ mf -= 1; ctx.font = 'bold ' + mf + 'px ' + BN_FONT; }
+    const w = textW(ctx, G.msg) + 30, my0 = IS_TOUCH ? Math.round(vh * 0.72) : vh - 110;
+    ctx.fillStyle = 'rgba(0,0,0,.72)'; ctx.fillRect(vw / 2 - w / 2, my0, w, 34);
+    ctx.fillStyle = '#fff'; ctx.fillText(G.msg, vw / 2, my0 + 23);
+  }
+  ctx.restore();
+}
+
 function drawHUD(){
+  if (role === 'police'){ drawHUDPolice(); return; }
   // draw the HUD on a virtual screen that shrinks on small displays so nothing overlaps
   const k = Math.max(0.6, Math.min(1, innerWidth / 760, innerHeight / 540)), vw = innerWidth / k, vh = innerHeight / k;
   const barY = vw < 800 ? Math.round(vh * 0.62) : 20, bannerY = vw < 800 ? Math.round(vh * 0.5) : 70;
@@ -843,7 +1156,10 @@ function starPath(g, cx, cy, R){ g.beginPath(); for (let i = 0; i < 10; i++){ co
 // trading-card layout: gold when the player wins, blue when detained or out of time
 function renderCard(kind, info){
   const W = 720, H = 1000, win = kind === 'win';
-  const T = win ? {frame: '#f2cf45', edge: '#c79a12', strip: '#e8d27a', box: '#f7e9a8', ink: '#412402', art: '#2b2f3a', art2: '#343947', dot: '#d9a93a'}
+  const pol = info.role === 'police';
+  const T = pol ? (win ? {frame: '#e5e4e2', edge: '#8e949a', strip: '#c9cdd1', box: '#f5f6f7', ink: '#1f2328', art: '#2b2f3a', art2: '#343947', dot: '#b9c0c7'}
+                       : {frame: '#8a8f94', edge: '#4a4f54', strip: '#a9adb1', box: '#d3d6d8', ink: '#1a1c1e', art: '#2a2d30', art2: '#34383c', dot: '#6f757a'})
+        : win ? {frame: '#f2cf45', edge: '#c79a12', strip: '#e8d27a', box: '#f7e9a8', ink: '#412402', art: '#2b2f3a', art2: '#343947', dot: '#d9a93a'}
                 : {frame: '#7fb2e5', edge: '#185fa5', strip: '#b5d4f4', box: '#e1eefb', ink: '#042c53', art: '#1d2b4a', art2: '#27406b', dot: '#378add'};
   const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
   g.fillStyle = T.frame; rrect(g, 0, 0, W, H, 38); g.fill();
@@ -869,11 +1185,12 @@ function renderCard(kind, info){
     const im = info.photo, k = Math.max(AW / im.width, AH / im.height), dw = im.width * k, dh = im.height * k;
     if (!win) g.filter = 'grayscale(0.7)';
     g.drawImage(im, (AW - dw) / 2 - AW / 2, (AH - dh) / 2, dw, dh); g.filter = 'none';
-  } else person(g, 0, AH - 100, {dress: WHITE, skin: info.skin, hat: 'band', scale: 9, flag: win});
+  } else if (pol) person(g, 0, AH - 100, {dress: BLUE, skin: info.skin, hat: 'cap', legs: '#14284f', scale: 9, stick: true});
+  else person(g, 0, AH - 100, {dress: WHITE, skin: info.skin, hat: 'band', scale: 9, flag: win});
   g.save(); g.translate(0, info.photo ? AH - 100 : 80); g.rotate(-0.2);
-  const col = win ? '#27500a' : info.station ? '#c8102e' : '#5f5e5a';
-  const label = win ? 'VICTORY' : info.station ? 'DETAINED' : 'TIME UP';
-  const sub = win ? 'HELD THE MINAR' : info.station ? info.station.toUpperCase() : 'DAY ' + MAX_DAY + ' ENDED';
+  const col = info.stampCol || (win ? '#27500a' : info.station ? '#c8102e' : '#5f5e5a');
+  const label = info.stampLabel || (win ? 'VICTORY' : info.station ? 'DETAINED' : 'TIME UP');
+  const sub = info.stampSub || (win ? 'HELD THE MINAR' : info.station ? info.station.toUpperCase() : 'DAY ' + MAX_DAY + ' ENDED');
   g.textAlign = 'center'; fitText(g, label, 440, 76, 'bold', 'system-ui'); const lw = g.measureText(label).width;
   fitText(g, sub, 440, 30, 'bold', 'system-ui'); const sbw = g.measureText(sub).width, bw = Math.max(lw, sbw, 240) + 44;
   g.fillStyle = 'rgba(247,244,234,.8)'; g.strokeStyle = col; g.lineWidth = 8; g.globalAlpha = 0.92; g.fillRect(-bw / 2, -62, bw, 140); g.strokeRect(-bw / 2, -62, bw, 140);
@@ -884,7 +1201,7 @@ function renderCard(kind, info){
   // rank strip
   g.fillStyle = T.strip; g.fillRect(AX, AY + AH + 14, AW, 40);
   g.fillStyle = T.ink; g.textAlign = 'left'; g.font = 'bold 24px ' + BN_FONT; g.fillText(info.rankBn, AX + 14, AY + AH + 43);
-  g.textAlign = 'right'; g.font = 'italic 20px system-ui'; g.fillText('Andolon · Day ' + info.day + ' of ' + MAX_DAY, AX + AW - 14, AY + AH + 42);
+  g.textAlign = 'right'; g.font = 'italic 20px system-ui'; g.fillText(info.dayText || 'Andolon · Day ' + info.day + ' of ' + MAX_DAY, AX + AW - 14, AY + AH + 42);
 
   // two "attack" rows: special tag, peak crowd
   const BY = AY + AH + 68;
@@ -899,11 +1216,11 @@ function renderCard(kind, info){
     g.textAlign = 'left'; fitText(g, desc, AW - 100, 21, 'normal', 'system-ui'); g.fillText(desc, AX + 74, y + 42);
   };
   row(BY + 42, info.tagBn, null, info.tagDesc, 'star');
-  row(BY + 144, 'Peak crowd', info.peak, 'Most people marching with you at once.', 'crowd');
+  row(BY + 144, info.row2Title || 'Peak crowd', info.row2Value != null ? info.row2Value : info.peak, info.row2Desc || 'Most people marching with you at once.', 'crowd');
 
   // footer stats
   const FY = BY + 232 + 26, cw = AW / 3;
-  const foot = [[info.nextText[0], info.nextText[1]], [info.newBest ? 'NEW BEST' : 'BEST SCORE', info.best.toLocaleString('en-US')], ['BARRICADES', info.rings + ' of ' + RINGS.length]];
+  const foot = [[info.nextText[0], info.nextText[1]], [info.newBest ? 'NEW BEST' : 'BEST SCORE', info.best.toLocaleString('en-US')], info.foot3 || ['BARRICADES', info.rings + ' of ' + RINGS.length]];
   g.textAlign = 'center';
   foot.forEach((f, i) => { const x = AX + cw * i + cw / 2; g.fillStyle = T.ink; g.font = '17px system-ui'; g.fillText(f[0], x, FY); g.font = 'bold 28px system-ui'; g.fillText(f[1], x, FY + 32); });
   g.font = '16px system-ui'; g.textAlign = 'left'; g.fillText('Fictional game · Play Andolon' + (location.protocol.startsWith('http') ? ' · ' + location.host + location.pathname.replace(/index\.html$/, '').replace(/\/$/, '') : ''), AX, H - 22);
@@ -1015,6 +1332,7 @@ function end(won, info){
   document.getElementById('share').onclick = () => shareCard(canvas, text);
   document.getElementById('dl').onclick = () => downloadCard(canvas);
   document.getElementById('go').onclick = start;
+  addSwitch();
   document.getElementById('menu').style.display = 'flex';
 }
 
@@ -1028,17 +1346,42 @@ function frame(ts){
 }
 function start(){
   const inp = document.getElementById('pname');
-  if (inp && inp.value.trim()) playerName = inp.value.trim();
+  const typed = inp ? inp.value.trim() : '';
+  if (typed && typed !== 'Protester' && typed !== 'Officer') playerName = typed;
+  else if (playerName === 'Protester' || playerName === 'Officer') playerName = role === 'police' ? 'Officer' : 'Protester';
   try { localStorage.setItem('da_name', playerName); } catch (e) {}
   ac();   // unlock audio on the user's click
   document.getElementById('menu').style.display = 'none';
-  newGame();
+  if (role === 'police') newPoliceGame(); else newGame();
 }
 document.getElementById('go').onclick = start;
 const mb = document.getElementById('mute'); if (mb) mb.onclick = toggleMute;
-const rulesEl = document.getElementById('rules'); if (rulesEl && innerWidth > 640) rulesEl.open = true;   // rules start folded on phones
+function showRole(){
+  const a = document.getElementById('role-prot'), b = document.getElementById('role-pol'); if (!a || !b) return;
+  a.classList.toggle('sel', role === 'protester'); b.classList.toggle('sel', role === 'police');
+  const r1 = document.getElementById('rules'), r2 = document.getElementById('rules2'); if (r1) r1.style.display = role === 'police' ? 'none' : ''; if (r2) r2.style.display = role === 'police' ? '' : 'none';
+  const pn = document.getElementById('pname'); if (pn) pn.placeholder = role === 'police' ? 'Officer' : 'Protester';
+  const go = document.getElementById('go'); if (go) go.textContent = role === 'police' ? 'Start patrol' : 'Start marching';
+}
+try { if (localStorage.getItem('da_role') === 'police') role = 'police'; } catch (e) {}
+if (document.getElementById('role-prot')){
+  document.getElementById('role-prot').onclick = () => { role = 'protester'; try { localStorage.setItem('da_role', role); } catch (e) {} showRole(); };
+  document.getElementById('role-pol').onclick = () => { role = 'police'; try { localStorage.setItem('da_role', role); } catch (e) {} showRole(); };
+  showRole();
+}
+const rulesEl = document.getElementById('rules'); if (rulesEl && innerWidth > 640) rulesEl.open = true;
+const rules2El = document.getElementById('rules2'); if (rules2El && innerWidth > 640) rules2El.open = true;   // rules start folded on phones
 document.getElementById('photo').onchange = e => loadPhoto(e.target.files[0]);
 cv.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+cv.addEventListener('mousedown', e => { if (role === 'police' && e.button === 0){ input.strike = true; doStrike(); } });
+addEventListener('mouseup', () => { input.strike = false; });
+addEventListener('keydown', e => {
+  if (role !== 'police' || !game || !game.started) return;
+  if (e.code === 'Space'){ e.preventDefault(); input.strike = true; doStrike(); }
+  else if (e.key === 'g' || e.key === 'G') doSmoke();
+  else if (e.key === 'f' || e.key === 'F') doGun();
+});
+addEventListener('keyup', e => { if (e.code === 'Space') input.strike = false; });
 // touch: a round pad at the bottom right. Touch and hold a direction on it to walk that way; lift to stop.
 // (touching anywhere else on the screen still walks toward the finger)
 const IS_TOUCH = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -1053,8 +1396,15 @@ function padSet(t){
 }
 const onPad = t => { const g = padGeom(); return Math.hypot(t.clientX - g.x, t.clientY - g.y) < g.R * 1.5; };
 const screenWalk = t => { mouse.x = t.clientX; mouse.y = t.clientY; };
+const actIds = new Map();   // touches that are holding an action button (police side)
+const actGeom = () => { const H = innerHeight; return [{id: 'strike', x: 64, y: H - 96, r: 42, t: 'STRIKE'}, {id: 'smoke', x: 150, y: H - 70, r: 30, t: 'SMOKE'}, {id: 'gun', x: 72, y: H - 182, r: 30, t: 'FIRE'}]; };
 const touchGo = e => {
   for (const t of e.changedTouches){
+    if (role === 'police' && e.type === 'touchstart'){
+      const a = actGeom().find(b => Math.hypot(t.clientX - b.x, t.clientY - b.y) < b.r + 10);
+      if (a){ actIds.set(t.identifier, a.id); doAction(a.id); continue; }
+    }
+    if (actIds.has(t.identifier)) continue;
     if (pad.id === t.identifier) padSet(t);
     else if (pad.id === null && e.type === 'touchstart' && onPad(t)){ pad.id = t.identifier; padSet(t); }
     else if (pad.id === null) screenWalk(t);
@@ -1063,6 +1413,7 @@ const touchGo = e => {
 };
 const touchEnd = e => {
   for (const t of e.changedTouches){
+    if (actIds.has(t.identifier)){ if (actIds.get(t.identifier) === 'strike') input.strike = false; actIds.delete(t.identifier); continue; }
     if (t.identifier === pad.id){ pad.id = null; pad.kx = pad.ky = pad.ux = pad.uy = 0; stopWalk(); }
     else if (pad.id === null) stopWalk();
   }
@@ -1080,6 +1431,16 @@ function drawPad(){
   for (let i = 0; i < 4; i++){ ctx.save(); ctx.rotate(i * Math.PI / 2); ctx.beginPath(); ctx.moveTo(g.R - 10, 0); ctx.lineTo(g.R - 22, -8); ctx.lineTo(g.R - 22, 8); ctx.fill(); ctx.restore(); }
   ctx.fillStyle = on ? '#fff' : 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.arc(pad.kx * 0.75, pad.ky * 0.75, g.R * 0.36, 0, 6.283); ctx.fill();
   ctx.restore();
+  if (role === 'police') drawActions();
+}
+function drawActions(){
+  for (const b of actGeom()){
+    const held = b.id === 'strike' && input.strike, cnt = b.id === 'smoke' ? game.smoke : b.id === 'gun' ? game.gun : null;
+    ctx.fillStyle = held ? 'rgba(255,255,255,.5)' : 'rgba(20,40,80,.55)'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 6.283); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = 'bold ' + (b.r > 35 ? 14 : 11) + 'px system-ui'; ctx.fillText(b.t, b.x, b.y + (cnt === null ? 5 : 0));
+    if (cnt !== null){ ctx.font = 'bold 13px system-ui'; ctx.fillStyle = cnt ? '#ffd54f' : '#ff8a80'; ctx.fillText(String(cnt), b.x, b.y + 15); }
+  }
 }
 // breaking news: one long line that scrolls by itself (the text is doubled so the loop is seamless)
 const tk = document.getElementById('tk');
