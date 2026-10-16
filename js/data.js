@@ -138,6 +138,8 @@ const PTAGS = {
   outnumbered: {bn: 'সংখ্যায় কম',      en: 'Outnumbered',     desc: 'Too few officers to hold the line.'},
 };
 
-// Optional support ("Buy your Neta a cha"). Leave all three empty to hide it everywhere.
-// bkashQr: path to a QR image you add, e.g. 'img/bkash-qr.png'. bkashNumber: shown under the QR. coffeeUrl: a Buy Me a Coffee / Ko-fi page.
-const SUPPORT = {bkashQr: '', bkashNumber: '', coffeeUrl: ''};
+// Optional support ("Buy your Neta a cha"). Leave all empty to hide it everywhere.
+// bkashNumber: shown with a Copy button. coffeeUrl: a Buy Me a Coffee / Ko-fi page.
+const SUPPORT = {bkashNumber: '', coffeeUrl: ''};
+// Optional WhatsApp group for game updates. qr: path to your QR image, e.g. 'img/whatsapp-qr.png'. link: the group invite link (lets phone users tap instead of scan).
+const WHATSAPP = {qr: '', link: ''};

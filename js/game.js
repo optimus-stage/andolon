@@ -1596,11 +1596,20 @@ mouse.x = innerWidth / 2; mouse.y = innerHeight / 2;
 requestAnimationFrame(frame);
 
 // ---------- optional support line: "Buy your Neta a cha" ----------
-const hasSupport = () => !!(SUPPORT.bkashQr || SUPPORT.bkashNumber || SUPPORT.coffeeUrl);
+const hasSupport = () => !!(SUPPORT.bkashNumber || SUPPORT.coffeeUrl);
+const hasWhatsapp = () => !!(WHATSAPP.qr || WHATSAPP.link);
 function supportHTML(){
-  if (!hasSupport()) return '';
+  if (!hasSupport() && !hasWhatsapp()) return '';
+  return (hasSupport() ? coffeeHTML() : '') + (hasWhatsapp() ? whatsappHTML() : '');
+}
+function whatsappHTML(){
+  let p = '<div class="wtext">New updates are coming. Join the WhatsApp group to hear first' + (WHATSAPP.qr ? ': scan the QR code.' : '.') + '</div>';
+  if (WHATSAPP.qr) p += '<img class="waqr" alt="WhatsApp group QR code" src="' + WHATSAPP.qr + '">';
+  if (WHATSAPP.link) p += '<a class="wabtn" href="' + WHATSAPP.link + '" target="_blank" rel="noopener">Open WhatsApp group</a>';
+  return '<div class="support"><button type="button" class="supportbtn wa alt">Get game updates on WhatsApp</button><div class="supportpanel">' + p + '</div></div>';
+}
+function coffeeHTML(){
   let p = '';
-  if (SUPPORT.bkashQr) p += '<img class="bkqr" alt="bKash QR" src="' + SUPPORT.bkashQr + '">';
   if (SUPPORT.bkashNumber) p += '<div class="bknum">bKash (Send Money): <b>' + SUPPORT.bkashNumber + '</b> <button type="button" class="copybtn alt" data-num="' + SUPPORT.bkashNumber + '">Copy</button></div>';
   if (SUPPORT.coffeeUrl) p += '<a class="coffeelink" href="' + SUPPORT.coffeeUrl + '" target="_blank" rel="noopener">Coffee link</a>';
   p += '<small>Optional and non-refundable. It does not unlock anything in the game.</small>';
