@@ -1596,7 +1596,7 @@ mouse.x = innerWidth / 2; mouse.y = innerHeight / 2;
 requestAnimationFrame(frame);
 
 // ---------- optional support line: "Buy your Neta a cha" ----------
-const hasSupport = () => !!SUPPORT.bkashNumber;
+const hasSupport = () => !!(SUPPORT.bkashNumber || SUPPORT.closedMessage);
 const hasWhatsapp = () => !!(WHATSAPP.qr || WHATSAPP.link);
 function supportHTML(){
   if (!hasSupport() && !hasWhatsapp()) return '';
@@ -1611,7 +1611,8 @@ function whatsappHTML(){
 function coffeeHTML(){
   let p = '';
   if (SUPPORT.bkashNumber) p += '<div class="bknum">bKash (Send Money): <b>' + SUPPORT.bkashNumber + '</b> <button type="button" class="copybtn alt" data-num="' + SUPPORT.bkashNumber + '">Copy</button></div>';
-  p += '<small>Optional and non-refundable. It does not unlock anything in the game.</small>';
+  if (!SUPPORT.bkashNumber && SUPPORT.closedMessage) p += '<div class="bknum">' + SUPPORT.closedMessage + '</div>';
+  else p += '<small>Optional and non-refundable. It does not unlock anything in the game.</small>';
   return '<div class="support"><button type="button" class="supportbtn alt">Enjoyed the game? Gift your Neta a cup of tea 🍵</button><div class="supportpanel">' + p + '</div></div>';
 }
 document.addEventListener('click', e => {
