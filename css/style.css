@@ -99,3 +99,12 @@ details.full li{font-size:16px}
 .rotphone{display:inline-block;font-size:64px;animation:rotphone 2s ease-in-out infinite}
 @keyframes rotphone{0%,25%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
 @media (prefers-reduced-motion:reduce){.rotphone{animation:none}}
+
+/* install tip (touch devices only, set by main.js) */
+#installtip{display:none;margin-top:10px;font-size:13px;color:#44604c}
+
+/* short screens (phones in landscape): a thin news ticker so the game gets more room */
+@media (max-height:500px){
+  #ticker{font-size:11px;padding:2px 10px calc(2px + env(safe-area-inset-bottom));gap:8px}
+  #ticker b{padding:0 6px;font-size:10px}
+}

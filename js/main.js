@@ -60,7 +60,7 @@ addEventListener('keyup', e => { if (e.code === 'Space') input.strike = false; }
 // (touching anywhere else on the screen still walks toward the finger)
 const IS_TOUCH = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 const pad = {id: null, kx: 0, ky: 0, ux: 0, uy: 0};
-const padGeom = () => { const R = Math.max(46, Math.min(66, innerWidth * 0.16)); return {x: innerWidth - R - 14, y: innerHeight - R - 46, R}; };
+const padGeom = () => { const R = Math.max(46, Math.min(66, innerWidth * 0.16)); return {x: innerWidth - R - 14, y: innerHeight - R - (innerHeight < 500 ? 30 : 46), R}; };
 const stopWalk = () => { mouse.x = vw / 2; mouse.y = vh / 2; };
 function padSet(t){
   const g = padGeom(); let dx = t.clientX - g.x, dy = t.clientY - g.y; const d = Math.hypot(dx, dy);
@@ -168,4 +168,12 @@ document.addEventListener('click', e => { const b = e.target.closest && e.target
   document.getElementById('aboutx').onclick = close;
   box.addEventListener('click', e => { if (e.target === box) close(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+})();
+
+// installable web app: opens full screen from the home screen, without the browser bars
+if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) navigator.serviceWorker.register('sw.js').catch(() => {});
+(function(){
+  const tip = document.getElementById('installtip'); if (!tip) return;
+  const installed = (matchMedia && matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches) || navigator.standalone;
+  if (IS_TOUCH && !installed) tip.style.display = 'block';
 })();
