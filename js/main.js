@@ -16,7 +16,8 @@ function start(){
   document.getElementById('menu').style.display = 'none';
   if (role === 'police') newPoliceGame(); else newGame();
 }
-document.getElementById('go').onclick = start;
+document.getElementById('go').onclick = () => { if (tutSeen(role)) start(); else showTutorial(role, start); };
+const hb = document.getElementById('howbtn'); if (hb) hb.onclick = () => showTutorial(role);
 const mb = document.getElementById('mute'); if (mb) mb.onclick = toggleMute;
 function showRole(){
   const a = document.getElementById('role-prot'), b = document.getElementById('role-pol'); if (!a || !b) return;
@@ -31,8 +32,6 @@ if (document.getElementById('role-prot')){
   document.getElementById('role-pol').onclick = () => { role = 'police'; try { localStorage.setItem('da_role', role); } catch (e) {} showRole(); };
   showRole();
 }
-const rulesEl = document.getElementById('rules'); if (rulesEl && innerWidth > 640) rulesEl.open = true;
-const rules2El = document.getElementById('rules2'); if (rules2El && innerWidth > 640) rules2El.open = true;   // rules start folded on phones
 const photoEl = document.getElementById('photo'); if (photoEl) photoEl.onchange = e => loadPhoto(e.target.files[0]);   // the photo is chosen on the final card
 cv.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
 cv.addEventListener('mousedown', e => { if (role === 'police' && e.button === 0){ input.strike = true; doStrike(); } });
