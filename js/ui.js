@@ -61,8 +61,8 @@ function renderCard(kind, info){
     const im = info.photo, k = Math.max(AW / im.width, AH / im.height), dw = im.width * k, dh = im.height * k;
     if (!win) g.filter = 'grayscale(0.7)';
     g.drawImage(im, (AW - dw) / 2 - AW / 2, (AH - dh) / 2, dw, dh); g.filter = 'none';
-  } else if (pol) person(g, 0, AH - 100, {dress: BLUE, skin: info.skin, hat: 'cap', legs: '#14284f', scale: 9, stick: true});
-  else person(g, 0, AH - 100, {dress: WHITE, skin: info.skin, hat: 'band', scale: 9, flag: win});
+  } else if (pol) person(g, 0, AH - 100, {dress: BLUE, skin: info.skin, hat: 'cap', legs: '#14284f', scale: 9, stick: true, noBase: true});
+  else person(g, 0, AH - 100, {dress: WHITE, skin: info.skin, hat: 'band', scale: 9, flag: win, noBase: true});
   g.save(); g.translate(0, info.photo || tier ? AH - 90 : 80); g.rotate(-0.2);
   const col = info.stampCol || (win ? '#27500a' : info.station ? '#c8102e' : '#5f5e5a');
   const label = info.stampLabel || (win ? 'VICTORY' : info.station ? 'DETAINED' : 'TIME UP');

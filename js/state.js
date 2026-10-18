@@ -26,9 +26,24 @@ function newGame(){
   for (let z = 0; z < 4; z++) for (let i = 0; i < 3; i++) mkRival(z, 60 + rand(0, 180));
   if ('ontouchstart' in window || navigator.maxTouchPoints > 0) say('Touch and hold a direction on the round pad to walk. Lift to stop.', 6);
 }
+// Each person gets a stable look: height, hair, head covering, outfit and legs. It is drawn by person() in render.js.
+function mkLook(){
+  const r = Math.random(), hr = Math.random(), or = Math.random();
+  return {
+    h: 0.9 + Math.random() * 0.22,                                         // height
+    hair: hr < 0.55 ? 'short' : hr < 0.8 ? 'long' : hr < 0.9 ? 'bun' : 'bald',
+    hc: pick(['#1b1210', '#1b1210', '#2a1a10', '#3a2418', '#5a4a40']),      // hair colour
+    head: r < 0.12 ? 'topi' : r < 0.22 ? 'hijab' : null,                    // prayer cap or head scarf
+    hj: pick(['#7a4a8a', '#2e7d6b', '#b5476a', '#3d5a8a', '#8a6a3a']),      // scarf colour
+    outfit: or < 0.5 ? 'shirt' : or < 0.72 ? 'panjabi' : or < 0.86 ? 'saree' : 'lungi',
+    legs: pick(['#2b2b2b', '#3a4a6a', '#4a3a2a', '#5a5a60', '#27432f']),
+    lungi: pick(['#2f6fd0', '#7a3b7a', '#2e7d5b', '#b5651d', '#8a2f3f']),
+    bag: Math.random() < 0.15,
+  };
+}
 function mkNeutral(x, y){
-  const tones = ['#c9a27a', '#7a9cc9', '#c97a8f', '#8fc97a', '#c9b97a', '#9a7ac9'];
-  return {x, y, vx: 0, vy: 0, wt: 0, cool: 0, skin: pick(SKINS), dress: pick(tones)};
+  const tones = ['#c9a27a', '#7a9cc9', '#c97a8f', '#8fc97a', '#c9b97a', '#9a7ac9', '#e0a96a', '#5f9ea0', '#d98c8c', '#a6b86a'];
+  return {x, y, vx: 0, vy: 0, wt: 0, cool: 0, skin: pick(SKINS), dress: pick(tones), look: mkLook()};
 }
 function mkPatrol(z){
   const p = {x: 0, y: 0, z, tx: 0, ty: 0, skin: pick(SKINS), moving: true, swing: 0, cool: 0, ftimer: 0, police: role === 'police'};

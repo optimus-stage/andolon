@@ -89,7 +89,7 @@ function update(dt){
     collide(r, 12);
     followRing(r.members, r, dt);
     r.recT = (r.recT || 0) - dt;   // rivals recruit slowly and never beyond their cap
-    if (r.recT <= 0 && r.members.length < RIVAL_MAX){ const ri = neutrals.findIndex(n => n.cool <= 0 && !(n.rcool > 0) && dist(n, r) < 24); if (ri >= 0){ const n = neutrals.splice(ri, 1)[0]; r.members.push({x: n.x, y: n.y, skin: n.skin}); r.recT = RIVAL_RECRUIT_EVERY; } }
+    if (r.recT <= 0 && r.members.length < RIVAL_MAX){ const ri = neutrals.findIndex(n => n.cool <= 0 && !(n.rcool > 0) && dist(n, r) < 24); if (ri >= 0){ const n = neutrals.splice(ri, 1)[0]; r.members.push({x: n.x, y: n.y, skin: n.skin, look: n.look}); r.recT = RIVAL_RECRUIT_EVERY; } }
     for (const g of gates) if (g.open < 1 && dist(r, g) < 130 && r.members.length >= g.need) g.open = Math.min(1, g.open + dt / 3);
     // clash: when protesters and a rival crowd meet they fight; ties go to the protesters
     r.fightT = (r.fightT || 0) - dt;

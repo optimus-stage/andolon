@@ -7,8 +7,8 @@ function clash(r){
   let switched = 0;
   for (let i = 0; i < dmgR; i++){
     const m = r.members.pop();
-    if (Math.random() < 0.4){ const n = mkNeutral(m.x, m.y); n.skin = m.skin; followers.push(n); switched++; game.stats.recruits++; }   // persuaded to join the protesters
-    else { const n = mkNeutral(m.x, m.y); n.skin = m.skin; n.cool = 6; n.rcool = 25; n.vx = rand(-70, 70); n.vy = rand(-70, 70); n.wt = 1; neutrals.push(n); }   // goes home for a while
+    if (Math.random() < 0.4){ const n = mkNeutral(m.x, m.y); n.skin = m.skin; if (m.look) n.look = m.look; followers.push(n); switched++; game.stats.recruits++; }   // persuaded to join the protesters
+    else { const n = mkNeutral(m.x, m.y); n.skin = m.skin; if (m.look) n.look = m.look; n.cool = 6; n.rcool = 25; n.vx = rand(-70, 70); n.vy = rand(-70, 70); n.wt = 1; neutrals.push(n); }   // goes home for a while
   }
   if (switched) sfxJoin();
   if (dmgR > dmgP) game.stats.clashWins++;

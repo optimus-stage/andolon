@@ -1,21 +1,52 @@
 // ---------- sprites ----------
+const lookOf = p => p.look || (p.look = mkLook());   // people created without a look get one the first time they are drawn
+const PERSON_SCALE = 1.25;   // everyone is drawn a bit bigger than their collision size, so crowds read better on a phone
 function person(c, x, y, o){
-  const s = o.scale || 1, ph = (x + y) * 0.05, t = (game && game.t) || 0, bob = o.moving ? Math.sin(t * 11 + ph) * 1.6 : 0;
+  const L = o.look, s = (o.scale || 1) * (o.noBase ? 1 : PERSON_SCALE) * (L ? L.h : 1), ph = (x + y) * 0.05, t = (game && game.t) || 0, bob = o.moving ? Math.sin(t * 11 + ph) * 1.6 : 0;
   c.save(); c.translate(x, y); c.scale(s, s);
   c.fillStyle = 'rgba(0,0,0,.2)'; c.beginPath(); c.ellipse(0, 9, 8, 3, 0, 0, 6.28); c.fill();
-  const sw = o.moving ? Math.sin(t * 11 + ph) * 3 : 0;
-  c.fillStyle = o.legs || '#2b2b2b'; c.fillRect(-4 + sw, 3, 3, 7); c.fillRect(1 - sw, 3, 3, 7);
+  const sw = o.moving ? Math.sin(t * 11 + ph) * 3 : 0, outfit = L && !o.legs ? L.outfit : null;
+  // legs (or a sarong / skirt)
+  if (outfit === 'lungi'){
+    c.fillStyle = L.lungi; c.fillRect(-5.5, 3, 11, 6.5); c.fillStyle = 'rgba(255,255,255,.35)'; c.fillRect(-5.5, 5.5, 11, 1);
+    c.fillStyle = '#2b2b2b'; c.fillRect(-4 + sw, 9, 3, 1.6); c.fillRect(1 - sw, 9, 3, 1.6);
+  } else if (outfit === 'saree'){
+    c.fillStyle = o.dress; c.beginPath(); c.moveTo(-6, 2); c.lineTo(6, 2); c.lineTo(7.5 + sw * 0.15, 10); c.lineTo(-7.5 + sw * 0.15, 10); c.closePath(); c.fill();
+    c.fillStyle = 'rgba(0,0,0,.14)'; c.fillRect(-7, 8.2, 14, 1.8);
+  } else {
+    c.fillStyle = o.legs || (L ? L.legs : '#2b2b2b'); c.fillRect(-4 + sw, 3, 3, 7); c.fillRect(1 - sw, 3, 3, 7);
+  }
+  // hair behind the head
+  if (L && !o.hat && L.hair === 'long' && L.head !== 'hijab'){ c.fillStyle = L.hc; c.fillRect(-5.4, -14 + bob, 10.8, 10); }
+  // body
   c.fillStyle = o.dress; c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 1;
-  c.beginPath(); c.roundRect(-6, -7 + bob, 12, 12, 3); c.fill(); c.stroke();
+  c.beginPath(); c.roundRect(-6, -7 + bob, 12, outfit === 'panjabi' ? 16 : 12, 3); c.fill(); c.stroke();
   c.fillStyle = o.dress; c.fillRect(-8, -6 + bob, 2.5, 8); c.fillRect(5.5, -6 + bob, 2.5, 8);
-  c.fillStyle = o.skin; c.beginPath(); c.arc(0, -12 + bob, 5, 0, 6.28); c.fill();
+  if (outfit === 'saree'){ c.fillStyle = 'rgba(0,0,0,.16)'; c.beginPath(); c.moveTo(-6, -7 + bob); c.lineTo(6, 3 + bob); c.lineTo(6, 5 + bob); c.lineTo(-6, -4 + bob); c.closePath(); c.fill(); }
+  if (L && L.bag){ c.fillStyle = '#6b4a2a'; c.fillRect(-9.5, -1 + bob, 4, 6); c.fillRect(-7.5, -6 + bob, 1, 5); }
+  // head
+  if (L && L.head === 'hijab' && !o.hat){
+    c.fillStyle = L.hj; c.beginPath(); c.arc(0, -12 + bob, 6.4, 0, 6.28); c.fill(); c.beginPath(); c.roundRect(-6.6, -9 + bob, 13.2, 6, 2.5); c.fill();
+    c.fillStyle = o.skin; c.beginPath(); c.ellipse(0, -11.4 + bob, 3.7, 4.3, 0, 0, 6.28); c.fill();
+  } else {
+    c.fillStyle = o.skin; c.beginPath(); c.arc(0, -12 + bob, 5, 0, 6.28); c.fill();
+  }
   if (o.hat === 'helmet'){
     c.fillStyle = '#1a1a1a'; c.beginPath(); c.arc(0, -13 + bob, 5.8, Math.PI, 0); c.fill(); c.fillRect(-6, -13 + bob, 12, 2.5);
     c.fillStyle = 'rgba(180,200,220,.6)'; c.fillRect(-4, -11 + bob, 8, 2);
   } else if (o.hat === 'cap'){
     c.fillStyle = '#12306b'; c.beginPath(); c.arc(0, -13 + bob, 5.5, Math.PI, 0); c.fill(); c.fillRect(-1, -13 + bob, 8, 2);
   } else if (o.hat === 'band'){
+    c.fillStyle = L && L.hair !== 'bald' ? L.hc : '#2a1a10'; c.beginPath(); c.arc(0, -14 + bob, 5, Math.PI, 0); c.fill();
     c.fillStyle = '#c8102e'; c.fillRect(-5, -15 + bob, 10, 2.5);
+  } else if (L){
+    if (L.head === 'topi'){
+      c.fillStyle = '#f4f1e6'; c.beginPath(); c.arc(0, -13.5 + bob, 5, Math.PI, 0); c.fill(); c.fillRect(-5, -14 + bob, 10, 2.5);
+      c.fillStyle = 'rgba(0,0,0,.18)'; c.fillRect(-5, -12 + bob, 10, 0.8);
+    } else if (L.head !== 'hijab' && L.hair !== 'bald'){
+      c.fillStyle = L.hc; c.beginPath(); c.arc(0, -14 + bob, 5.2, Math.PI, 0); c.fill();
+      if (L.hair === 'bun'){ c.beginPath(); c.arc(0, -19.5 + bob, 2.6, 0, 6.28); c.fill(); }
+    }
   } else { c.fillStyle = '#2a1a10'; c.beginPath(); c.arc(0, -14 + bob, 5, Math.PI, 0); c.fill(); }
   if (o.flag){  // Bangladesh flag: green field, red disc (only protesters carry it)
     c.fillStyle = '#6b4a2a'; c.fillRect(7, -26 + bob, 1.6, 22);
@@ -112,6 +143,21 @@ function drawTea(c, t){
 }
 
 // ground texture: a small speckled tile, built once and repeated over the whole map
+function drawLamp(c, l){
+  c.fillStyle = 'rgba(0,0,0,.16)'; c.beginPath(); c.ellipse(l.x + 2, l.y + 3, 4, 1.8, 0, 0, 6.283); c.fill();
+  c.fillStyle = '#4a4a50'; c.fillRect(l.x - 1, l.y - 14, 2, 15);
+  c.fillStyle = 'rgba(255,224,130,.22)'; c.beginPath(); c.arc(l.x, l.y - 15, 8, 0, 6.283); c.fill();
+  c.fillStyle = '#ffe082'; c.beginPath(); c.arc(l.x, l.y - 15, 3, 0, 6.283); c.fill();
+}
+function drawRickshaw(c, r){
+  c.save(); c.translate(r.x, r.y); c.rotate(r.ang);
+  c.fillStyle = 'rgba(0,0,0,.18)'; c.beginPath(); c.ellipse(0, 6, 13, 4, 0, 0, 6.283); c.fill();
+  c.fillStyle = '#222'; c.beginPath(); c.arc(-9, 4, 3.4, 0, 6.283); c.arc(9, 4, 3.4, 0, 6.283); c.fill();
+  c.fillStyle = r.c; c.fillRect(-10, -5, 15, 8);
+  c.fillStyle = 'rgba(0,0,0,.28)'; c.beginPath(); c.arc(-3, -5, 7, Math.PI, 0); c.fill();
+  c.fillStyle = '#f2e6b8'; c.fillRect(7, -3, 5, 2);
+  c.restore();
+}
 let groundPat = null;
 function groundPattern(){
   if (groundPat) return groundPat;
@@ -157,6 +203,8 @@ function draw(){
   ctx.fillStyle = '#8ec3e6'; ctx.beginPath(); ctx.ellipse(130, -380, 110, 50, -0.5, 0, 6.28); ctx.fill();
 
   for (const t of TOWN.trees) if (v(t)) drawTree(ctx, t, false);
+  for (const r of TOWN.rickshaws) if (v(r)) drawRickshaw(ctx, r);
+  for (const l of TOWN.lamps) if (v(l)) drawLamp(ctx, l);
 
   // houses
   for (const h of TOWN.houses) if (h.x > cam.x - 80 && h.x < cam.x + VWZ + 80 && h.y > cam.y - 80 && h.y < cam.y + VHZ + 80){
@@ -222,24 +270,24 @@ function draw(){
 
   // people (depth-sorted)
   const list = [];
-  for (const n of neutrals) if (v(n)) list.push([n.y, () => person(ctx, n.x, n.y, {dress: n.dress, skin: n.skin, moving: Math.abs(n.vx) + Math.abs(n.vy) > 4})]);
+  for (const n of neutrals) if (v(n)) list.push([n.y, () => person(ctx, n.x, n.y, {dress: n.dress, skin: n.skin, look: n.look, moving: Math.abs(n.vx) + Math.abs(n.vy) > 4})]);
   followers.forEach((f, i) => { if (v(f)) list.push([f.y, () => role === 'police'
     ? person(ctx, f.x, f.y, {dress: BLUE, skin: f.skin, hat: 'cap', legs: '#14284f', scale: 1.3, moving: player.moving, stick: true, swing: (f.swing || 0) / 0.35})
-    : person(ctx, f.x, f.y, {dress: WHITE, skin: f.skin, moving: player.moving, flag: i % 6 === 0, hat: i % 4 === 0 ? 'band' : null})]); });
+    : person(ctx, f.x, f.y, {dress: WHITE, skin: f.skin, look: lookOf(f), moving: player.moving, flag: i % 6 === 0, hat: i % 4 === 0 ? 'band' : null})]); });
   for (const r of marchers){   // AI protester crowds (police side)
-    r.members.forEach((m, i) => { if (v(m)) list.push([m.y, () => person(ctx, m.x, m.y, {dress: WHITE, skin: m.skin, moving: r.moving, flag: i % 6 === 0, hat: i % 4 === 0 ? 'band' : null})]); });
-    list.push([r.y, () => { person(ctx, r.x, r.y, {dress: WHITE, skin: SKINS[1], hat: 'band', scale: 1.25, moving: r.moving, flag: true}); label(ctx, 'CROWD ' + (r.members.length + 1), r.x, r.y - 30, 'bold 11px system-ui', '#0b6b3a'); }]);
+    r.members.forEach((m, i) => { if (v(m)) list.push([m.y, () => person(ctx, m.x, m.y, {dress: WHITE, skin: m.skin, look: lookOf(m), moving: r.moving, flag: i % 6 === 0, hat: i % 4 === 0 ? 'band' : null})]); });
+    list.push([r.y, () => { person(ctx, r.x, r.y, {dress: WHITE, skin: SKINS[1], hat: 'band', scale: 1.25, moving: r.moving, flag: true}); label(ctx, 'CROWD ' + (r.members.length + 1), r.x, r.y - 36, 'bold 11px system-ui', '#0b6b3a'); }]);
   }
   for (const r of rivals){
-    r.members.forEach(m => { if (v(m)) list.push([m.y, () => person(ctx, m.x, m.y, {dress: BLACK, skin: m.skin, hat: 'helmet', moving: r.moving})]); });
-    list.push([r.y, () => { person(ctx, r.x, r.y, {dress: BLACK, skin: SKINS[1], hat: 'helmet', scale: 1.25, moving: r.moving}); label(ctx, (r.armed ? 'ARMED ' : 'RIVAL ') + (r.members.length + 1), r.x, r.y - 28, 'bold 11px system-ui', r.armed ? '#c8102e' : '#111');
-    if (r.armed){ ctx.strokeStyle = r.aim > 0 ? '#ff1744' : 'rgba(200,16,46,.6)'; ctx.lineWidth = r.aim > 0 ? 4 : 2; ctx.beginPath(); ctx.arc(r.x, r.y, 34, 0, 6.28); ctx.stroke(); if (r.aim > 0) label(ctx, '!', r.x, r.y - 46, 'bold 22px system-ui', '#ff1744'); } }]);
+    r.members.forEach(m => { if (v(m)) list.push([m.y, () => person(ctx, m.x, m.y, {dress: BLACK, skin: m.skin, look: lookOf(m), hat: 'helmet', moving: r.moving})]); });
+    list.push([r.y, () => { person(ctx, r.x, r.y, {dress: BLACK, skin: SKINS[1], hat: 'helmet', scale: 1.25, moving: r.moving}); label(ctx, (r.armed ? 'ARMED ' : 'RIVAL ') + (r.members.length + 1), r.x, r.y - 34, 'bold 11px system-ui', r.armed ? '#c8102e' : '#111');
+    if (r.armed){ ctx.strokeStyle = r.aim > 0 ? '#ff1744' : 'rgba(200,16,46,.6)'; ctx.lineWidth = r.aim > 0 ? 4 : 2; ctx.beginPath(); ctx.arc(r.x, r.y, 34, 0, 6.28); ctx.stroke(); if (r.aim > 0) label(ctx, '!', r.x, r.y - 52, 'bold 22px system-ui', '#ff1744'); } }]);
   }
   if (!player.hidden) list.push([player.y, () => {
     if (role === 'police') person(ctx, player.x, player.y, {dress: BLUE, skin: player.skin, hat: 'cap', legs: '#14284f', scale: 1.4, moving: player.moving, stick: true, swing: player.swing / 0.35});
     else person(ctx, player.x, player.y, {dress: WHITE, skin: player.skin, hat: 'band', scale: 1.35, moving: player.moving, flag: true});
     // name tag above the head so you can find yourself
-    ctx.save(); ctx.translate(player.x, player.y - 36); ctx.scale(zf, zf);   // keeps the tag readable when zoomed out
+    ctx.save(); ctx.translate(player.x, player.y - 46); ctx.scale(zf, zf);   // keeps the tag readable when zoomed out
     ctx.font = 'bold 14px ' + BN_FONT; const nb = inkBounds(ctx.font, playerName), w = textW(ctx, playerName) + 18;
     const ta = Math.max(nb.ok ? nb.asc : 0, 14 * 0.95), td = Math.max(nb.ok ? nb.desc : 0, 14 * 0.35), th = ta + td + 10;
     ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.beginPath(); ctx.roundRect(-w / 2, -th, w, th, 7); ctx.fill();
@@ -287,7 +335,7 @@ function draw(){
   const placed = [];   // screen rectangles of bubbles already drawn, so bubbles do not sit on top of each other
   for (const b of bubbles){
     if (!v(b.who)) continue;
-    const bx = b.who.x, by = b.who.y - 38 - (b.who === player ? 36 * zf : 0);
+    const bx = b.who.x, by = b.who.y - 46 - (b.who === player ? 36 * zf : 0);
     ctx.save(); ctx.translate(bx, by); ctx.scale(zf, zf);   // from here 1 unit = 1 screen pixel
     ctx.globalAlpha = Math.min(1, b.t * 2); ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
     let fs = 16; ctx.font = '700 ' + fs + 'px ' + BN_FONT;
@@ -444,7 +492,7 @@ function drawHUD(){
     const x = 12, y = vh - 60 - (i + 1) * 118;
     ctx.save(); ctx.globalAlpha = Math.min(1, t.t);
     ctx.fillStyle = '#fff'; ctx.fillRect(x, y, 100, 108); ctx.fillStyle = '#d7d3c8'; ctx.fillRect(x + 6, y + 6, 88, 66);
-    person(ctx, x + 50, y + 62, {dress: WHITE, skin: t.skin, scale: 2.2});
+    person(ctx, x + 50, y + 62, {dress: WHITE, skin: t.skin, scale: 2.2, noBase: true});
     const rel = t.kind === 'released';
     ctx.fillStyle = rel ? '#1b8a3e' : '#c8102e'; ctx.font = 'bold 12px system-ui'; ctx.textAlign = 'center'; ctx.fillText(rel ? 'RELEASED' : 'DETAINED', x + 50, y + 88);
     ctx.fillStyle = '#222'; ctx.font = '11px ' + BN_FONT; ctx.fillText(rel ? t.count + ' freed · ' + t.station.replace(' Thana', '') : t.name + ' · ' + t.station.replace(' Thana', ''), x + 50, y + 102);

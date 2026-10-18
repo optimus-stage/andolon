@@ -22,6 +22,7 @@ function blocked(x, y, margin){
   for (const l of LANDMARKS) if (Math.hypot(x - l.x, y - l.y) < 55) return true;
   return false;
 }
+const pick2 = (a, rng) => a[Math.floor(rng() * a.length)];
 function genTown(){
   const rng = mulberry(7771999), houses = [], occ = new Set(), mosques = NAMED_MOSQUES.slice(), coffee = NAMED_COFFEE.slice(), temples = [], monasteries = [], churches = [];
   for (let i = 0; i < 40000 && houses.length < HOUSE_COUNT; i++){
@@ -53,7 +54,24 @@ function genTown(){
   }
   for (let i = 0; i < 70; i++){ const a = sr() * 6.283, r = Math.sqrt(sr()) * (MAP_R - 100); patches.push({x: Math.cos(a) * r, y: Math.sin(a) * r, rx: 80 + sr() * 140, ry: 50 + sr() * 90, rot: sr() * 3}); }
   for (let i = 0; i < 360; i++){ const a = sr() * 6.283, r = MAP_R + 30 + sr() * 560; forest.push({x: Math.cos(a) * r, y: Math.sin(a) * r, r: 16 + sr() * 14, c: sr()}); }
-  return {houses, mosques, coffee, temples, monasteries, churches, solids, trees, patches, forest};
+  // street furniture along the roads: lamp posts and parked rickshaws (decoration only)
+  const lamps = [], rickshaws = [], step = Math.PI / 4;
+  for (const r of RINGS.concat([MAP_R - 60])){
+    const n = Math.round(6.283 * r / 240), off = sr() * 6.283;
+    for (let i = 0; i < n; i++){ const a = off + i * 6.283 / n; lamps.push({x: Math.cos(a) * (r + 44), y: Math.sin(a) * (r + 44)}); }
+  }
+  for (let k = 0; k < 8; k++) for (let d = 260; d < MAP_R - 120; d += 260){
+    const a = k * step, px = -Math.sin(a) * 44, py = Math.cos(a) * 44; lamps.push({x: Math.cos(a) * d + px, y: Math.sin(a) * d + py});
+  }
+  for (let i = 0; i < 110; i++){
+    const ring = sr() < 0.6, tones = ['#d9402e', '#2e8b57', '#2f6fd0', '#e0b030', '#c86ab0'];
+    let x, y, ang;
+    if (ring){ const r = pick2(RINGS.concat([MAP_R - 60]), sr) + (sr() - 0.5) * 36, a = sr() * 6.283; x = Math.cos(a) * r; y = Math.sin(a) * r; ang = a + Math.PI / 2; }
+    else { const a = Math.floor(sr() * 8) * step, d = 260 + sr() * (MAP_R - 520), side = (sr() - 0.5) * 36; x = Math.cos(a) * d - Math.sin(a) * side; y = Math.sin(a) * d + Math.cos(a) * side; ang = a; }
+    if (Math.hypot(x, y) < 200) continue;
+    rickshaws.push({x, y, ang, c: tones[Math.floor(sr() * tones.length)]});
+  }
+  return {houses, mosques, coffee, temples, monasteries, churches, solids, trees, patches, forest, lamps, rickshaws};
 }
 const TOWN = genTown();
 

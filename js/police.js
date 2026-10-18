@@ -30,7 +30,7 @@ function scatter(r, k, ox, oy){   // members run away and stay out of the march 
   let c = 0;
   for (let i = 0; i < k && r.members.length; i++){
     const m = r.members.pop(), a = Math.atan2(m.y - oy, m.x - ox), nb = mkNeutral(m.x, m.y);
-    nb.skin = m.skin; nb.cool = 9; nb.rcool = 14; nb.vx = Math.cos(a) * 90; nb.vy = Math.sin(a) * 90; nb.wt = 1.5; neutrals.push(nb); c++;
+    nb.skin = m.skin; if (m.look) nb.look = m.look; nb.cool = 9; nb.rcool = 14; nb.vx = Math.cos(a) * 90; nb.vy = Math.sin(a) * 90; nb.wt = 1.5; neutrals.push(nb); c++;
   }
   return c;
 }
@@ -117,7 +117,7 @@ function updateCrowds(dt){
     r.recT -= dt;
     if (r.recT <= 0 && r.members.length < MARCH_MAX){
       const rr = 24 + G.anger * 0.25, ri2 = neutrals.findIndex(nb => nb.cool <= 0 && !(nb.rcool > 0) && dist(nb, r) < rr);
-      if (ri2 >= 0){ const nb = neutrals.splice(ri2, 1)[0]; r.members.push({x: nb.x, y: nb.y, skin: nb.skin}); r.recT = 1.1 / (1 + G.anger / 50); }
+      if (ri2 >= 0){ const nb = neutrals.splice(ri2, 1)[0]; r.members.push({x: nb.x, y: nb.y, skin: nb.skin, look: nb.look}); r.recT = 1.1 / (1 + G.anger / 50); }
     }
     // two crowds that meet join up
     for (const q of marchers){
