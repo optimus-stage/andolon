@@ -1,10 +1,22 @@
 // ---------- loop ----------
 let last = 0;
+let rotShown = false;
 function frame(ts){
   const dt = Math.min(0.05, (ts - last) / 1000 || 0); last = ts;
-  if (game && game.started) update(dt);
+  // on a phone held upright, ask for landscape and pause the game until it is turned
+  const needRotate = IS_TOUCH && !!(game && game.started) && innerHeight > innerWidth;
+  if (needRotate !== rotShown){ rotShown = needRotate; document.getElementById('rotate').classList.toggle('open', needRotate); }
+  if (game && game.started && !rotShown) update(dt);
   if (game) draw();
   requestAnimationFrame(frame);
+}
+// phones: ask for fullscreen and landscape (Android Chrome allows the lock in fullscreen; iPhone Safari does not)
+function goLandscape(){
+  if (!IS_TOUCH) return;
+  try {
+    const el = document.documentElement, p = el.requestFullscreen ? el.requestFullscreen() : null;
+    Promise.resolve(p).then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape')).catch(() => {});
+  } catch (e) {}
 }
 function start(){
   const inp = document.getElementById('pname');
@@ -13,6 +25,7 @@ function start(){
   else if (playerName === 'Protester' || playerName === 'Officer') playerName = role === 'police' ? 'Officer' : 'Protester';
   try { localStorage.setItem('da_name', playerName); } catch (e) {}
   ac();   // unlock audio on the user's click
+  goLandscape();
   document.getElementById('menu').style.display = 'none';
   if (role === 'police') newPoliceGame(); else newGame();
 }

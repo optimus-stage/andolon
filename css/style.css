@@ -90,3 +90,12 @@ details.full li{font-size:16px}
 .tutcard.police #tutnext{background:#2f4a7a}
 @keyframes tutpop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
 @media (prefers-reduced-motion:reduce){.tuticon{animation:none}}
+
+/* ask phones held upright to turn to landscape */
+#rotate{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;background:rgba(10,20,15,.96);color:#fff;text-align:center;padding:20px;box-sizing:border-box}
+#rotate.open{display:flex}
+#rotate p{font-size:22px;font-weight:700;margin:14px 0 4px;color:#fff}
+#rotate small{color:#b9c9bd;margin:0}
+.rotphone{display:inline-block;font-size:64px;animation:rotphone 2s ease-in-out infinite}
+@keyframes rotphone{0%,25%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+@media (prefers-reduced-motion:reduce){.rotphone{animation:none}}
