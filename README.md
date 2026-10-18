@@ -8,8 +8,9 @@ Open `index.html` in a browser (no build, no server needed). To share online, up
 ## Files
 - `index.html`: page and start menu
 - `css/style.css`: styles
-- `js/data.js`: map size, rings, barricade sizes, day length, score weights, ranks, tags and roasts (Bengali), police stations, hospitals, landmarks, chants, news headlines
-- `js/game.js`: game logic, drawing, sounds, police van arrest, scoring, shareable photo card
+- `js/chapters.js`: one object per chapter: balance numbers (rings, crowd sizes, day length, rivals), map content (police stations, hospitals, landmarks, river), chants and news headlines. Add a chapter here; play one with `?chapter=<id>`
+- `js/data.js`: data shared by every chapter (score weights, ranks, tags, roasts, police ranks, names, support links) and the globals built from the active chapter
+- `js/core.js`, `audio.js`, `town.js`, `state.js`, `collision.js`, `protester.js`, `police.js`, `combat.js`, `render.js`, `ui.js`, `main.js`: the game code, loaded in this order by `index.html` (they share one global scope)
 
 ## Rules
 - Walk with the mouse (or touch and hold on a phone). Recruit bystanders and they join your crowd in white. Your name shows above your head.
@@ -39,7 +40,7 @@ Open `index.html` in a browser (no build, no server needed). To share online, up
 The grey dashed zones play radio static. Stay inside for 4 seconds and your crowd starts losing people, about 20% every 1.2 seconds, until you leave.
 
 ## Tuning
-Everything is at the top of `js/data.js`: gates per ring, barricade sizes, crowd needed, day length, bystander counts, rival limits, score weights, ranks, tags and roast lines. Police strength is in `strikePlayer()` in `js/game.js`.
+Level numbers are in `balance` inside `js/chapters.js`: gates per ring, barricade sizes, crowd needed, day length, bystander counts, rival limits, rival limits and so on. Score weights, ranks, tags and roast lines are in `js/data.js`. Police strength is in `strikePlayer()` in `js/combat.js`.
 
 ## Playing as police
 
@@ -49,4 +50,4 @@ Choose **Police** on the start screen. You lead the police and the protester cro
 - Walk into the blue officers on the streets to add them to your squad (up to 14).
 - **Strike** (click, Space or the STRIKE button), **smoke grenade** (G or SMOKE) and **warning shots** (F or FIRE) scatter people. Nobody is hurt.
 - Force raises **public anger**; angry crowds recruit faster. Smoke and rounds come back over time.
-- Tuning constants live in `js/data.js` (`DISPERSE_GOAL`, `MARCH_MAX`) and the top of the police section in `js/game.js`.
+- Tuning constants live in `balance.police` in `js/chapters.js` (`disperseGoal`, `marchMax`) and the top of `js/police.js`.
