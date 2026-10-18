@@ -43,7 +43,17 @@ function genTown(){
     .concat(coffee.map(s => ({x: s.x - 18, y: s.y - 10, w: 36, h: 24})))
     .concat(temples.concat(monasteries, churches).map(s => ({x: s.x - 20, y: s.y - 14, w: 40, h: 30})))
     .concat(HOSPITALS.map(h => ({x: h.x - 30, y: h.y - 22, w: 60, h: 44})));
-  return {houses, mosques, coffee, temples, monasteries, churches, solids};
+  // scenery only (nobody collides with it): trees and grass patches on the map, a forest around its edge.
+  // It uses its own random stream so the buildings above stay exactly where they were.
+  const sr = mulberry(424242), trees = [], patches = [], forest = [];
+  for (let i = 0; i < 4000 && trees.length < 260; i++){
+    const a = sr() * 6.283, r = Math.sqrt(sr()) * (MAP_R - 60), x = Math.cos(a) * r, y = Math.sin(a) * r, size = 11 + sr() * 9, tone = sr();
+    if (blocked(x, y, 14) || houses.some(h => x > h.x - 24 && x < h.x + h.w + 24 && y > h.y - 24 && y < h.y + h.h + 24)) continue;
+    trees.push({x, y, r: size, c: tone});
+  }
+  for (let i = 0; i < 70; i++){ const a = sr() * 6.283, r = Math.sqrt(sr()) * (MAP_R - 100); patches.push({x: Math.cos(a) * r, y: Math.sin(a) * r, rx: 80 + sr() * 140, ry: 50 + sr() * 90, rot: sr() * 3}); }
+  for (let i = 0; i < 360; i++){ const a = sr() * 6.283, r = MAP_R + 30 + sr() * 560; forest.push({x: Math.cos(a) * r, y: Math.sin(a) * r, r: 16 + sr() * 14, c: sr()}); }
+  return {houses, mosques, coffee, temples, monasteries, churches, solids, trees, patches, forest};
 }
 const TOWN = genTown();
 

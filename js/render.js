@@ -111,6 +111,30 @@ function drawTea(c, t){
   c.globalAlpha = 1;
 }
 
+// ground texture: a small speckled tile, built once and repeated over the whole map
+let groundPat = null;
+function groundPattern(){
+  if (groundPat) return groundPat;
+  const S = 256, t = document.createElement('canvas'); t.width = t.height = S;
+  const g = t.getContext('2d'), rng = mulberry(1952);
+  g.fillStyle = '#e8dfc4'; g.fillRect(0, 0, S, S);
+  for (let i = 0; i < 520; i++){
+    const x = rng() * S, y = rng() * S, r = 0.8 + rng() * 2.2, k = rng();
+    g.fillStyle = k < 0.45 ? 'rgba(150,132,96,.16)' : k < 0.8 ? 'rgba(255,250,232,.30)' : 'rgba(120,150,90,.14)';
+    g.beginPath(); g.arc(x, y, r, 0, 6.283); g.fill();
+    if (x < 4 || y < 4 || x > S - 4 || y > S - 4){ const wx = (x + S / 2) % S, wy = (y + S / 2) % S; g.beginPath(); g.arc(wx, wy, r, 0, 6.283); g.fill(); }   // a few extra specks hide the tile seams
+  }
+  groundPat = ctx.createPattern(t, 'repeat');
+  return groundPat;
+}
+function drawTree(c, t, dark){
+  c.fillStyle = 'rgba(0,0,0,.16)'; c.beginPath(); c.ellipse(t.x + t.r * 0.3, t.y + t.r * 0.75, t.r * 0.95, t.r * 0.4, 0, 0, 6.283); c.fill();
+  c.fillStyle = '#6b4a2a'; c.fillRect(t.x - 1.8, t.y, 3.6, t.r * 0.8);
+  const g = dark ? [38, 92, 52] : [58 + t.c * 30, 130 + t.c * 30, 66];
+  c.fillStyle = 'rgb(' + Math.round(g[0] * 0.78) + ',' + Math.round(g[1] * 0.78) + ',' + Math.round(g[2] * 0.78) + ')'; c.beginPath(); c.arc(t.x, t.y - t.r * 0.2, t.r, 0, 6.283); c.fill();
+  c.fillStyle = 'rgb(' + Math.round(g[0]) + ',' + Math.round(g[1]) + ',' + Math.round(g[2]) + ')'; c.beginPath(); c.arc(t.x - t.r * 0.15, t.y - t.r * 0.45, t.r * 0.78, 0, 6.283); c.fill();
+}
+
 // ---------- draw ----------
 function draw(){
   const target = game.mode === 'arrest' && game.van && game.arrest.phase > 0 ? game.van : player;
@@ -118,10 +142,11 @@ function draw(){
   const VWZ = vw / Z, VHZ = vh / Z, zf = 1 / Z;
   const v = o => o.x > cam.x - 100 && o.x < cam.x + VWZ + 100 && o.y > cam.y - 100 && o.y < cam.y + VHZ + 100;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.fillStyle = '#0f2a1c'; ctx.fillRect(0, 0, vw, vh);
+  ctx.fillStyle = '#17402a'; ctx.fillRect(0, 0, vw, vh);
   ctx.save(); ctx.scale(Z, Z); ctx.translate(-cam.x, -cam.y);
-  ctx.beginPath(); ctx.arc(0, 0, MAP_R, 0, 6.283); ctx.fillStyle = '#e8dfc4'; ctx.fill();
+  ctx.beginPath(); ctx.arc(0, 0, MAP_R, 0, 6.283); ctx.fillStyle = groundPattern(); ctx.fill();
   ctx.save(); ctx.clip();
+  for (const p of TOWN.patches) if (v(p)){ ctx.fillStyle = 'rgba(120,160,90,.13)'; ctx.beginPath(); ctx.ellipse(p.x, p.y, p.rx, p.ry, p.rot, 0, 6.283); ctx.fill(); }   // soft grass patches under the roads
 
   ctx.strokeStyle = '#c9c3ae'; ctx.lineWidth = 54;
   for (let k = 0; k < 8; k++){ const p = polar(k * Math.PI / 4, MAP_R); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(p.x, p.y); ctx.stroke(); }
@@ -131,10 +156,13 @@ function draw(){
   label(ctx, 'Buriganga', -600, 1330, 'italic 16px system-ui', '#4b7ea3');
   ctx.fillStyle = '#8ec3e6'; ctx.beginPath(); ctx.ellipse(130, -380, 110, 50, -0.5, 0, 6.28); ctx.fill();
 
+  for (const t of TOWN.trees) if (v(t)) drawTree(ctx, t, false);
+
   // houses
   for (const h of TOWN.houses) if (h.x > cam.x - 80 && h.x < cam.x + VWZ + 80 && h.y > cam.y - 80 && h.y < cam.y + VHZ + 80){
     ctx.fillStyle = 'rgba(0,0,0,.14)'; ctx.fillRect(h.x + 3, h.y + 3, h.w, h.h);
     ctx.fillStyle = h.c; ctx.fillRect(h.x, h.y, h.w, h.h);
+    ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.fillRect(h.x + 4, h.y + 8, h.w - 8, h.h - 13);   // lighter roof panel
     ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(h.x, h.y, h.w, 5);
   }
   for (const l of LANDMARKS) label(ctx, l.name, l.x, l.y, '600 14px system-ui', 'rgba(40,40,40,.65)');
@@ -171,6 +199,9 @@ function draw(){
   for (const s of stalls) if (v(s)) drawBiriyani(ctx, s);
   for (const t of teas) if (v(t)) drawTea(ctx, t);
   ctx.restore();
+  // the edge of the city: a forest and a low boundary, instead of a flat dark void
+  for (const t of TOWN.forest) if (v(t)) drawTree(ctx, t, true);
+  ctx.beginPath(); ctx.arc(0, 0, MAP_R, 0, 6.283); ctx.strokeStyle = 'rgba(30,70,40,.85)'; ctx.lineWidth = 34; ctx.stroke();
 
   // goal
   ctx.fillStyle = 'rgba(11,107,58,.18)'; ctx.beginPath(); ctx.arc(0, 0, GOAL.r, 0, 6.28); ctx.fill();
@@ -236,6 +267,11 @@ function draw(){
       const a = 1 - e.t / 0.3; ctx.globalAlpha = a; ctx.fillStyle = '#fff6b0'; ctx.beginPath();
       for (let k = 0; k < 8; k++){ const ang = k * Math.PI / 4, rr = k % 2 ? 7 : 16; ctx.lineTo(e.x + Math.cos(ang) * rr, e.y + Math.sin(ang) * rr); }
       ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
+    } else if (e.kind === 'join'){   // a ring and a few sparks where someone joins
+      const k = e.t / 0.55; ctx.globalAlpha = Math.max(0, 1 - k); ctx.strokeStyle = role === 'police' ? '#7fb2ff' : '#7fe3a4'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(e.x, e.y, 6 + k * 24, 0, 6.283); ctx.stroke(); ctx.fillStyle = '#fff';
+      for (let q = 0; q < 5; q++){ const an = q * 1.2566 + 0.5, rr = 8 + k * 22; ctx.beginPath(); ctx.arc(e.x + Math.cos(an) * rr, e.y + Math.sin(an) * rr - k * 6, 2, 0, 6.283); ctx.fill(); }
+      ctx.globalAlpha = 1;
     } else if (e.kind === 'dust'){   // dust cloud from a broken barricade
       const k = e.t / 0.9; ctx.globalAlpha = Math.max(0, 0.6 * (1 - k)); ctx.fillStyle = '#b9aa8f';
       for (const [ox, oy, r0] of [[-22, 0, 14], [20, -6, 12], [0, -16, 16]]){ ctx.beginPath(); ctx.arc(e.x + ox, e.y + oy - k * 14, r0 + k * 42, 0, 6.28); ctx.fill(); }

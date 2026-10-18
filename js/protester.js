@@ -2,7 +2,7 @@
 function update(dt){
   if (role === 'police'){ updatePolice(dt); return; }
   game.t += dt; game.msgT -= dt; game.flash = Math.max(0, game.flash - dt);
-  for (let i = fx.length - 1; i >= 0; i--){ fx[i].t += dt; if (fx[i].t > (fx[i].kind === 'boom' ? 1.1 : fx[i].kind === 'dust' ? 0.9 : 0.3)) fx.splice(i, 1); }
+  for (let i = fx.length - 1; i >= 0; i--){ fx[i].t += dt; if (fx[i].t > fxLife(fx[i].kind)) fx.splice(i, 1); }
   game.day = Math.min(MAX_DAY, 1 + Math.floor(game.t / DAY_SECONDS));
   for (let i = toasts.length - 1; i >= 0; i--){ toasts[i].t -= dt; if (toasts[i].t <= 0) toasts.splice(i, 1); }
   updateBubbles(dt);
@@ -26,7 +26,7 @@ function update(dt){
     n.cool -= dt; n.wt -= dt; n.rcool = Math.max(0, (n.rcool || 0) - dt);
     if (n.wt <= 0){ const a = rand(0, 6.28), s = rand(0, 25); n.vx = Math.cos(a) * s; n.vy = Math.sin(a) * s; n.wt = rand(1, 3); }
     n.x += n.vx * dt; n.y += n.vy * dt; collide(n, 7);
-    if (n.cool <= 0 && dist(n, player) < RECRUIT_R){ followers.push(n); neutrals.splice(i, 1); game.stats.recruits++; sfxJoin(); }
+    if (n.cool <= 0 && dist(n, player) < RECRUIT_R){ followers.push(n); neutrals.splice(i, 1); game.stats.recruits++; sfxJoin(); addFx(n.x, n.y, 'join'); }
   }
 
   // police: slow, short-range chase, strike with sticks

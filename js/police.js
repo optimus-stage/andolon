@@ -135,7 +135,7 @@ function updateCrowds(dt){
 function updatePolice(dt){
   const G = game; if (!G.started) return;
   G.t += dt; G.msgT -= dt; G.flash = Math.max(0, G.flash - dt); G.day = 1 + Math.floor(G.t / DAY_SECONDS);
-  for (let i = fx.length - 1; i >= 0; i--){ fx[i].t += dt; if (fx[i].t > (fx[i].kind === 'boom' ? 1.1 : fx[i].kind === 'dust' ? 0.9 : 0.3)) fx.splice(i, 1); }
+  for (let i = fx.length - 1; i >= 0; i--){ fx[i].t += dt; if (fx[i].t > fxLife(fx[i].kind)) fx.splice(i, 1); }
   for (let i = smokes.length - 1; i >= 0; i--){ smokes[i].t += dt; if (smokes[i].t > smokes[i].life) smokes.splice(i, 1); }
   if (G.cone){ G.cone.t += dt; if (G.cone.t > 0.2) G.cone = null; }
   if (G.hit){ G.hit.t += dt; if (G.hit.t > 0.25) G.hit = null; }
@@ -172,7 +172,7 @@ function updatePolice(dt){
     collide(p, 14);
     if (followers.length < SQUAD_MAX && dist(p, player) < 42){
       patrols.splice(i, 1); followers.push({x: p.x, y: p.y, skin: p.skin, swing: 0, police: true}); G.stats.squadPeak = Math.max(G.stats.squadPeak, followers.length + 1);
-      sfxJoin(); say('An officer joins your squad (' + (followers.length + 1) + ')', 2);
+      sfxJoin(); addFx(p.x, p.y, 'join'); say('An officer joins your squad (' + (followers.length + 1) + ')', 2);
     }
   }
   G.reinT -= dt; if (G.reinT <= 0){ G.reinT = 30; if (patrols.length < 6) patrols.push(mkPatrol(Math.floor(Math.random() * 4))); }

@@ -99,6 +99,7 @@ function stopSiren(){
 // Fight effects: sticks always; gunshots and grenade blasts now and then (sound plus a flash on screen)
 let fx = [];
 function addFx(x, y, kind){ fx.push({x, y, t: 0, kind}); }
+const fxLife = kind => kind === 'boom' ? 1.1 : kind === 'dust' ? 0.9 : kind === 'join' ? 0.55 : 0.3;   // seconds an effect stays on screen
 function fightSfx(x, y){
   sfxWhack();
   if (Math.random() < 0.45){ setTimeout(sfxGunshot, 120); addFx(x + rand(-25, 25), y + rand(-25, 10), 'shot'); }
