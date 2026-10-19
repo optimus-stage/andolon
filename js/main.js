@@ -1,3 +1,4 @@
+const IS_TOUCH = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 // ---------- loop ----------
 let last = 0;
 let rotShown = false;
@@ -10,13 +11,23 @@ function frame(ts){
   if (game) draw();
   requestAnimationFrame(frame);
 }
-// phones: ask for fullscreen and landscape (Android Chrome allows the lock in fullscreen; iPhone Safari does not)
+// phones: go landscape by themselves. Installed/home-screen apps follow the manifest; in a browser tab Android Chrome allows the lock once fullscreen.
+function lockLandscape(){ try { return screen.orientation && screen.orientation.lock ? screen.orientation.lock('landscape') : Promise.reject(); } catch (e) { return Promise.reject(); } }
 function goLandscape(){
   if (!IS_TOUCH) return;
-  try {
-    const el = document.documentElement, p = el.requestFullscreen ? el.requestFullscreen() : null;
-    Promise.resolve(p).then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape')).catch(() => {});
-  } catch (e) {}
+  lockLandscape().catch(() => {
+    try {
+      const el = document.documentElement, rf = el.requestFullscreen || el.webkitRequestFullscreen;
+      Promise.resolve(rf ? rf.call(el) : null).then(lockLandscape).catch(() => {});
+    } catch (e) {}
+  });
+}
+// no tap needed from the player: try at once, and again on the first touch (browsers only allow fullscreen after a touch)
+if (IS_TOUCH){
+  lockLandscape().catch(() => {});
+  const firstTouch = () => { goLandscape(); if (document.fullscreenElement || (screen.orientation && /landscape/.test(screen.orientation.type))) removeEventListener('touchend', firstTouch, true); };
+  addEventListener('touchend', firstTouch, true);
+  addEventListener('click', firstTouch, true);
 }
 function start(){
   const inp = document.getElementById('pname');
@@ -56,11 +67,10 @@ addEventListener('keydown', e => {
   else if (e.key === 'f' || e.key === 'F') doGun();
 });
 addEventListener('keyup', e => { if (e.code === 'Space') input.strike = false; });
-// touch: a round pad at the bottom right. Touch and hold a direction on it to walk that way; lift to stop.
+// touch: a round pad at the bottom left. Touch and hold a direction on it to walk that way; lift to stop.
 // (touching anywhere else on the screen still walks toward the finger)
-const IS_TOUCH = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 const pad = {id: null, kx: 0, ky: 0, ux: 0, uy: 0};
-const padGeom = () => { const R = Math.max(46, Math.min(66, innerWidth * 0.16)); return {x: innerWidth - R - 14, y: innerHeight - R - (innerHeight < 500 ? 30 : 46), R}; };
+const padGeom = () => { const R = Math.max(46, Math.min(66, innerWidth * 0.16)); return {x: R + 18, y: innerHeight - R - (innerHeight < 500 ? 30 : 46), R}; };
 const stopWalk = () => { mouse.x = vw / 2; mouse.y = vh / 2; };
 function padSet(t){
   const g = padGeom(); let dx = t.clientX - g.x, dy = t.clientY - g.y; const d = Math.hypot(dx, dy);
@@ -71,7 +81,7 @@ function padSet(t){
 const onPad = t => { const g = padGeom(); return Math.hypot(t.clientX - g.x, t.clientY - g.y) < g.R * 1.5; };
 const screenWalk = t => { mouse.x = t.clientX; mouse.y = t.clientY; };
 const actIds = new Map();   // touches that are holding an action button (police side)
-const actGeom = () => { const H = innerHeight; return [{id: 'strike', x: 64, y: H - 96, r: 42, t: 'STRIKE'}, {id: 'smoke', x: 150, y: H - 70, r: 30, t: 'SMOKE'}, {id: 'gun', x: 72, y: H - 182, r: 30, t: 'FIRE'}]; };
+const actGeom = () => { const H = innerHeight, W = innerWidth; return [{id: 'strike', x: W - 64, y: H - 96, r: 42, t: 'STRIKE'}, {id: 'smoke', x: W - 150, y: H - 70, r: 30, t: 'SMOKE'}, {id: 'gun', x: W - 72, y: H - 182, r: 30, t: 'FIRE'}]; };
 const touchGo = e => {
   for (const t of e.changedTouches){
     if (role === 'police' && e.type === 'touchstart'){

@@ -223,7 +223,7 @@ function endPolice(won, why){
   box.innerHTML = head + '<img id="cardimg" alt="Photo card" src="' + canvas.toDataURL('image/png') + '">' +
     '<label>Put your own photo on the card (optional)<input id="photo2" type="file" accept="image/*"></label>' +
     '<button id="share">Share card</button><button id="dl" class="alt">' + (IS_TOUCH ? 'Save to Photos' : 'Download') + '</button><button id="go">Patrol again</button>' +
-    (IS_TOUCH ? '<small>Tip: press and hold the card to save it to your Photos.</small><br>' : '') +
+    (IS_TOUCH ? '<small>Tip: tap Save to Photos, or press and hold the card, to keep it in your Gallery.</small><br>' : '') +
     (playerPhoto ? '<button id="nophoto" class="alt">Use default avatar</button>' : '') +
     supportHTML() + '<a href="#" class="aboutlink">About &amp; Disclaimer</a><br>' +
     '<small>Your photo stays on your device. It is only drawn onto this card. Fictional game; characters and events are not real people or incidents.</small>';

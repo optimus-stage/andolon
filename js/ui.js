@@ -114,20 +114,30 @@ async function shareCard(canvas, text, saveMode){
   }
   downloadCard(canvas, blob);
 }
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function toast(msg){
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;left:50%;bottom:18%;transform:translateX(-50%);z-index:80;max-width:86%;background:rgba(0,0,0,.85);color:#fff;font:15px system-ui;padding:12px 16px;border-radius:10px;text-align:center';
+  t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 5000);
+}
+function fileDownload(blob){
+  const a = document.createElement('a'); a.download = 'andolon-card.png'; a.href = URL.createObjectURL(blob);
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 8000);
+}
 async function downloadCard(canvas, blob){
   blob = blob || await cardBlob(canvas);
-  if (IS_TOUCH && !blob.__tried){   // phone: share sheet first
+  if (IS_IOS){   // iPhone: the share sheet has "Save Image"; otherwise show the picture to press and hold
     const file = new File([blob], 'andolon.png', {type: 'image/png'});
     if (navigator.canShare && navigator.canShare({files: [file]})){ try { await navigator.share({files: [file]}); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
-    saveOverlay(canvas); return;      // no share sheet: show the picture so it can be pressed and held
+    saveOverlay(canvas); return;
   }
-  const a = document.createElement('a'); a.download = 'andolon.png'; a.href = URL.createObjectURL(blob);
-  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  fileDownload(blob);   // Android Chrome and desktop: a real download, which lands in Downloads and shows up in Gallery / Photos
+  if (IS_TOUCH){ toast('Card saved to your Downloads. Open Gallery or Google Photos and look in the Downloads folder.'); setTimeout(() => saveOverlay(canvas, true), 600); }
 }
-function saveOverlay(canvas){
+function saveOverlay(canvas, androidExtra){
   const o = document.createElement('div');
   o.style.cssText = 'position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:12px;color:#fff;font:16px system-ui;text-align:center';
-  o.innerHTML = '<div>Press and hold the card, then tap <b>Save to Photos</b> (or Save Image).</div><img alt="Your card" style="max-width:100%;max-height:70vh;border-radius:10px" src="' + canvas.toDataURL('image/png') + '"><button style="padding:10px 24px;font-size:16px;border-radius:8px;border:0">Close</button>';
+  o.innerHTML = '<div>' + (androidExtra ? 'Saved! If you do not see it in Gallery, press and hold the card and tap <b>Download image</b>.' : 'Press and hold the card, then tap <b>Save to Photos</b> (or Save Image).') + '</div><img alt="Your card" style="max-width:100%;max-height:70vh;border-radius:10px" src="' + canvas.toDataURL('image/png') + '"><button style="padding:10px 24px;font-size:16px;border-radius:8px;border:0">Close</button>';
   o.querySelector('button').onclick = () => o.remove();
   document.body.appendChild(o);
 }
@@ -196,7 +206,7 @@ function end(won, info){
   box.innerHTML = head + '<img id="cardimg" alt="Photo card" src="' + canvas.toDataURL('image/png') + '">' +
     '<label>Put your own photo on the card (optional)<input id="photo2" type="file" accept="image/*"></label>' +
     '<button id="share">Share card</button><button id="dl" class="alt">' + (IS_TOUCH ? 'Save to Photos' : 'Download') + '</button><button id="go">March again</button>' +
-    (IS_TOUCH ? '<small>Tip: press and hold the card to save it to your Photos.</small><br>' : '') +
+    (IS_TOUCH ? '<small>Tip: tap Save to Photos, or press and hold the card, to keep it in your Gallery.</small><br>' : '') +
     (playerPhoto ? '<button id="nophoto" class="alt">Use default avatar</button>' : '') +
     supportHTML() + '<a href="#" class="aboutlink">About &amp; Disclaimer</a><br>' +
     '<small>Your photo stays on your device. It is only drawn onto this card. Fictional game; characters and events are not real people or incidents.</small>';
