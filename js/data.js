@@ -13,6 +13,7 @@ const GATES_PER_RING = BAL.gatesPerRing;
 const HOUSE_COUNT = BAL.houseCount;
 const POLICE_PER_ZONE = BAL.policePerZone;
 const GATE_HALF = BAL.gateHalf;
+const GATE_HITS = BAL.gateHits || 3;
 const GOAL = BAL.goal;
 const NEED_HOLD = BAL.needHold, NEED_CROWD = BAL.needCrowd;
 const MAX_DAY = BAL.maxDay, DAY_SECONDS = BAL.daySeconds;

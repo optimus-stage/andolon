@@ -8,7 +8,7 @@ function newGame(){
   gates = []; stalls = []; teas = []; shutdowns = []; bubbles = []; toasts = []; fx = []; marchers = []; smokes = [];
   RINGS.forEach((r, i) => {
     const n = GATES_PER_RING[i], base = rand(-Math.PI, Math.PI);
-    for (let k = 0; k < n; k++){ const ang = base + k * 2 * Math.PI / n, p = polar(ang, r); gates.push({r, ring: i, ang, x: p.x, y: p.y, need: GATE_NEEDS[i], open: 0}); }
+    for (let k = 0; k < n; k++){ const ang = base + k * 2 * Math.PI / n, p = polar(ang, r); gates.push({r, ring: i, ang, x: p.x, y: p.y, need: GATE_NEEDS[i], open: 0, hits: GATE_HITS}); }
   });
   neutrals = []; followers = []; patrols = []; rivals = [];
   const counts = BYSTANDERS;

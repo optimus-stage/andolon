@@ -59,10 +59,11 @@ if (document.getElementById('role-prot')){
 }
 const photoEl = document.getElementById('photo'); if (photoEl) photoEl.onchange = e => loadPhoto(e.target.files[0]);   // the photo is chosen on the final card
 cv.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
-cv.addEventListener('mousedown', e => { if (role === 'police' && e.button === 0){ input.strike = true; doStrike(); } });
+cv.addEventListener('mousedown', e => { if (e.button !== 0) return; if (role === 'police'){ input.strike = true; doStrike(); } else doBreak(); });
 addEventListener('mouseup', () => { input.strike = false; });
 addEventListener('keydown', e => {
-  if (role !== 'police' || !game || !game.started) return;
+  if (!game || !game.started) return;
+  if (role !== 'police'){ if (e.code === 'Space'){ e.preventDefault(); doBreak(); } return; }
   if (e.code === 'Space'){ e.preventDefault(); input.strike = true; doStrike(); }
   else if (e.key === 'g' || e.key === 'G') doSmoke();
   else if (e.key === 'f' || e.key === 'F') doGun();
@@ -82,10 +83,10 @@ function padSet(t){
 const onPad = t => { const g = padGeom(); return Math.hypot(t.clientX - g.x, t.clientY - g.y) < g.R * 1.5; };
 const screenWalk = t => { mouse.x = t.clientX; mouse.y = t.clientY; };
 const actIds = new Map();   // touches that are holding an action button (police side)
-const actGeom = () => { const H = innerHeight, W = innerWidth; return [{id: 'strike', x: W - 64, y: H - 96, r: 42, t: 'STRIKE'}, {id: 'smoke', x: W - 150, y: H - 70, r: 30, t: 'SMOKE'}, {id: 'gun', x: W - 146, y: H - 142, r: 30, t: 'FIRE'}]; };
+const actGeom = () => { const H = innerHeight, W = innerWidth; if (role !== 'police') return [{id: 'strike', x: W - 64, y: H - 96, r: 42, t: 'STRIKE'}]; return [{id: 'strike', x: W - 64, y: H - 96, r: 42, t: 'STRIKE'}, {id: 'smoke', x: W - 150, y: H - 70, r: 30, t: 'SMOKE'}, {id: 'gun', x: W - 146, y: H - 142, r: 30, t: 'FIRE'}]; };
 const touchGo = e => {
   for (const t of e.changedTouches){
-    if (role === 'police' && e.type === 'touchstart'){
+    if (e.type === 'touchstart'){
       const a = actGeom().find(b => Math.hypot(t.clientX - b.x, t.clientY - b.y) < b.r + 10);
       if (a){ actIds.set(t.identifier, a.id); doAction(a.id); continue; }
     }
@@ -116,12 +117,12 @@ function drawPad(){
   for (let i = 0; i < 4; i++){ ctx.save(); ctx.rotate(i * Math.PI / 2); ctx.beginPath(); ctx.moveTo(g.R - 10, 0); ctx.lineTo(g.R - 22, -8); ctx.lineTo(g.R - 22, 8); ctx.fill(); ctx.restore(); }
   ctx.fillStyle = on ? '#fff' : 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.arc(pad.kx * 0.75, pad.ky * 0.75, g.R * 0.36, 0, 6.283); ctx.fill();
   ctx.restore();
-  if (role === 'police') drawActions();
+  drawActions();
 }
 function drawActions(){
   for (const b of actGeom()){
     const held = b.id === 'strike' && input.strike, cnt = b.id === 'smoke' ? game.smoke : b.id === 'gun' ? game.gun : null;
-    ctx.fillStyle = held ? 'rgba(255,255,255,.5)' : 'rgba(20,40,80,.55)'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 6.283); ctx.fill();
+    ctx.fillStyle = held ? 'rgba(255,255,255,.5)' : role === 'police' ? 'rgba(20,40,80,.55)' : 'rgba(120,40,20,.6)'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 6.283); ctx.fill();
     ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 2; ctx.stroke();
     ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = 'bold ' + (b.r > 35 ? 14 : 11) + 'px system-ui'; ctx.fillText(b.t, b.x, b.y + (cnt === null ? 5 : 0));
     if (cnt !== null){ ctx.font = 'bold 13px system-ui'; ctx.fillStyle = cnt ? '#ffd54f' : '#ff8a80'; ctx.fillText(String(cnt), b.x, b.y + 15); }
