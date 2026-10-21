@@ -82,7 +82,7 @@ function padSet(t){
 const onPad = t => { const g = padGeom(); return Math.hypot(t.clientX - g.x, t.clientY - g.y) < g.R * 1.5; };
 const screenWalk = t => { mouse.x = t.clientX; mouse.y = t.clientY; };
 const actIds = new Map();   // touches that are holding an action button (police side)
-const actGeom = () => { const H = innerHeight, W = innerWidth; return [{id: 'strike', x: W - 64, y: H - 96, r: 42, t: 'STRIKE'}, {id: 'smoke', x: W - 150, y: H - 70, r: 30, t: 'SMOKE'}, {id: 'gun', x: W - 72, y: H - 182, r: 30, t: 'FIRE'}]; };
+const actGeom = () => { const H = innerHeight, W = innerWidth; return [{id: 'strike', x: W - 64, y: H - 96, r: 42, t: 'STRIKE'}, {id: 'smoke', x: W - 150, y: H - 70, r: 30, t: 'SMOKE'}, {id: 'gun', x: W - 146, y: H - 142, r: 30, t: 'FIRE'}]; };
 const touchGo = e => {
   for (const t of e.changedTouches){
     if (role === 'police' && e.type === 'touchstart'){
