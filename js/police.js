@@ -236,6 +236,7 @@ function endPolice(won, why){
   document.getElementById('dl').onclick = () => downloadCard(canvas);
   document.getElementById('go').onclick = start;
   addSwitch();
+  addLeaderboard('police', {score, rank: rank.en, stat: st.dispersed, day: game.day});
   document.getElementById('menu').style.display = 'flex';
 }
 function addSwitch(){   // button on the result screen to play the other side

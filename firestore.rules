@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function validDoc(d, uid) {
+      return d.keys().hasOnly(['uid', 'name', 'division', 'score', 'rank', 'stat', 'day', 'updatedAt'])
+        && d.uid == uid
+        && d.name is string && d.name.size() >= 1 && d.name.size() <= 24
+        && d.division in ['Barishal', 'Chattogram', 'Dhaka', 'Khulna', 'Mymensingh', 'Rajshahi', 'Rangpur', 'Sylhet', 'Outside Bangladesh']
+        && d.score is int && d.score >= 0 && d.score <= 100000
+        && d.rank is string && d.rank.size() <= 40
+        && d.stat is int && d.stat >= 0 && d.stat <= 1000
+        && d.day is int && d.day >= 0 && d.day <= 1000
+        && d.updatedAt == request.time;
+    }
+    // play counters: any signed-in visitor may add 1 to a counter, nobody may lower or reset one
+    function bump(k) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny([k])
+        || request.resource.data[k] == resource.data.get(k, 0) + 1;
+    }
+    match /stats/global {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['players', 'games', 'games_protester', 'games_police'])
+        && request.resource.data.get('players', 1) == 1 && request.resource.data.get('games', 1) == 1
+        && request.resource.data.get('games_protester', 1) == 1 && request.resource.data.get('games_police', 1) == 1;
+      allow update: if request.auth != null
+        && request.resource.data.keys().hasOnly(['players', 'games', 'games_protester', 'games_police'])
+        && bump('players') && bump('games') && bump('games_protester') && bump('games_police');
+    }
+    match /{board}/{uid} {
+      allow read: if board in ['lb_protester', 'lb_police'];
+      allow create: if board in ['lb_protester', 'lb_police'] && request.auth != null && request.auth.uid == uid && validDoc(request.resource.data, uid);
+      // a score can only go up; name and division can be changed
+      allow update: if board in ['lb_protester', 'lb_police'] && request.auth != null && request.auth.uid == uid && validDoc(request.resource.data, uid)
+        && request.resource.data.score >= resource.data.score;
+      allow delete: if board in ['lb_protester', 'lb_police'] && request.auth != null && request.auth.uid == uid;
+    }
+  }
+}

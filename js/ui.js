@@ -220,6 +220,7 @@ function end(won, info){
   document.getElementById('dl').onclick = () => downloadCard(canvas);
   document.getElementById('go').onclick = start;
   addSwitch();
+  addLeaderboard('protester', {score, rank: rank.en, stat: st.peak, day: game.day});
   document.getElementById('menu').style.display = 'flex';
 }
 
