@@ -200,20 +200,6 @@ function barricadeSprite(){
 function drawBar(c, x, y, ang, alpha){
   c.save(); c.globalAlpha = alpha; c.translate(x, y); c.rotate(ang); c.drawImage(barricadeSprite(), -26, -8.5, 52, 17); c.restore();
 }
-// barrier line between the checkpoints, built once per game
-function cordonUnits(){
-  if (gates._cord) return gates._cord;
-  const out = [];
-  RINGS.forEach((r, i) => {
-    const n = Math.floor(6.283 * r / 50), gs = gates.filter(g => g.ring === i);
-    for (let k = 0; k < n; k++){
-      const a = k * 6.283 / n;
-      if (gs.some(g => Math.abs(wrap(a - g.ang)) * r < GATE_HALF + 26)) continue;   // the checkpoint fills this stretch
-      const p = polar(a, r); out.push({x: p.x, y: p.y, ang: a + Math.PI / 2});
-    }
-  });
-  return gates._cord = out;
-}
 // officers standing at a checkpoint: a row behind the barriers and one on each flank; they step aside as it opens
 function gatePolice(g, gi){
   const rx = Math.cos(g.ang), ry = Math.sin(g.ang), tx = -ry, ty = rx, out = [];
@@ -225,7 +211,6 @@ function gatePolice(g, gi){
   return out;
 }
 function drawBarricades(c, v){
-  for (const u of cordonUnits()) if (v(u)) drawBar(c, u.x, u.y, u.ang, 1);
   gates.forEach(g => {
     if (!v(g)) return;
     const rx = Math.cos(g.ang), ry = Math.sin(g.ang), tx = -ry, ty = rx, a = 1 - g.open * 0.85, ang = g.ang + Math.PI / 2;
