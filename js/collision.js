@@ -9,15 +9,12 @@ function resolveRect(o, r, rad){
 }
 function collide(o, rad){
   let d = Math.hypot(o.x, o.y) || 0.001;
-  for (let i = 0; i < RINGS.length; i++){
-    if (o.police) break;   // police walk through their own barricades
-    const r = RINGS[i], off = d - r;
-    if (Math.abs(off) < rad + 15){
-      const ang = Math.atan2(o.y, o.x);
-      let pass = false;
-      for (const g of gates) if (g.ring === i && g.open >= 1 && Math.abs(wrap(ang - g.ang)) * r < GATE_HALF){ pass = true; break; }
-      if (pass) continue;
-      const target = off >= 0 ? r + rad + 15 : r - rad - 15;
+  // only the police checkpoints block the way; the rest of the road is open
+  if (!o.police) for (const g of gates){   // police walk through their own barricades
+    if (g.open >= 1) continue;
+    const off = d - g.r;
+    if (Math.abs(off) < rad + 15 && Math.abs(wrap(Math.atan2(o.y, o.x) - g.ang)) * g.r < GATE_HALF){
+      const target = off >= 0 ? g.r + rad + 15 : g.r - rad - 15;
       o.x = o.x / d * target; o.y = o.y / d * target; d = target;
     }
   }
