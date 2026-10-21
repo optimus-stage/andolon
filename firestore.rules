@@ -12,6 +12,21 @@ service cloud.firestore {
         && d.day is int && d.day >= 0 && d.day <= 1000
         && d.updatedAt == request.time;
     }
+    // play counters: any signed-in visitor may add 1 to a counter, nobody may lower or reset one
+    function bump(k) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny([k])
+        || request.resource.data[k] == resource.data.get(k, 0) + 1;
+    }
+    match /stats/global {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['players', 'games', 'games_protester', 'games_police'])
+        && request.resource.data.get('players', 1) == 1 && request.resource.data.get('games', 1) == 1
+        && request.resource.data.get('games_protester', 1) == 1 && request.resource.data.get('games_police', 1) == 1;
+      allow update: if request.auth != null
+        && request.resource.data.keys().hasOnly(['players', 'games', 'games_protester', 'games_police'])
+        && bump('players') && bump('games') && bump('games_protester') && bump('games_police');
+    }
     match /{board}/{uid} {
       allow read: if board in ['lb_protester', 'lb_police'];
       allow create: if board in ['lb_protester', 'lb_police'] && request.auth != null && request.auth.uid == uid && validDoc(request.resource.data, uid);

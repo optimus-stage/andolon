@@ -39,6 +39,7 @@ function start(){
   goLandscape();
   document.getElementById('menu').style.display = 'none';
   if (role === 'police') newPoliceGame(); else newGame();
+  if (typeof trackStart === 'function') trackStart(role);
 }
 document.getElementById('go').onclick = () => { if (tutSeen(role)) start(); else showTutorial(role, start); };
 const hb = document.getElementById('howbtn'); if (hb) hb.onclick = () => showTutorial(role);

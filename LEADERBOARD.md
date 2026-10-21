@@ -11,3 +11,9 @@ The leaderboard stays hidden until `js/firebase-config.js` has your Firebase con
 7. Optional: in Google Cloud console, restrict the API key to your website's domain (HTTP referrers).
 
 Data: one document per player per board (`lb_protester`, `lb_police`), keyed by the anonymous user id, holding name, division, best score, rank title, a peak stat and the day. The rules only let a player write their own document, and a score can only go up.
+
+## Play counter
+
+Each time someone starts a game, the page adds 1 to `stats/global` in Firestore: `games` (every start), `games_protester`, `games_police`, and `players` (once per device, the first time it plays). Open **Firestore Database > stats > global** in the Firebase console to read the numbers. Nothing personal is stored. Re-publish `firestore.rules` after updating, since it now includes the `stats` rule.
+
+`players` counts devices/browsers, so one person on two phones counts twice, and clearing browser data counts again.

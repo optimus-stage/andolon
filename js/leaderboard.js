@@ -102,3 +102,17 @@ function addLeaderboard(r, e){
   const b = document.createElement('button'); b.type = 'button'; b.className = 'alt'; b.id = 'lbbtn'; b.textContent = 'Leaderboard';
   b.onclick = () => openLeaderboard(role); if (hb) hb.after(b);
 })();
+
+// ---------- play counter: stats/global holds players (new devices), games (every start), games_protester, games_police ----------
+// Nothing personal is stored. View the numbers in the Firebase console under Firestore > stats > global.
+async function trackStart(r){
+  if (!LB_ON) return;
+  try {
+    const first = !localStorage.getItem('da_counted');
+    const {fs, db} = await fbInit(), inc = {games: fs.increment(1)};
+    inc[r === 'police' ? 'games_police' : 'games_protester'] = fs.increment(1);
+    if (first) inc.players = fs.increment(1);
+    await fs.setDoc(fs.doc(db, 'stats', 'global'), inc, {merge: true});
+    if (first) localStorage.setItem('da_counted', '1');
+  } catch (e) {}   // counting must never get in the way of playing
+}
