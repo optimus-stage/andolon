@@ -181,6 +181,73 @@ function drawTree(c, t, dark){
   c.fillStyle = 'rgb(' + Math.round(g[0]) + ',' + Math.round(g[1]) + ',' + Math.round(g[2]) + ')'; c.beginPath(); c.arc(t.x - t.r * 0.15, t.y - t.r * 0.45, t.r * 0.78, 0, 6.283); c.fill();
 }
 
+
+// ---------- police barricades: yellow-and-black barriers with officers on duty ----------
+let barSprite = null;
+function barricadeSprite(){
+  if (barSprite) return barSprite;
+  const W = 96, H = 30, c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
+  g.fillStyle = 'rgba(0,0,0,.28)'; g.fillRect(4, 10, W - 8, 18);
+  g.fillStyle = '#2a2a2a'; g.fillRect(8, 2, 8, 24); g.fillRect(W - 16, 2, 8, 24);   // legs
+  g.save(); g.beginPath(); g.rect(2, 6, W - 4, 16); g.clip();
+  g.fillStyle = '#f7c600'; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#161616'; for (let x = -20; x < W + 20; x += 24){ g.beginPath(); g.moveTo(x, 6); g.lineTo(x + 12, 6); g.lineTo(x - 2, 22); g.lineTo(x - 14, 22); g.closePath(); g.fill(); }
+  g.restore();
+  g.strokeStyle = '#161616'; g.lineWidth = 2; g.strokeRect(2, 6, W - 4, 16);
+  g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(3, 7, W - 6, 3);
+  return barSprite = c;
+}
+function drawBar(c, x, y, ang, alpha){
+  c.save(); c.globalAlpha = alpha; c.translate(x, y); c.rotate(ang); c.drawImage(barricadeSprite(), -26, -8.5, 52, 17); c.restore();
+}
+// barrier line between the checkpoints, built once per game
+function cordonUnits(){
+  if (gates._cord) return gates._cord;
+  const out = [];
+  RINGS.forEach((r, i) => {
+    const n = Math.floor(6.283 * r / 50), gs = gates.filter(g => g.ring === i);
+    for (let k = 0; k < n; k++){
+      const a = k * 6.283 / n;
+      if (gs.some(g => Math.abs(wrap(a - g.ang)) * r < GATE_HALF + 26)) continue;   // the checkpoint fills this stretch
+      const p = polar(a, r); out.push({x: p.x, y: p.y, ang: a + Math.PI / 2});
+    }
+  });
+  return gates._cord = out;
+}
+// officers standing at a checkpoint: a row behind the barriers and one on each flank; they step aside as it opens
+function gatePolice(g, gi){
+  const rx = Math.cos(g.ang), ry = Math.sin(g.ang), tx = -ry, ty = rx, out = [];
+  const spots = [[-70, -42], [-35, -46], [0, -42], [35, -46], [70, -42], [-124, 6], [124, 6]];
+  spots.forEach((s, k) => {
+    const along = s[0] + Math.sign(s[0]) * g.open * 70;
+    out.push({x: g.x + tx * along + rx * s[1], y: g.y + ty * along + ry * s[1], skin: SKINS[(gi + k) % SKINS.length]});
+  });
+  return out;
+}
+function drawBarricades(c, v){
+  for (const u of cordonUnits()) if (v(u)) drawBar(c, u.x, u.y, u.ang, 1);
+  gates.forEach(g => {
+    if (!v(g)) return;
+    const rx = Math.cos(g.ang), ry = Math.sin(g.ang), tx = -ry, ty = rx, a = 1 - g.open * 0.85, ang = g.ang + Math.PI / 2;
+    for (const o of [-75, -25, 25, 75]) drawBar(c, g.x + tx * o, g.y + ty * o, ang, a);
+    for (const o of [-50, 0, 50]) drawBar(c, g.x + tx * o - rx * 18, g.y + ty * o - ry * 18, ang, a);
+    const lp = polar(g.ang, g.r + 72);
+    label(c, g.open >= 1 ? 'OPEN' : 'POLICE BARRICADE: ' + g.need + ' people', lp.x, lp.y, 'bold ' + Math.round(14 / Z) + 'px system-ui', '#111');
+  });
+}
+function minarMark(c, x, y){   // blinking red star on the small map
+  const on = Math.floor(performance.now() / 400) % 2 === 0;
+  c.save();
+  if (on){ c.fillStyle = 'rgba(255,40,40,.4)'; c.beginPath(); c.arc(x, y, 11, 0, 6.283); c.fill(); }
+  c.globalAlpha = on ? 1 : 0.2; c.fillStyle = '#e8102e'; c.strokeStyle = '#fff'; c.lineWidth = 1.2;
+  starPath(c, x, y, 8); c.fill(); c.stroke();
+  c.restore();
+}
+function miniDot(c, x, y, r, fill, edge){   // round dot for people on the small map
+  c.fillStyle = fill; c.beginPath(); c.arc(x, y, r, 0, 6.283); c.fill();
+  if (edge){ c.strokeStyle = edge; c.lineWidth = 1.2; c.stroke(); }
+}
+
 // ---------- draw ----------
 function draw(){
   const target = game.mode === 'arrest' && game.van && game.arrest.phase > 0 ? game.van : player;
@@ -257,19 +324,11 @@ function draw(){
   drawMonument(ctx);
   label(ctx, 'কেন্দ্রীয় শহীদ মিনার', 0, -GOAL.r - 12, 'bold ' + Math.round(20 * zf) + 'px ' + BN_FONT, '#0b6b3a');
 
-  // police barricade rings
-  RINGS.forEach((r, i) => {
-    const gs = gates.filter(g => g.ring === i).sort((a, b) => a.ang - b.ang), half = GATE_HALF / r;
-    ctx.strokeStyle = '#6c6c6c'; ctx.lineWidth = 30;
-    gs.forEach((g, k) => { const nx = gs[(k + 1) % gs.length], end = k + 1 < gs.length ? nx.ang : nx.ang + 2 * Math.PI; ctx.beginPath(); ctx.arc(0, 0, r, g.ang + half, end - half); ctx.stroke(); });
-    for (const g of gs){
-      ctx.globalAlpha = 1 - g.open * 0.85; ctx.strokeStyle = '#b5532a'; ctx.beginPath(); ctx.arc(0, 0, r, g.ang - half, g.ang + half); ctx.stroke(); ctx.globalAlpha = 1;
-      const lp = polar(g.ang, r + 32); label(ctx, g.open >= 1 ? 'OPEN' : 'POLICE BARRICADE: ' + g.need + ' people', lp.x, lp.y, 'bold ' + Math.round(14 * zf) + 'px system-ui', '#111');
-    }
-  });
+  drawBarricades(ctx, v);
 
   // people (depth-sorted)
   const list = [];
+  gates.forEach((g, gi) => { if (v(g)) for (const p of gatePolice(g, gi)) list.push([p.y, () => person(ctx, p.x, p.y, {dress: BLUE, skin: p.skin, hat: 'cap', legs: '#14284f', scale: 1.3, moving: false, stick: true, swing: 0})]); });
   for (const n of neutrals) if (v(n)) list.push([n.y, () => person(ctx, n.x, n.y, {dress: n.dress, skin: n.skin, look: n.look, moving: Math.abs(n.vx) + Math.abs(n.vy) > 4})]);
   followers.forEach((f, i) => { if (v(f)) list.push([f.y, () => role === 'police'
     ? person(ctx, f.x, f.y, {dress: BLUE, skin: f.skin, hat: 'cap', legs: '#14284f', scale: 1.3, moving: player.moving, stick: true, swing: (f.swing || 0) / 0.35})
@@ -388,13 +447,13 @@ function drawHUDPolice(){
   ctx.fillStyle = '#fff'; ctx.fillText('Smoke ' + G.smoke + '/3     Rounds ' + G.gun + '/6', 20, y0 + 68);
   if (!IS_TOUCH){ ctx.fillStyle = '#cfd8dc'; ctx.fillText('Click/Space strike · G smoke · F fire', 20, y0 + 92); }
   // map top right, arrow to the nearest crowd under it
-  const mr = 62, mx = vw - mr - 12, my = 12 + mr, ay = my + mr + 34, s = mr / MAP_R;
+  const mr = 76, mx = vw - mr - 12, my = 12 + mr, ay = my + mr + 34, s = mr / MAP_R;
   ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.beginPath(); ctx.arc(mx, my, mr, 0, 6.28); ctx.fill();
   ctx.strokeStyle = '#888'; ctx.lineWidth = 1; for (const r of RINGS){ ctx.beginPath(); ctx.arc(mx, my, r * s, 0, 6.28); ctx.stroke(); }
-  ctx.fillStyle = '#4caf50'; ctx.fillRect(mx - 3, my - 3, 6, 6);
-  ctx.fillStyle = '#4a8bff'; for (const p of patrols) ctx.fillRect(mx + p.x * s - 1, my + p.y * s - 1, 3, 3);
-  ctx.fillStyle = '#fff'; ctx.strokeStyle = '#e53935'; for (const r of marchers){ const q = 3 + Math.min(4, r.members.length / 6); ctx.fillRect(mx + r.x * s - q / 2, my + r.y * s - q / 2, q, q); ctx.strokeRect(mx + r.x * s - q / 2, my + r.y * s - q / 2, q, q); }
-  ctx.fillStyle = '#4fc3f7'; ctx.fillRect(mx + player.x * s - 2, my + player.y * s - 2, 5, 5);
+  for (const p of patrols) miniDot(ctx, mx + p.x * s, my + p.y * s, 3, '#4a8bff', '#fff');
+  for (const r of marchers) miniDot(ctx, mx + r.x * s, my + r.y * s, 4 + Math.min(4, r.members.length / 6), '#fff', '#e53935');
+  miniDot(ctx, mx + player.x * s, my + player.y * s, 5, '#4fc3f7', '#fff');
+  minarMark(ctx, mx, my);
   const near = marchers.reduce((b, r) => !b || dist(r, player) < dist(b, player) ? r : b, null);
   if (near){
     const a = Math.atan2(near.y - player.y, near.x - player.x);
@@ -442,7 +501,7 @@ function drawHUD(){
   ctx.fillStyle = '#fff'; ctx.fillText(ri >= 0 ? 'Next police barricade needs ' + GATE_NEEDS[ri] + ' people' : 'All barricades passed!', 20, y0 + 68);
   if (player.injured){ ctx.fillStyle = '#e53935'; ctx.font = 'bold 13px system-ui'; ctx.fillText('INJURED: find a hospital', 20, y0 + 96); }
 
-  const mr = 80, mx = vw - mr - 12, my = 12 + mr, ay = my + mr + 34, s = mr / MAP_R;   // map top right, red arrow under it
+  const mr = 96, mx = vw - mr - 12, my = 12 + mr, ay = my + mr + 34, s = mr / MAP_R;   // map top right, red arrow under it
   if (!inShutdown()){
     const a = Math.atan2(GOAL.y - player.y, GOAL.x - player.x);
     ctx.save(); ctx.translate(mx, ay); ctx.rotate(a);
@@ -463,12 +522,13 @@ function drawHUD(){
     }
     ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.beginPath(); ctx.arc(mx, my, mr, 0, 6.28); ctx.fill();
     ctx.strokeStyle = '#888'; ctx.lineWidth = 1; for (const r of RINGS){ ctx.beginPath(); ctx.arc(mx, my, r * s, 0, 6.28); ctx.stroke(); }
-    ctx.fillStyle = '#4caf50'; ctx.fillRect(mx - 3, my - 3, 6, 6);
-    ctx.fillStyle = '#ff5252'; for (const h of HOSPITALS) ctx.fillRect(mx + h.x * s - 2, my + h.y * s - 2, 4, 4);
-    ctx.fillStyle = '#4a8bff'; for (const p of patrols) ctx.fillRect(mx + p.x * s - 1, my + p.y * s - 1, 3, 3);
+    for (const h of HOSPITALS) miniDot(ctx, mx + h.x * s, my + h.y * s, 3, '#ff5252', '#fff');
+    for (const p of patrols) miniDot(ctx, mx + p.x * s, my + p.y * s, 3.2, '#4a8bff', '#fff');
     ctx.fillStyle = '#ff8c00'; for (const stn of STATIONS) if (heldAt(stn).length){ ctx.beginPath(); ctx.arc(mx + stn.x * s, my + stn.y * s, 4, 0, 6.28); ctx.fill(); }
-    ctx.fillStyle = '#000'; ctx.strokeStyle = '#fff'; for (const r of rivals){ ctx.fillRect(mx + r.x * s - 2, my + r.y * s - 2, 5, 5); ctx.strokeRect(mx + r.x * s - 2, my + r.y * s - 2, 5, 5); }
-    ctx.fillStyle = '#fff'; ctx.fillRect(mx + player.x * s - 2, my + player.y * s - 2, 5, 5);
+    for (const r of rivals) miniDot(ctx, mx + r.x * s, my + r.y * s, 4, '#000', '#fff');
+    ctx.fillStyle = 'rgba(255,255,255,.28)'; ctx.beginPath(); ctx.arc(mx + player.x * s, my + player.y * s, 6 + Math.min(8, Math.sqrt(followers.length)), 0, 6.283); ctx.fill();   // your crowd
+    miniDot(ctx, mx + player.x * s, my + player.y * s, 5, '#fff', '#0b6b3a');
+    minarMark(ctx, mx, my);
   } else { ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.beginPath(); ctx.arc(mx, my, mr, 0, 6.28); ctx.fill(); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = 'bold 12px system-ui'; ctx.fillText('NO SIGNAL', mx, my + 4); }
 
   ctx.textAlign = 'center';

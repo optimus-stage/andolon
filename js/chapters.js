@@ -39,7 +39,7 @@ const CHAPTERS = [
     map: {
       // Police stations a detained protester can be taken to (plus the Aynaghor).
       stations: [
-        {name: 'Shahbag Thana',    x: -57,  y: -150},
+        {name: 'Shahbag Thana',    x: -330, y: -170},
         {name: 'Dhanmondi Thana',  x: -486, y: -285},
         {name: 'Motijheel Thana',  x: 400,  y: -42},
         {name: 'Jatrabari Thana',  x: 716,  y: 437},
@@ -50,8 +50,8 @@ const CHAPTERS = [
       aynaghor: {name: 'Aynaghor', x: 60, y: -1420},
       // Hospitals: after being beaten by police, walk into one to recover energy.
       hospitals: [
-        {name: 'Dhaka Medical (DMCH)', x: 40,   y: 175},
-        {name: 'BSMMU',                x: -110, y: -125},
+        {name: 'DMC',                  x: -120, y: 330},
+        {name: 'BSMMU',                x: -230, y: -420},
         {name: 'Jatrabari Hospital',   x: 800,  y: 350},
         {name: 'United Hospital',      x: 360,  y: -1300},
         {name: 'Mirpur Hospital',      x: -700, y: -1700},
