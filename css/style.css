@@ -108,3 +108,24 @@ details.full li{font-size:16px}
   #ticker{font-size:11px;padding:2px 10px calc(2px + env(safe-area-inset-bottom));gap:8px}
   #ticker b{padding:0 6px;font-size:10px}
 }
+
+/* leaderboard */
+.lbsubmit{margin-top:14px;padding:10px 12px;background:#e4efe6;border-radius:10px}
+.lbsubmit label{display:block;font-size:15px;color:#1d3a27}
+select{width:100%;box-sizing:border-box;padding:10px;font-size:16px;border:1px solid #bbb;border-radius:8px;margin-top:6px;background:#fff}
+#lb{position:fixed;inset:0;z-index:65;display:flex;background:rgba(10,20,15,.88);overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+#lbbox{position:relative;background:#f6f1e3;color:#222;max-width:520px;width:calc(100% - 24px);margin:auto;padding:20px 16px 16px;border-radius:14px;box-shadow:0 10px 40px #0008}
+#lbbox h2{margin:0 0 10px;font-size:24px;color:#0b6b3a}
+#lbx{position:absolute;right:8px;top:6px;width:40px;height:40px;border:0;border-radius:50%;background:transparent;color:#444;font-size:30px;line-height:1;padding:0;margin:0}
+#lbtabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+#lbtabs button{margin:0;width:auto;padding:10px;background:#e6e1d0;color:#222;font-weight:700}
+#lbtabs button.on{background:#0b6b3a;color:#fff}
+#lbmsg{margin:10px 0;font-size:15px;color:#555;text-align:center}
+#lblist{list-style:none;margin:8px 0 0;padding:0;counter-reset:lb}
+#lblist li{counter-increment:lb;display:flex;align-items:center;gap:10px;padding:8px 6px;border-bottom:1px solid #ddd6bd;font-size:16px}
+#lblist li::before{content:counter(lb);flex:none;width:28px;text-align:center;font-weight:700;color:#0b6b3a}
+#lblist li>div{flex:1;min-width:0}
+#lblist li b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#lblist li small{margin:0;font-size:12px}
+#lblist li>span{font-weight:700;font-size:18px}
+#lblist li.me{background:#fff3c4;border-radius:8px}

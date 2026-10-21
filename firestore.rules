@@ -1,0 +1,24 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function validDoc(d, uid) {
+      return d.keys().hasOnly(['uid', 'name', 'division', 'score', 'rank', 'stat', 'day', 'updatedAt'])
+        && d.uid == uid
+        && d.name is string && d.name.size() >= 1 && d.name.size() <= 24
+        && d.division in ['Barishal', 'Chattogram', 'Dhaka', 'Khulna', 'Mymensingh', 'Rajshahi', 'Rangpur', 'Sylhet', 'Outside Bangladesh']
+        && d.score is int && d.score >= 0 && d.score <= 100000
+        && d.rank is string && d.rank.size() <= 40
+        && d.stat is int && d.stat >= 0 && d.stat <= 1000
+        && d.day is int && d.day >= 0 && d.day <= 1000
+        && d.updatedAt == request.time;
+    }
+    match /{board}/{uid} {
+      allow read: if board in ['lb_protester', 'lb_police'];
+      allow create: if board in ['lb_protester', 'lb_police'] && request.auth != null && request.auth.uid == uid && validDoc(request.resource.data, uid);
+      // a score can only go up; name and division can be changed
+      allow update: if board in ['lb_protester', 'lb_police'] && request.auth != null && request.auth.uid == uid && validDoc(request.resource.data, uid)
+        && request.resource.data.score >= resource.data.score;
+      allow delete: if board in ['lb_protester', 'lb_police'] && request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
