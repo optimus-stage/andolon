@@ -9,7 +9,7 @@ function tutorialSteps(r){
   ];
   return [
     {icon: '\u{1F6B6}', title: 'Walk and gather', text: (touch ? 'Hold the round pad to walk.' : 'Move the mouse to walk.') + ' Walk into bystanders to bring them along.'},
-    {icon: '\u{1F6A7}', title: 'Pass the barricades', text: 'A barricade opens when your crowd is big enough: ' + GATE_NEEDS.slice().reverse().join(', ') + ' people. Stand near it and wait.'},
+    {icon: '\u{1F6A7}', title: 'Pass the barricades', text: 'Bricks and barriers block the road. With enough people (' + GATE_NEEDS.slice().reverse().join(', ') + ') stand at a checkpoint and ' + (touch ? 'tap STRIKE' : 'click or press Space') + ' a few times to break it.'},
     {icon: '\u{1F6E1}️', title: 'Stay safe', text: 'Police sticks cost morale. Heal at hospitals or biryani stalls. If your morale runs out you will be detained.'},
     {icon: '\u{1F3DB}️', title: 'Hold the Minar', text: 'Reach the Shaheed Minar with ' + NEED_CROWD + ' people and hold it for ' + NEED_HOLD + ' seconds. You have ' + MAX_DAY + ' days, about 4 minutes.'},
   ];

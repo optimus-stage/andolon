@@ -4,7 +4,7 @@ function newPoliceGame(){
   gates = []; stalls = []; teas = []; shutdowns = []; bubbles = []; toasts = []; fx = []; smokes = []; marchers = []; rivals = [];
   RINGS.forEach((r, i) => {
     const n = GATES_PER_RING[i], base = rand(-Math.PI, Math.PI);
-    for (let k = 0; k < n; k++){ const ang = base + k * 2 * Math.PI / n, p = polar(ang, r); gates.push({r, ring: i, ang, x: p.x, y: p.y, need: GATE_NEEDS[i], open: 0}); }
+    for (let k = 0; k < n; k++){ const ang = base + k * 2 * Math.PI / n, p = polar(ang, r); gates.push({r, ring: i, ang, x: p.x, y: p.y, need: GATE_NEEDS[i], open: 0, hits: GATE_HITS}); }
   });
   neutrals = []; followers = []; patrols = [];
   for (let z = 0; z < 4; z++){
@@ -75,7 +75,7 @@ function doGun(){
     }
   }
 }
-function doAction(id){ if (id === 'strike'){ input.strike = true; doStrike(); } else if (id === 'smoke') doSmoke(); else if (id === 'gun') doGun(); }
+function doAction(id){ if (role !== 'police'){ doBreak(); return; } if (id === 'strike'){ input.strike = true; doStrike(); } else if (id === 'smoke') doSmoke(); else if (id === 'gun') doGun(); }
 function crowdNeed(r){ const dr = Math.hypot(r.x, r.y), ri = RINGS.findIndex(rr => rr < dr - 20); return ri >= 0 ? GATE_NEEDS[ri] : NEED_CROWD; }
 function spawnCrowd(){
   const z = Math.random() < 0.65 ? 0 : 1, p = spawnIn(ZR[z + 1] + 100, ZR[z] - 120);

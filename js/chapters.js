@@ -17,6 +17,7 @@ const CHAPTERS = [
       gatesPerRing: [6, 2, 2],         // number of police barricades on the outer, middle and inner rings
       houseCount: 240,                 // solid houses on the map
       policePerZone: [4, 6, 3, 4],     // police in each zone, outermost to centre
+      gateHits: 3,                     // strikes needed to break a barricade (when the crowd is big enough)
       gateHalf: 85,                    // half-width of a gate gap in px
       goal: {x: 0, y: 0, r: 130},
       needHold: 10, needCrowd: 15,     // hold the goal for 10s with 15 people

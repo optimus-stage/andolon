@@ -203,21 +203,37 @@ function drawBar(c, x, y, ang, alpha){
 // officers standing at a checkpoint: a row behind the barriers and one on each flank; they step aside as it opens
 function gatePolice(g, gi){
   const rx = Math.cos(g.ang), ry = Math.sin(g.ang), tx = -ry, ty = rx, out = [];
-  const spots = [[-70, -42], [-35, -46], [0, -42], [35, -46], [70, -42], [-124, 6], [124, 6]];
+  const spots = [[-45, -44], [0, -48], [45, -44]];
   spots.forEach((s, k) => {
     const along = s[0] + Math.sign(s[0]) * g.open * 70;
     out.push({x: g.x + tx * along + rx * s[1], y: g.y + ty * along + ry * s[1], skin: SKINS[(gi + k) % SKINS.length]});
   });
   return out;
 }
+function drawBrickWall(c){
+  RINGS.forEach((r, i) => {
+    const gs = gates.filter(g => g.ring === i).sort((a, b) => a.ang - b.ang), half = GATE_HALF / r;
+    gs.forEach((g, k) => {
+      const nx = gs[(k + 1) % gs.length], a0 = g.ang + half, a1 = k + 1 < gs.length ? nx.ang - half : nx.ang + 2 * Math.PI - half;
+      c.beginPath(); c.arc(0, 0, r, a0, a1);
+      c.lineCap = 'butt'; c.strokeStyle = '#9c4a32'; c.lineWidth = 26; c.stroke();
+      c.strokeStyle = 'rgba(236,214,186,.6)'; c.setLineDash([1.8, 15]); c.stroke(); c.setLineDash([]);   // vertical mortar joints
+      c.lineWidth = 1.6; c.stroke();                                                                  // course in the middle
+      c.strokeStyle = 'rgba(255,255,255,.22)'; c.lineWidth = 3; c.beginPath(); c.arc(0, 0, r - 11, a0, a1); c.stroke();   // lit top edge
+      c.strokeStyle = 'rgba(0,0,0,.25)'; c.beginPath(); c.arc(0, 0, r + 12, a0, a1); c.stroke();                       // shadow side
+    });
+  });
+}
 function drawBarricades(c, v){
+  drawBrickWall(c);
   gates.forEach(g => {
     if (!v(g)) return;
     const rx = Math.cos(g.ang), ry = Math.sin(g.ang), tx = -ry, ty = rx, a = 1 - g.open * 0.85, ang = g.ang + Math.PI / 2;
-    for (const o of [-75, -25, 25, 75]) drawBar(c, g.x + tx * o, g.y + ty * o, ang, a);
-    for (const o of [-50, 0, 50]) drawBar(c, g.x + tx * o - rx * 18, g.y + ty * o - ry * 18, ang, a);
+    const j = g.shake > 0 ? (Math.random() - 0.5) * 6 : 0;   // rattles when struck
+    for (const o of [-75, -25, 25, 75]) drawBar(c, g.x + tx * o + rx * j, g.y + ty * o + ry * j, ang, a);
+    for (const o of [-50, 0, 50]) drawBar(c, g.x + tx * o - rx * 18 + rx * j, g.y + ty * o - ry * 18 + ry * j, ang, a);
     const lp = polar(g.ang, g.r + 72);
-    label(c, g.open >= 1 ? 'OPEN' : 'POLICE BARRICADE: ' + g.need + ' people', lp.x, lp.y, 'bold ' + Math.round(14 / Z) + 'px system-ui', '#111');
+    label(c, g.open >= 1 ? 'OPEN' : 'POLICE BARRICADE: ' + g.need + ' people' + (g.hits < GATE_HITS && !g.opening ? ' · ' + g.hits + ' hits left' : ''), lp.x, lp.y, 'bold ' + Math.round(14 / Z) + 'px system-ui', '#111');
   });
 }
 function minarMark(c, x, y){   // blinking red star on the small map

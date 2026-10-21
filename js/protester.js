@@ -1,4 +1,16 @@
 // ---------- update ----------
+// protesters: strike the nearest police barricade; it only breaks when the crowd is big enough
+function doBreak(){
+  if (!game || !game.started || role === 'police' || game.mode === 'arrest' || game.brkCd > 0) return;
+  game.brkCd = 0.45;
+  const g = gates.filter(g => g.open < 1 && !g.opening && dist(player, g) < 150).sort((a, b) => dist(a, player) - dist(b, player))[0];
+  if (!g) return;
+  sfxWhack();
+  if (followers.length < g.need){ say('This police barricade needs ' + g.need + ' people to break. You have ' + followers.length + '.'); return; }
+  g.hits -= 1; g.shake = 0.25; addFx(g.x, g.y, 'dust');
+  if (g.hits <= 0){ g.opening = true; say('The police barricade gives way. Keep moving!'); }
+  else say(g.hits + ' more strike' + (g.hits > 1 ? 's' : '') + ' to break it.', 1.5);
+}
 function update(dt){
   if (role === 'police'){ updatePolice(dt); return; }
   game.t += dt; game.msgT -= dt; game.flash = Math.max(0, game.flash - dt);
@@ -99,12 +111,14 @@ function update(dt){
   if (rivals.length < RIVAL_TARGET){ game.rivalSpawnT -= dt; if (game.rivalSpawnT <= 0 && spawnRival()) game.rivalSpawnT = 20; }
 
   // police barricades
+  game.brkCd = Math.max(0, (game.brkCd || 0) - dt);
   for (const g of gates){
+    if (g.shake > 0) g.shake -= dt;
     if (g.open >= 1) continue;
-    const near = dist(player, g) < 130;
-    if (near && followers.length >= g.need){ g.open = Math.min(1, g.open + dt / 3); if (g.open >= 1) say('The police barricade gives way. Keep moving!'); }
+    const near = dist(player, g) < 150;
+    if (g.opening) g.open = Math.min(1, g.open + dt * 2.5);   // struck down: the barricade swings open
     else if (!rivals.some(r => dist(r, g) < 130 && r.members.length >= g.need)) g.open = Math.max(0, g.open - dt * 0.5);
-    if (near && followers.length < g.need && game.msgT <= 0) say('This police barricade needs ' + g.need + ' people. You have ' + followers.length + '.');
+    if (near && game.msgT <= 0 && !g.opening) say(followers.length >= g.need ? 'Press STRIKE to break this police barricade.' : 'This police barricade needs ' + g.need + ' people to break. You have ' + followers.length + '.');
   }
 
   for (const g of gates) if (g.open >= 1 && !g.broken){   // the barricade just broke: crumble sound and dust (only if it is near you)
