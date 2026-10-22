@@ -10,7 +10,7 @@ Open `index.html` in a browser (no build, no server needed). To share online, up
 - `css/style.css`: styles
 - `js/chapters.js`: one object per chapter: balance numbers (rings, crowd sizes, day length, rivals), map content (police stations, hospitals, landmarks, river), chants and news headlines. Add a chapter here; play one with `?chapter=<id>`
 - `js/data.js`: data shared by every chapter (score weights, ranks, tags, roasts, police ranks, names, support links) and the globals built from the active chapter
-- `js/core.js`, `audio.js`, `town.js`, `state.js`, `collision.js`, `protester.js`, `police.js`, `combat.js`, `render.js`, `ui.js`, `main.js`: the game code, loaded in this order by `index.html` (they share one global scope)
+- `js/core.js`, `audio.js`, `town.js`, `state.js`, `collision.js`, `protester.js`, `police.js`, `combat.js`, `render.js`, `ui.js`, `avatar.js`, `main.js`: the game code, loaded in this order by `index.html` (they share one global scope)
 
 ## Rules
 - Walk with the mouse (or touch and hold on a phone). Recruit bystanders and they join your crowd in white. Your name shows above your head.
@@ -30,6 +30,13 @@ Open `index.html` in a browser (no build, no server needed). To share online, up
 - Special tags for winners: ঝড়ের গতি, অদম্য, জনসমুদ্র, শেষ লড়াই, ব্যারিকেড ভাঙনকারী. For detained players: প্রথম হুংকার (First Roar), অকুতোভয় (Fearless), দুর্জয় (Indomitable).
 - If Day 30 ends without a win you get a friendly roast tag instead of a rank: বিরিয়ানি বিপ্লবী, একলা চলো রে, ব্যারিকেডের ভয়ে ঘরমুখো or ফেসবুক বিপ্লবী.
 - End screens produce a shareable PNG photo card (Web Share on phones, download on desktop). You can upload your own photo on the start screen or on the card screen; it replaces the avatar and never leaves your device. Your best score is saved in your browser. Press M to mute sound.
+
+## Avatars
+- **Customize avatar** on the menu (and on the result screens) opens the editor: gender, skin tone, hair and hair colour, head covering, outfit and colours, and an accessory for the protester; gender, skin, hair, cap or beret, uniform colour, rank badge and glasses for the police officer. Each side keeps its own avatar. Choices are saved on the device (`da_avatar`).
+- Players signed in with Google also keep their avatars in `profiles/{uid}.av`, so they follow the account to other devices. Edits that have not been saved yet (`da_avatar_dirty`) are never overwritten by the cloud copy.
+- The avatar is drawn by `person()` in `js/render.js` from the options in `js/avatar.js`. It shows in the game, on the share card (a photo you add to the card replaces it), and on the leaderboard rows. Photos are never uploaded.
+- An avatar is stored as a short string of option numbers (for example `0.1.0.0.3.0.0.0.0.1`), so adding an option means extending the lists at the top of `js/avatar.js` and the Bangla names in `js/i18n.js`. Keep the order of existing values, because saved avatars use the numbers.
+- Avatar choices never use the seeded game RNG, so daily and friend challenges stay identical for everyone.
 
 ## Hunting rivals and rescues
 - Rival crowds (about 12, three per zone) now chase you when you are close in the same zone. They are slower than you, so run early. They still recruit bystanders, and equal-sized crowds go to the protesters.

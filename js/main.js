@@ -74,6 +74,7 @@ function showRole(){
   const r1 = document.getElementById('rules'), r2 = document.getElementById('rules2'); if (r1) r1.style.display = role === 'police' ? 'none' : ''; if (r2) r2.style.display = role === 'police' ? '' : 'none';
   const pn = document.getElementById('pname'); if (pn) pn.placeholder = tr(role === 'police' ? 'Officer' : 'Protester');
   const go = document.getElementById('go'); if (go) go.textContent = tr(role === 'police' ? 'Start patrol' : 'Start marching');
+  if (typeof refreshAvatarUI === 'function') refreshAvatarUI();
 }
 try { if (localStorage.getItem('da_role') === 'police') role = 'police'; } catch (e) {}
 if (document.getElementById('role-prot')){

@@ -14,8 +14,11 @@ service cloud.firestore {
     function bdTime() { return request.time + duration.value(6, 'h'); }
     function dayKey(t) { return 'd' + string(t.year() * 10000 + t.month() * 100 + t.day()); }
     function validDay(day) { return day == dayKey(bdTime()) || day == dayKey(bdTime() - duration.value(1, 'd')); }
+    // an avatar is a short string of option numbers such as "0.1.0.0.3.0.0.0.0.1"
+    function validAv(v) { return v is string && v.matches('^[0-9.]{1,40}$'); }
     function validDaily(d, uid) {
-      return d.keys().hasOnly(['uid', 'name', 'division', 'score', 'rank', 'stat', 'day', 'streak', 'updatedAt'])
+      return d.keys().hasOnly(['uid', 'name', 'division', 'score', 'rank', 'stat', 'day', 'streak', 'av', 'updatedAt'])
+        && (!('av' in d) || validAv(d.av))
         && d.uid == uid
         && d.name == getAfter(playerDoc(uid)).data.name
         && validDivision(d.division)
@@ -29,7 +32,8 @@ service cloud.firestore {
     // lifetime profile (private to the owner): counters only ever go up, achievements are a short list of ids
     function numOk(n, k) { return !(k in n) || (n[k] is int && n[k] >= 0 && n[k] <= 1000000000); }
     function validProfile(d) {
-      return d.keys().hasOnly(['n', 'ach', 'updatedAt'])
+      return d.keys().hasOnly(['n', 'ach', 'av', 'updatedAt'])
+        && (!('av' in d) || (d.av is map && d.av.keys().hasOnly(['p', 'c']) && (!('p' in d.av) || validAv(d.av.p)) && (!('c' in d.av) || validAv(d.av.c))))
         && d.n is map && d.n.keys().hasOnly(['games', 'wins', 'winsP', 'winsPol', 'secs', 'recruits', 'peak', 'bestP', 'bestPol', 'dispersed', 'breaks', 'clashes', 'detained', 'beaten', 'cures', 'teas', 'dailies', 'bestStreak', 'squadPeak', 'smokes'])
         && numOk(d.n, 'games') && numOk(d.n, 'wins') && numOk(d.n, 'winsP') && numOk(d.n, 'winsPol') && numOk(d.n, 'secs') && numOk(d.n, 'recruits') && numOk(d.n, 'peak') && numOk(d.n, 'bestP') && numOk(d.n, 'bestPol') && numOk(d.n, 'dispersed') && numOk(d.n, 'breaks') && numOk(d.n, 'clashes') && numOk(d.n, 'detained') && numOk(d.n, 'beaten') && numOk(d.n, 'cures') && numOk(d.n, 'teas') && numOk(d.n, 'dailies') && numOk(d.n, 'bestStreak') && numOk(d.n, 'squadPeak') && numOk(d.n, 'smokes')
         && d.ach is list && d.ach.size() <= 40
@@ -41,7 +45,8 @@ service cloud.firestore {
     function nameDoc(n) { return /databases/$(database)/documents/names/$(n.lower()); }
     function playerDoc(uid) { return /databases/$(database)/documents/players/$(uid); }
     function validDoc(d, uid) {
-      return d.keys().hasOnly(['uid', 'name', 'division', 'score', 'rank', 'stat', 'day', 'updatedAt'])
+      return d.keys().hasOnly(['uid', 'name', 'division', 'score', 'rank', 'stat', 'day', 'av', 'updatedAt'])
+        && (!('av' in d) || validAv(d.av))
         && d.uid == uid
         && d.name == getAfter(playerDoc(uid)).data.name   // the leaderboard name is the player's registered, unique nickname
         && validDivision(d.division)

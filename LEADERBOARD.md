@@ -10,7 +10,7 @@ The leaderboard stays hidden until `js/firebase-config.js` has your Firebase con
 6. **Authentication > Settings > Authorized domains**: add your site domain (for example `optimus-stage.github.io`).
 7. Optional: in Google Cloud console, restrict the API key to your website's domain (HTTP referrers).
 
-Data: one document per player per board (`lb_protester`, `lb_police`), keyed by the anonymous user id, holding name, division, best score, rank title, a peak stat and the day. The rules only let a player write their own document, and a score can only go up.
+Data: one document per player per board (`lb_protester`, `lb_police`), keyed by the anonymous user id, holding name, division, best score, rank title, a peak stat, the day and the optional `av` avatar code (a short string of option numbers, never a photo). The rules only let a player write their own document, and a score can only go up.
 
 ## Play counter
 
@@ -26,6 +26,12 @@ Each time someone starts a game, the page adds 1 to `stats/global` in Firestore:
 - Optional Google sign-in links the anonymous account to a Google account (same user id), so the record follows the player to other devices. If that Google account already has a record, the game switches to it.
 - Republish `firestore.rules` after pulling this update. Leaderboard entries created before nicknames existed stay visible; their owners register a nickname the next time they submit.
 - The rules can be tested locally with the Firebase emulator (`firebase emulators:exec --only firestore ...`).
+
+## Avatars
+
+- Leaderboard and daily entries carry an optional `av` string (digits and dots, at most 40 characters, checked by `validAv` in `firestore.rules`). Entries without it show the default avatar.
+- `profiles/{uid}.av` (`{p, c}`, the protester and police codes) keeps a Google-signed-in player's avatars private to them and syncs them across devices.
+- Republish `firestore.rules` after pulling this update.
 
 ## Daily challenge
 
