@@ -193,7 +193,7 @@ function openLeaderboard(startRole, startToday){
         const n = document.createElement('b'); n.textContent = dispName(x.name);
         const d = document.createElement('small'); d.textContent = tr(x.division) + ' · ' + tr(x.rank) + (today && x.streak > 1 ? ' · ' + tr('🔥 {n}-day streak', {n: x.streak}) : '');
         const s = document.createElement('span'); s.textContent = loc(x.score);
-        const av = document.createElement('canvas'); av.className = 'lbav'; li.appendChild(av); drawAvatar(av, x.av, r, 1.7);
+        const av = document.createElement('canvas'); av.className = 'lbav'; li.appendChild(av); drawAvatar(av, x.av, r, 1.9, null, 64, 72);
         const w = document.createElement('div'); w.append(n, d); li.append(w, s); list.appendChild(li);
       });
     } catch (e) { msg.textContent = tr('Could not load the leaderboard. Check your connection and try again.'); }

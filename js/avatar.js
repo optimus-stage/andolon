@@ -70,9 +70,11 @@ function applyAvatar(p, r){   // put the chosen avatar on the player (called whe
   const pr = avatarProps(getAvatar(r), r); p.skin = pr.skin; p.avp = pr;
 }
 
-// draw an avatar into a canvas (menu preview, editor, leaderboard rows). h: canvas CSS size is set by the caller.
-function drawAvatar(cv, str, r, scale, extra){
-  const k = Math.min(2, window.devicePixelRatio || 1), w = cv.clientWidth || cv.width / k, h = cv.clientHeight || cv.height / k;
+// draw an avatar into a canvas (menu preview, editor, leaderboard rows). w and h are the canvas's CSS size: a canvas that is not in the page yet
+// reports no size, and falling back to its default 300x150 bitmap would squash the picture.
+function drawAvatar(cv, str, r, scale, extra, w, h){
+  const k = Math.min(2, window.devicePixelRatio || 1); w = w || cv.clientWidth || +cv.dataset.w || 100; h = h || cv.clientHeight || +cv.dataset.h || 100;
+  cv.style.width = w + 'px'; cv.style.height = h + 'px';
   cv.width = Math.round(w * k); cv.height = Math.round(h * k);
   const c = cv.getContext('2d'); c.scale(k, k); c.clearRect(0, 0, w, h);
   person(c, w / 2 - 3 * scale, h - Math.round(10 * scale) - 4, Object.assign({scale, noBase: true, stick: avRole(r) === 'police'}, extra || {}, avatarPropsFor(str, r)));
@@ -113,7 +115,7 @@ function openAvatarEditor(r){
       });
       d.appendChild(box); rows.appendChild(d);
     });
-    drawAvatar(big, avEncode(a, r), r, 4.8);
+    drawAvatar(big, avEncode(a, r), r, 4.8, null, 220, 190);
     refreshAvatarUI();
   };
   const close = () => { o.remove(); refreshAvatarUI(); if (typeof cardRefresh === 'function' && document.getElementById('cardimg')) cardRefresh(); };
@@ -135,7 +137,7 @@ function avatarButton(cls){   // a "Customize avatar" button with a live thumbna
 }
 function paintAvatarButton(b){ b.textContent = tr('Customize avatar'); }
 function refreshAvatarUI(){
-  const c = document.getElementById('avprev'); if (c) drawAvatar(c, avStr(role), role, 2.6);
+  const c = document.getElementById('avprev'); if (c) drawAvatar(c, avStr(role), role, 2.6, null, 100, 104);
   const t = document.getElementById('avtitle'); if (t) t.textContent = tr(role === 'police' ? 'Your officer' : 'Your protester');
   for (let i = avatarButtons.length - 1; i >= 0; i--){ if (!avatarButtons[i].isConnected && avatarButtons[i].dataset.menu !== '1') avatarButtons.splice(i, 1); else paintAvatarButton(avatarButtons[i]); }
 }
