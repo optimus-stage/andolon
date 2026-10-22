@@ -1,11 +1,22 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function validDivision(v) {
+      return v in ['Barishal', 'Chattogram', 'Dhaka', 'Khulna', 'Mymensingh', 'Rajshahi', 'Rangpur', 'Sylhet', 'Outside Bangladesh'];
+    }
+    // 1 to 24 letters, marks, numbers, space . _ - ; no space at the start or end; a few reserved names
+    function validName(n) {
+      return n is string
+        && n.matches('^[\\p{L}\\p{M}\\p{N}_.-]([\\p{L}\\p{M}\\p{N} _.-]{0,22}[\\p{L}\\p{M}\\p{N}_.-])?$')
+        && !(n.lower() in ['protester', 'officer', 'admin', 'administrator', 'andolon', 'আন্দোলন', 'আন্দোলনকারী', 'অফিসার']);
+    }
+    function nameDoc(n) { return /databases/$(database)/documents/names/$(n.lower()); }
+    function playerDoc(uid) { return /databases/$(database)/documents/players/$(uid); }
     function validDoc(d, uid) {
       return d.keys().hasOnly(['uid', 'name', 'division', 'score', 'rank', 'stat', 'day', 'updatedAt'])
         && d.uid == uid
-        && d.name is string && d.name.size() >= 1 && d.name.size() <= 24
-        && d.division in ['Barishal', 'Chattogram', 'Dhaka', 'Khulna', 'Mymensingh', 'Rajshahi', 'Rangpur', 'Sylhet', 'Outside Bangladesh']
+        && d.name == getAfter(playerDoc(uid)).data.name   // the leaderboard name is the player's registered, unique nickname
+        && validDivision(d.division)
         && d.score is int && d.score >= 0 && d.score <= 100000
         && d.rank is string && d.rank.size() <= 40
         && d.stat is int && d.stat >= 0 && d.stat <= 1000
@@ -26,6 +37,37 @@ service cloud.firestore {
       allow update: if request.auth != null
         && request.resource.data.keys().hasOnly(['players', 'games', 'games_protester', 'games_police'])
         && bump('players') && bump('games') && bump('games_protester') && bump('games_police');
+    }
+    // one record per signed-in user: the nickname (changeable once every 7 days) and division
+    match /players/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name', 'division', 'nameChangedAt'])
+        && validName(request.resource.data.name) && validDivision(request.resource.data.division)
+        && request.resource.data.nameChangedAt == request.time
+        && getAfter(nameDoc(request.resource.data.name)).data.uid == uid;
+      allow update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name', 'division', 'nameChangedAt'])
+        && validName(request.resource.data.name) && validDivision(request.resource.data.division)
+        && (
+          // only the division changed
+          (request.resource.data.name == resource.data.name && request.resource.data.nameChangedAt == resource.data.nameChangedAt)
+          // new nickname: at most once every 7 days, the new name must be claimed and the old one released in the same write
+          || (request.resource.data.nameChangedAt == request.time
+              && request.time >= resource.data.nameChangedAt + duration.value(7, 'd')
+              && getAfter(nameDoc(request.resource.data.name)).data.uid == uid
+              && !existsAfter(nameDoc(resource.data.name)))
+        );
+    }
+    // nickname claims: the document id is the lower-case nickname, so two players can never hold the same one
+    match /names/{key} {
+      allow get: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['uid', 'name'])
+        && request.resource.data.uid == request.auth.uid
+        && validName(request.resource.data.name) && key == request.resource.data.name.lower()
+        && getAfter(playerDoc(request.auth.uid)).data.name == request.resource.data.name;
+      allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
     }
     match /{board}/{uid} {
       allow read: if board in ['lb_protester', 'lb_police'];

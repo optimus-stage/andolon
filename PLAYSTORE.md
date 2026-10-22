@@ -25,7 +25,7 @@ Without it the app opens with a browser address bar.
 ## 4. Play Console
 - Create the app, one-time $25 developer fee. New personal accounts must usually run a closed test with a minimum number of testers for a set period before production; check Google's current rules.
 - Privacy policy URL: `https://yourdomain/privacy.html` (already in the repo).
-- **Data safety form**: collected data = name (nickname) and in-app score/progress, shared publicly on the leaderboard; anonymous device/user ID (Firebase). No ads, no location, no contacts. Data can be deleted on request (email in the policy).
+- **Data safety form**: collected data = nickname and in-app score/progress, shared publicly on the leaderboard; anonymous user ID (Firebase); optional Google sign-in (email and name, used only to sign in, not shown). No ads, no location, no contacts. Data can be deleted on request (email in the policy).
 - **Content rating questionnaire**: fictional, cartoon, non-graphic conflict involving police and crowds; stick/gunfire sound effects. Answer honestly. Mention that the game is fictional and not tied to real events.
 - **User-generated content**: leaderboard names are public; the leaderboard has a "Report an inappropriate name" link and the policy explains removal.
 - Store listing: short and full description, 512 px icon, feature graphic (1024x500), phone screenshots (landscape).

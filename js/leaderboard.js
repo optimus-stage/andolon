@@ -1,4 +1,4 @@
-// ---------- online leaderboard (Firebase Firestore, anonymous sign-in) ----------
+// ---------- online leaderboard (Firebase Firestore, anonymous sign-in, optional Google sign-in) ----------
 const DIVISIONS = ['Barishal', 'Chattogram', 'Dhaka', 'Khulna', 'Mymensingh', 'Rajshahi', 'Rangpur', 'Sylhet', 'Outside Bangladesh'];
 const LB_ON = typeof FIREBASE_CONFIG !== 'undefined' && !!FIREBASE_CONFIG.apiKey;
 const lbName = () => (typeof playerName === 'string' ? playerName : 'Protester');
@@ -11,7 +11,7 @@ function fbInit(){
     const a = app.initializeApp(FIREBASE_CONFIG), au = auth.getAuth(a);
     await au.authStateReady();
     if (!au.currentUser) await auth.signInAnonymously(au);
-    return {fs, db: fs.getFirestore(a), uid: au.currentUser.uid};
+    return {fs, db: fs.getFirestore(a), au, A: auth, get uid(){ return au.currentUser.uid; }};   // uid is read live: it changes if the player signs in with Google
   })();
   fbp.catch(() => { fbp = null; });
   return fbp;
@@ -38,6 +38,97 @@ async function topScores(r){
   const {fs, db, uid} = await fbInit();
   const s = await fs.getDocs(fs.query(fs.collection(db, boardName(r)), fs.orderBy('score', 'desc'), fs.limit(100)));
   return {uid, rows: s.docs.map(d => d.data())};
+}
+
+
+// ---------- nicknames: unique, and changeable once every 7 days (enforced by firestore.rules) ----------
+const NAME_RE = /^[\p{L}\p{M}\p{N}_.-]([\p{L}\p{M}\p{N} _.-]{0,22}[\p{L}\p{M}\p{N}_.-])?$/u;
+const RESERVED_NAMES = ['protester', 'officer', 'admin', 'administrator', 'andolon', 'আন্দোলন', 'আন্দোলনকারী', 'অফিসার'];
+const cleanName = n => String(n || '').replace(/\s+/g, ' ').trim();
+const nameError = n => !n ? 'Please enter a nickname.' : !NAME_RE.test(n) ? 'Use 1 to 24 letters, numbers, spaces, dots, dashes or underscores.' : RESERVED_NAMES.indexOf(n.toLowerCase()) >= 0 ? 'That nickname is reserved. Please pick another.' : '';
+function setPlayerName(n){
+  playerName = n; try { localStorage.setItem('da_name', n); } catch (e) {}
+  const i = document.getElementById('pname'); if (i) i.value = n;
+}
+async function registerName(raw, division){
+  const name = cleanName(raw), bad = nameError(name); if (bad) throw {code: 'invalid', msg: bad};
+  const {fs, db, uid} = await fbInit(), pref = fs.doc(db, 'players', uid), ps = await fs.getDoc(pref);
+  if (ps.exists()){
+    const cur = ps.data();
+    if (cur.name.toLowerCase() === name.toLowerCase()){   // already this nickname
+      if (cur.division !== division) await fs.updateDoc(pref, {division});
+      return cur.name;
+    }
+    const wait = cur.nameChangedAt.toMillis() + 7 * 864e5 - Date.now();
+    if (wait > 0) throw {code: 'wait', days: Math.ceil(wait / 864e5)};
+  }
+  const key = name.toLowerCase(), taken = await fs.getDoc(fs.doc(db, 'names', key));
+  if (taken.exists() && taken.data().uid !== uid) throw {code: 'taken'};
+  const w = fs.writeBatch(db);   // claim the new nickname, release the old one, update the player and any leaderboard entries together
+  if (ps.exists()) w.delete(fs.doc(db, 'names', ps.data().name.toLowerCase()));
+  w.set(fs.doc(db, 'names', key), {uid, name});
+  w.set(pref, {name, division, nameChangedAt: fs.serverTimestamp()});
+  for (const b of ['protester', 'police']){ const ref = fs.doc(db, boardName(b), uid); if ((await fs.getDoc(ref)).exists()) w.update(ref, {name, updatedAt: fs.serverTimestamp()}); }
+  await w.commit();
+  try { localStorage.setItem('da_nick', '1'); } catch (e) {}
+  return name;
+}
+const nameErrText = er => er && er.code === 'invalid' ? tr(er.msg) : er && er.code === 'taken' ? tr('That nickname is already taken. Please pick another.')
+  : er && er.code === 'wait' ? tr('You can change your nickname again in {n} days.', {n: er.days})
+  : er && er.code === 'permission-denied' ? tr('Could not save that nickname. It may be taken or reserved. Please try another.')
+  : tr('Could not submit. Check your connection and try again.');
+
+// ---------- optional Google sign-in: links the anonymous player to a Google account so the record follows them to any device ----------
+async function loadProfile(){   // after signing in on a new device: bring back the saved nickname and division
+  try {
+    const {fs, db, uid} = await fbInit(), s = await fs.getDoc(fs.doc(db, 'players', uid)); if (!s.exists()) return;
+    const p = s.data(); setPlayerName(p.name); setDivision(p.division); const m = document.getElementById('mdiv'); if (m) m.value = p.division;
+  } catch (e) {}
+}
+async function googleLink(){
+  const {au, A} = await fbInit(), prov = new A.GoogleAuthProvider(); let how = 'linked';
+  try { await A.linkWithPopup(au.currentUser, prov); }
+  catch (e){
+    if (e && (e.code === 'auth/credential-already-in-use' || e.code === 'auth/email-already-in-use')){   // this Google account already has a record: switch to it
+      const cred = A.GoogleAuthProvider.credentialFromError(e); if (!cred) throw e;
+      await A.signInWithCredential(au, cred); how = 'switched';
+    } else throw e;
+  }
+  try { localStorage.setItem('da_google', '1'); } catch (e) {}
+  await loadProfile();
+  return how;
+}
+async function accountSignOut(){
+  const {au, A} = await fbInit(); await A.signOut(au); await A.signInAnonymously(au);
+  try { localStorage.removeItem('da_google'); localStorage.removeItem('da_nick'); } catch (e) {}
+}
+const escH = t => String(t).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+const accountRows = [];
+function repaintAccounts(){ for (let i = accountRows.length - 1; i >= 0; i--){ if (!accountRows[i].el.isConnected) accountRows.splice(i, 1); else accountRows[i].paint(); } }
+function accountRow(){
+  const el = document.createElement('div'); el.className = 'acct';
+  const paint = async () => {
+    let u = null;
+    try { if (localStorage.getItem('da_google') || fbp) u = (await fbInit()).au.currentUser; } catch (e) {}
+    if (u && !u.isAnonymous){
+      el.innerHTML = '<small>' + tr('Signed in as {e}', {e: escH(u.email || u.displayName || '')}) + '</small><button type="button" class="alt acctout">' + tr('Sign out') + '</button>';
+      el.querySelector('.acctout').onclick = async () => {
+        if (!confirm(tr('Sign out? This device will become a new anonymous player. Your record stays on your Google account.'))) return;
+        try { await accountSignOut(); } catch (e) {}
+        repaintAccounts();
+      };
+    } else {
+      el.innerHTML = '<small>' + tr('Keep your record on any device.') + '</small><button type="button" class="acctin">' + tr('Save my progress with Google') + '</button><small class="acctmsg"></small>';
+      const msg = el.querySelector('.acctmsg'), b = el.querySelector('.acctin');
+      b.onclick = async () => {
+        b.disabled = true; msg.textContent = '';
+        try { const how = await googleLink(); repaintAccounts(); const m2 = el.querySelector('.acctmsg'); if (m2) m2.textContent = how === 'switched' ? tr('Signed in. Welcome back, {n}!', {n: dispName(playerName)}) : tr('Saved. Your record now follows your Google account.'); }
+        catch (er) { b.disabled = false; msg.textContent = tr(er && (er.code === 'auth/popup-closed-by-user' || er.code === 'auth/cancelled-popup-request') ? 'Sign-in was cancelled.' : 'Could not sign in. Try again.'); }
+      };
+    }
+  };
+  accountRows.push({el, paint}); paint();
+  return el;
 }
 
 // full-screen leaderboard
@@ -75,19 +166,22 @@ function openLeaderboard(startRole){
 function addLeaderboard(r, e){
   const go = document.getElementById('go'); if (!go || !LB_ON) return;
   const w = document.createElement('div'); w.className = 'lbsubmit';
-  w.innerHTML = '<label>' + tr('Division') + '<select id="lbsel">' + divOptions(getDivision()) + '</select></label>' +
+  w.innerHTML = '<label>' + tr('Nickname') + '<input id="lbname" maxlength="24" value="' + escH(['Protester', 'Officer'].indexOf(lbName()) >= 0 ? '' : lbName()) + '" placeholder="' + escH(tr('Choose a nickname')) + '"></label><small>' + tr('Shown on the leaderboard. You can change it once every 7 days.') + '</small><label>' + tr('Division') + '<select id="lbsel">' + divOptions(getDivision()) + '</select></label>' +
     '<button type="button" id="lbsend">' + tr('Submit score to leaderboard') + '</button><button type="button" id="lbview" class="alt">' + tr('View leaderboard') + '</button><small id="lbstat">' + tr('Submits your name, division and score. Your photo is never uploaded.') + '</small>';
-  go.before(w);
-  const st = w.querySelector('#lbstat'), send = w.querySelector('#lbsend'), sel = w.querySelector('#lbsel');
+  w.appendChild(accountRow()); go.before(w);
+  const st = w.querySelector('#lbstat'), send = w.querySelector('#lbsend'), sel = w.querySelector('#lbsel'), nick = w.querySelector('#lbname');
   w.querySelector('#lbview').onclick = () => openLeaderboard(r);
   send.onclick = async () => {
+    const nm = cleanName(nick.value), bad = nameError(nm);
+    if (bad){ st.textContent = tr(bad); nick.focus(); return; }
     if (!sel.value){ st.textContent = tr('Please choose your division first.'); sel.focus(); return; }
     setDivision(sel.value); send.disabled = true; st.textContent = tr('Submitting...');
     try {
-      const res = await submitScore(r, lbName(), sel.value, e);
+      const name = await registerName(nm, sel.value); setPlayerName(name); nick.value = name;
+      const res = await submitScore(r, name, sel.value, e);
       st.textContent = tr('You are #{n} of {m} on the board (your best: {b}).', {n: res.place, m: res.total, b: loc(res.best)});
       send.textContent = tr('Submitted ✓');
-    } catch (er) { st.textContent = tr('Could not submit. Check your connection and try again.'); send.disabled = false; }
+    } catch (er) { st.textContent = nameErrText(er); send.disabled = false; }
   };
 }
 
@@ -101,6 +195,8 @@ function addLeaderboard(r, e){
   const hb = document.getElementById('howbtn');
   const b = document.createElement('button'); b.type = 'button'; b.className = 'alt'; b.id = 'lbbtn'; b.textContent = tr('Leaderboard');
   b.onclick = () => openLeaderboard(role); if (hb) hb.after(b);
+  const tip = document.getElementById('installtip'); if (tip) tip.before(accountRow());
+  try { if (localStorage.getItem('da_google') || localStorage.getItem('da_nick')) loadProfile(); } catch (e) {}   // returning players: restore nickname and division
 })();
 
 // ---------- play counter: stats/global holds players (new devices), games (every start), games_protester, games_police ----------
