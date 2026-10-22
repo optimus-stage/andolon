@@ -139,7 +139,7 @@ const BN = {
   'Out of smoke grenades. One comes back every few seconds.': 'ধোঁয়ার গ্রেনেড শেষ। কয়েক সেকেন্ড পরপর একটি ফিরে আসে।',
   'Out of rounds. One comes back every few seconds.': 'গুলি শেষ। কয়েক সেকেন্ড পরপর একটি ফিরে আসে।',
   'An officer joins your squad ({n})': 'একজন অফিসার আপনার দলে যোগ দিলেন ({n})',
-  'This police barricade needs {n} people to break. You have {m}.': 'এই পুলিশ ব্যারিকেড ভাঙতে {n} জন লাগবে। আপনার আছে {m} জন।',
+  'This police barricade needs {n} people to break. You have {m}, {k} more needed.': 'এই পুলিশ ব্যারিকেড ভাঙতে {n} জন লাগবে। আপনার আছে {m} জন, আরও {k} জন দরকার।',
   'The police barricade gives way. Keep moving!': 'পুলিশ ব্যারিকেড ভেঙে পড়ল। এগিয়ে চলুন!',
   '{n} more strike to break it.': 'ভাঙতে আরও {n}টি স্ট্রাইক লাগবে।', '{n} more strikes to break it.': 'ভাঙতে আরও {n}টি স্ট্রাইক লাগবে।',
   'Press STRIKE to break this police barricade.': 'এই পুলিশ ব্যারিকেড ভাঙতে STRIKE চাপুন।',
