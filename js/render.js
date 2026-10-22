@@ -433,6 +433,13 @@ function draw(){
 
 function inShutdown(){ return shutdowns.some(s => dist(s, player) < s.r); }
 
+function dailyBadge(c, y){   // small gold tag while a daily challenge run is on
+  if (!game.daily) return;
+  const t = '★ ' + tr('Daily Challenge') + ' · ' + tr(TWIST_NAMES[game.daily.twist]);
+  c.font = 'bold 12px ' + BN_FONT; const w = textW(c, t) + 16;
+  c.fillStyle = 'rgba(255,213,79,.95)'; c.beginPath(); c.roundRect(10, y, w, 22, 11); c.fill();
+  c.fillStyle = '#3a2a00'; c.textAlign = 'left'; c.fillText(t, 18, y + 16);
+}
 function drawHUDPolice(){
   const k = Math.max(0.6, Math.min(1, innerWidth / 760, innerHeight / 540)), vw = innerWidth / k, vh = innerHeight / k, G = game, st = G.stats;
   const barY = vw < 800 ? Math.round(vh * 0.62) : 20;
@@ -447,6 +454,7 @@ function drawHUDPolice(){
   ctx.fillStyle = G.anger > 70 ? '#e53935' : G.anger > 40 ? '#ffb300' : '#4caf50'; ctx.fillRect(70, y0 + 35, 1.7 * G.anger, 10);
   ctx.fillStyle = '#fff'; ctx.fillText(tr('Smoke {a}/3     Rounds {b}/6', {a: G.smoke, b: G.gun}), 20, y0 + 68);
   if (!IS_TOUCH){ ctx.fillStyle = '#cfd8dc'; ctx.fillText(tr('Click/Space strike · G smoke · F fire'), 20, y0 + 92); }
+  dailyBadge(ctx, y0 + (IS_TOUCH ? 84 : 104) + 6);
   // map top right, arrow to the nearest crowd under it
   const mr = 76, mx = vw - mr - 12, my = 12 + mr, ay = my + mr + 34, s = mr / MAP_R;
   ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.beginPath(); ctx.arc(mx, my, mr, 0, 6.28); ctx.fill();
@@ -501,6 +509,7 @@ function drawHUD(){
   const ri = RINGS.findIndex(r => r < Math.hypot(player.x, player.y) - 20);
   ctx.fillStyle = '#fff'; ctx.fillText(ri >= 0 ? tr('Next police barricade needs {n} people', {n: GATE_NEEDS[ri]}) : tr('All barricades passed!'), 20, y0 + 68);
   if (player.injured){ ctx.fillStyle = '#e53935'; ctx.font = 'bold 13px system-ui'; ctx.fillText(tr('INJURED: find a hospital'), 20, y0 + 96); }
+  dailyBadge(ctx, player.injured ? y0 + 110 : y0 + 84);
 
   const mr = 96, mx = vw - mr - 12, my = 12 + mr, ay = my + mr + 34, s = mr / MAP_R;   // map top right, red arrow under it
   if (!inShutdown()){

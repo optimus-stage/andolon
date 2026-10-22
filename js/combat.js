@@ -7,7 +7,7 @@ function clash(r){
   let switched = 0;
   for (let i = 0; i < dmgR; i++){
     const m = r.members.pop();
-    if (Math.random() < 0.4){ const n = mkNeutral(m.x, m.y); n.skin = m.skin; if (m.look) n.look = m.look; followers.push(n); switched++; game.stats.recruits++; }   // persuaded to join the protesters
+    if (RNG() < 0.4){ const n = mkNeutral(m.x, m.y); n.skin = m.skin; if (m.look) n.look = m.look; followers.push(n); switched++; game.stats.recruits++; }   // persuaded to join the protesters
     else { const n = mkNeutral(m.x, m.y); n.skin = m.skin; if (m.look) n.look = m.look; n.cool = 6; n.rcool = 25; n.vx = rand(-70, 70); n.vy = rand(-70, 70); n.wt = 1; neutrals.push(n); }   // goes home for a while
   }
   if (switched) sfxJoin();
@@ -30,7 +30,7 @@ function strikePlayer(p){
 function strikeFollower(p, idx){
   p.swing = 0.35; p.cool = 1.8;
   const f = followers.splice(idx, 1)[0]; fightSfx(f.x, f.y);
-  if (Math.random() < 0.4){ detainFollower(f); return; }   // taken to a station
+  if (RNG() < 0.4){ detainFollower(f); return; }   // taken to a station
   const a = Math.atan2(f.y - p.y, f.x - p.x);
   f.cool = 6; f.vx = Math.cos(a) * 80; f.vy = Math.sin(a) * 80; f.wt = 1; neutrals.push(f);
   say(tr('Police beat back part of your crowd'), 2);
@@ -63,7 +63,7 @@ function updateRescue(dt){
   }
 }
 function startArrest(police){
-  const dest = Math.random() < 0.3 ? AYNAGHOR : pick(nearestStations(player).slice(0, 3));
+  const dest = RNG() < 0.3 ? AYNAGHOR : pick(nearestStations(player).slice(0, 3));
   const a = Math.atan2(police.y - player.y, police.x - player.x);
   game.mode = 'arrest';
   sfxSiren();
@@ -98,7 +98,7 @@ function updateChant(dt){
   const c = CHANTS[chant.i];
   if (chant.phase === 0){ bubble(player, c.call[0], c.call[1], 1.3); chant.phase = 1; chant.timer = 1.3; }
   else {
-    [...followers].sort(() => Math.random() - 0.5).slice(0, Math.min(vw < 700 ? 2 : 4, followers.length)).forEach(f => bubble(f, c.resp[0], c.resp[1], 1.8));
+    [...followers].sort(() => RNG() - 0.5).slice(0, Math.min(vw < 700 ? 2 : 4, followers.length)).forEach(f => bubble(f, c.resp[0], c.resp[1], 1.8));
     chant.phase = 0; chant.i = (chant.i + 1) % CHANTS.length; chant.timer = 3;
   }
 }

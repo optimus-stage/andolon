@@ -29,7 +29,8 @@ if (IS_TOUCH){
   addEventListener('touchend', firstTouch, true);
   addEventListener('click', firstTouch, true);
 }
-function start(){
+function start(isDaily){
+  if (isDaily !== true){ DAILY = null; seedGame(null); }   // normal games use real randomness
   const inp = document.getElementById('pname');
   const typed = inp ? inp.value.trim() : '';
   if (typed && typed !== 'Protester' && typed !== 'Officer') playerName = typed;
@@ -46,7 +47,7 @@ const hb = document.getElementById('howbtn'); if (hb) hb.onclick = () => showTut
 const mb = document.getElementById('mute'); if (mb) mb.onclick = toggleMute;
 function showRole(){
   const a = document.getElementById('role-prot'), b = document.getElementById('role-pol'); if (!a || !b) return;
-  a.classList.toggle('sel', role === 'protester'); b.classList.toggle('sel', role === 'police');
+  a.classList.toggle('sel', role === 'protester'); b.classList.toggle('sel', role === 'police'); if (typeof refreshDaily === 'function') refreshDaily();
   const r1 = document.getElementById('rules'), r2 = document.getElementById('rules2'); if (r1) r1.style.display = role === 'police' ? 'none' : ''; if (r2) r2.style.display = role === 'police' ? '' : 'none';
   const pn = document.getElementById('pname'); if (pn) pn.placeholder = tr(role === 'police' ? 'Officer' : 'Protester');
   const go = document.getElementById('go'); if (go) go.textContent = tr(role === 'police' ? 'Start patrol' : 'Start marching');

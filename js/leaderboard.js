@@ -41,6 +41,24 @@ async function topScores(r){
 }
 
 
+// daily board: daily/{dayKey}/{role}/{uid}, one best score per player per day
+async function submitDaily(r, name, division, e, streak){
+  const {fs, db, uid} = await fbInit(), day = dayKey(), ref = fs.doc(db, 'daily', day, r, uid), old = await fs.getDoc(ref);
+  const score = Math.max(0, Math.min(100000, Math.round(e.score)));
+  const data = {uid, name: name.slice(0, 24), division, score, rank: String(e.rank).slice(0, 40), stat: Math.max(0, Math.round(e.stat)), day: Math.round(e.day), streak: Math.max(0, Math.min(1000, streak || 0)), updatedAt: fs.serverTimestamp()};
+  let mine = score;
+  if (!old.exists() || score > old.data().score) await fs.setDoc(ref, data);
+  else { mine = old.data().score; await fs.updateDoc(ref, {name: data.name, division, streak: data.streak, updatedAt: data.updatedAt}); }
+  const col = fs.collection(db, 'daily', day, r);
+  const [above, all] = await Promise.all([fs.getCountFromServer(fs.query(col, fs.where('score', '>', mine))), fs.getCountFromServer(col)]);
+  return {place: above.data().count + 1, total: all.data().count, best: mine};
+}
+async function topDaily(r){
+  const {fs, db, uid} = await fbInit();
+  const s = await fs.getDocs(fs.query(fs.collection(db, 'daily', dayKey(), r), fs.orderBy('score', 'desc'), fs.limit(100)));
+  return {uid, rows: s.docs.map(d => d.data())};
+}
+
 // ---------- nicknames: unique, and changeable once every 7 days (enforced by firestore.rules) ----------
 const NAME_RE = /^[\p{L}\p{M}\p{N}_.-]([\p{L}\p{M}\p{N} _.-]{0,22}[\p{L}\p{M}\p{N}_.-])?$/u;
 const RESERVED_NAMES = ['protester', 'officer', 'admin', 'administrator', 'andolon', 'আন্দোলন', 'আন্দোলনকারী', 'অফিসার'];
@@ -132,10 +150,11 @@ function accountRow(){
 }
 
 // full-screen leaderboard
-function openLeaderboard(startRole){
-  let r = startRole || 'protester', div = '';
+function openLeaderboard(startRole, startToday){
+  let r = startRole || 'protester', div = '', today = !!startToday;
   const o = document.createElement('div'); o.id = 'lb';
   o.innerHTML = '<div id="lbbox"><button id="lbx" aria-label="' + tr('Close') + '">&times;</button><h2>' + tr('Leaderboard') + '</h2>' +
+    '<div id="lbmode"><button type="button" data-m="1">' + tr('Today') + '</button><button type="button" data-m="0">' + tr('All-time') + '</button></div><div id="lbreset"></div>' +
     '<div id="lbtabs"><button type="button" data-r="protester">' + tr('Andolonkari') + '</button><button type="button" data-r="police">' + tr('Police') + '</button></div>' +
     '<select id="lbdiv"><option value="">' + tr('All divisions') + '</option>' + DIVISIONS.map(d => '<option value="' + d + '">' + tr(d) + '</option>').join('') + '</select>' +
     '<div id="lbmsg"></div><ol id="lblist"></ol><a id="lbreport" href="mailto:bizwithsabbir@gmail.com?subject=Andolon%20leaderboard%20report">' + tr('Report an inappropriate name') + '</a></div>';
@@ -144,33 +163,36 @@ function openLeaderboard(startRole){
   const msg = o.querySelector('#lbmsg'), list = o.querySelector('#lblist');
   const load = async () => {
     o.querySelectorAll('#lbtabs button').forEach(b => b.classList.toggle('on', b.dataset.r === r));
+    o.querySelectorAll('#lbmode button').forEach(b => b.classList.toggle('on', (b.dataset.m === '1') === today));
+    o.querySelector('#lbreset').textContent = today ? tr('Daily Challenge') + ' · ' + dayLabel() + ' · ' + tr('Resets in {t}', {t: resetText()}) : '';
     list.textContent = ''; msg.textContent = tr('Loading...');
     try {
-      const {uid, rows} = await topScores(r), shown = rows.filter(x => !div || x.division === div).slice(0, 20);
+      const {uid, rows} = await (today ? topDaily(r) : topScores(r)), shown = rows.filter(x => !div || x.division === div).slice(0, 20);
       msg.textContent = shown.length ? '' : tr('No scores yet. Be the first!');
       shown.forEach((x, i) => {
         const li = document.createElement('li'); if (x.uid === uid) li.className = 'me';
         const n = document.createElement('b'); n.textContent = dispName(x.name);
-        const d = document.createElement('small'); d.textContent = tr(x.division) + ' · ' + tr(x.rank);
+        const d = document.createElement('small'); d.textContent = tr(x.division) + ' · ' + tr(x.rank) + (today && x.streak > 1 ? ' · ' + tr('🔥 {n}-day streak', {n: x.streak}) : '');
         const s = document.createElement('span'); s.textContent = loc(x.score);
         const w = document.createElement('div'); w.append(n, d); li.append(w, s); list.appendChild(li);
       });
     } catch (e) { msg.textContent = tr('Could not load the leaderboard. Check your connection and try again.'); }
   };
   o.querySelectorAll('#lbtabs button').forEach(b => b.onclick = () => { r = b.dataset.r; load(); });
+  o.querySelectorAll('#lbmode button').forEach(b => b.onclick = () => { today = b.dataset.m === '1'; load(); });
   o.querySelector('#lbdiv').onchange = e => { div = e.target.value; load(); };
   load();
 }
 
 // buttons on the result screen: choose division, submit the score, open the board
-function addLeaderboard(r, e){
+function addLeaderboard(r, e, daily){
   const go = document.getElementById('go'); if (!go || !LB_ON) return;
   const w = document.createElement('div'); w.className = 'lbsubmit';
   w.innerHTML = '<label>' + tr('Nickname') + '<input id="lbname" maxlength="24" value="' + escH(['Protester', 'Officer'].indexOf(lbName()) >= 0 ? '' : lbName()) + '" placeholder="' + escH(tr('Choose a nickname')) + '"></label><small>' + tr('Shown on the leaderboard. You can change it once every 7 days.') + '</small><label>' + tr('Division') + '<select id="lbsel">' + divOptions(getDivision()) + '</select></label>' +
-    '<button type="button" id="lbsend">' + tr('Submit score to leaderboard') + '</button><button type="button" id="lbview" class="alt">' + tr('View leaderboard') + '</button><small id="lbstat">' + tr('Submits your name, division and score. Your photo is never uploaded.') + '</small>';
+    '<button type="button" id="lbsend">' + tr(daily ? "Submit to today's board" : 'Submit score to leaderboard') + '</button><button type="button" id="lbview" class="alt">' + tr('View leaderboard') + '</button><small id="lbstat">' + tr('Submits your name, division and score. Your photo is never uploaded.') + '</small>';
   w.appendChild(accountRow()); go.before(w);
   const st = w.querySelector('#lbstat'), send = w.querySelector('#lbsend'), sel = w.querySelector('#lbsel'), nick = w.querySelector('#lbname');
-  w.querySelector('#lbview').onclick = () => openLeaderboard(r);
+  w.querySelector('#lbview').onclick = () => openLeaderboard(r, !!daily);
   send.onclick = async () => {
     const nm = cleanName(nick.value), bad = nameError(nm);
     if (bad){ st.textContent = tr(bad); nick.focus(); return; }
@@ -178,8 +200,10 @@ function addLeaderboard(r, e){
     setDivision(sel.value); send.disabled = true; st.textContent = tr('Submitting...');
     try {
       const name = await registerName(nm, sel.value); setPlayerName(name); nick.value = name;
-      const res = await submitScore(r, name, sel.value, e);
-      st.textContent = tr('You are #{n} of {m} on the board (your best: {b}).', {n: res.place, m: res.total, b: loc(res.best)});
+      let res;
+      if (daily){ await submitScore(r, name, sel.value, e); res = await submitDaily(r, name, sel.value, e, daily.streak); }   // a daily run also counts for the all-time board
+      else res = await submitScore(r, name, sel.value, e);
+      st.textContent = tr(daily ? "You are #{n} of {m} on today's board (your best today: {b})." : 'You are #{n} of {m} on the board (your best: {b}).', {n: res.place, m: res.total, b: loc(res.best)});
       send.textContent = tr('Submitted ✓');
     } catch (er) { st.textContent = nameErrText(er); send.disabled = false; }
   };

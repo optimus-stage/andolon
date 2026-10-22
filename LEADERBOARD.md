@@ -26,3 +26,11 @@ Each time someone starts a game, the page adds 1 to `stats/global` in Firestore:
 - Optional Google sign-in links the anonymous account to a Google account (same user id), so the record follows the player to other devices. If that Google account already has a record, the game switches to it.
 - Republish `firestore.rules` after pulling this update. Leaderboard entries created before nicknames existed stay visible; their owners register a nickname the next time they submit.
 - The rules can be tested locally with the Firebase emulator (`firebase emulators:exec --only firestore ...`).
+
+## Daily challenge
+
+- Everyone gets the same map, crowds and "twist" each day (Bangladesh time, UTC+6, new challenge at midnight). The date seeds the game's random numbers (`seedGame` in `js/core.js`); twists are in `js/daily.js` and `js/state.js` / `js/police.js`.
+- 3 attempts per day per side, counted on the device. The best score of the day goes to `daily/{dayKey}/{protester|police}/{uid}` (one document per player; a score can only go up). A daily run also updates the all-time board.
+- `firestore.rules` accepts only today's board, or yesterday's for a run that finishes just after midnight, and the entry name must be the player's registered nickname.
+- Streak: consecutive days with at least one finished daily run, kept on the device and shown on the board.
+- Republish `firestore.rules` after pulling this update.
