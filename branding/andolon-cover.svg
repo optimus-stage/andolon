@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1640 924" width="1640" height="924">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0c1626"/><stop offset=".7" stop-color="#1d3752"/><stop offset="1" stop-color="#25415f"/></linearGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#16263b"/><stop offset="1" stop-color="#0a121e"/></linearGradient>
+    <radialGradient id="warm" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffd166" stop-opacity=".95"/><stop offset=".62" stop-color="#f4a62a" stop-opacity=".85"/><stop offset=".63" stop-color="#f4a62a" stop-opacity=".25"/><stop offset="1" stop-color="#f4a62a" stop-opacity="0"/></radialGradient>
+    <radialGradient id="cool" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#6fa8ee" stop-opacity=".5"/><stop offset="1" stop-color="#6fa8ee" stop-opacity="0"/></radialGradient>
+    <pattern id="hazard" width="56" height="56" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="28" height="56" fill="#f2c200"/><rect x="28" width="28" height="56" fill="#1c1c1c"/></pattern>
+    <!-- people, drawn in the game's own units (head r5, body 12 wide), feet at y=10 -->
+    <g id="legs"><rect x="-4" y="3" width="3" height="7" fill="#2b2b2b"/><rect x="1" y="3" width="3" height="7" fill="#2b2b2b"/></g>
+    <g id="body"><rect x="-8" y="-6" width="2.5" height="8" fill="currentColor"/><rect x="5.5" y="-6" width="2.5" height="8" fill="currentColor"/><rect x="-6" y="-7" width="12" height="12" rx="3" fill="currentColor" stroke="#00000030" stroke-width=".45"/></g>
+    <g id="band"><use href="#legs"/><use href="#body"/><circle cy="-12" r="5" fill="var(--skin)"/><path d="M-5 -14A5 5 0 0 1 5 -14Z" fill="#1b1210"/><rect x="-5" y="-15" width="10" height="2.5" fill="#d62839"/></g>
+    <g id="hijab"><use href="#legs"/><use href="#body"/><circle cy="-12" r="6.4" fill="var(--scarf)"/><rect x="-6.6" y="-9" width="13.2" height="6" rx="2.5" fill="var(--scarf)"/><ellipse cy="-11.4" rx="3.7" ry="4.3" fill="var(--skin)"/></g>
+    <g id="long"><use href="#legs"/><rect x="-5.4" y="-14" width="10.8" height="10" fill="#1b1210"/><use href="#body"/><circle cy="-12" r="5" fill="var(--skin)"/><path d="M-5.2 -14A5.2 5.2 0 0 1 5.2 -14Z" fill="#1b1210"/></g>
+    <g id="topi"><use href="#legs"/><rect x="-6" y="-7" width="12" height="16" rx="3" fill="currentColor" stroke="#00000030" stroke-width=".45"/><rect x="-8" y="-6" width="2.5" height="8" fill="currentColor"/><rect x="5.5" y="-6" width="2.5" height="8" fill="currentColor"/><circle cy="-12" r="5" fill="var(--skin)"/><path d="M-5 -13.5A5 5 0 0 1 5 -13.5Z" fill="#f4f1e6"/><rect x="-5" y="-14" width="10" height="2.5" fill="#f4f1e6"/></g>
+    <g id="cop"><rect x="-4" y="3" width="3" height="7" fill="#14284f"/><rect x="1" y="3" width="3" height="7" fill="#14284f"/><use href="#body" color="#2f6fd0"/><circle cy="-12" r="5" fill="var(--skin)"/><path d="M-5.5 -13A5.5 5.5 0 0 1 5.5 -13Z" fill="#12306b"/><rect x="-1" y="-13" width="8" height="2" fill="#12306b"/>
+      <g transform="translate(7 -3) rotate(-40)"><rect y="-1.5" width="17" height="3" fill="#8b5a2b"/><rect x="12" y="-1.5" width="5" height="3" fill="#5a3a1a"/></g></g>
+  </defs>
+
+  <rect width="1640" height="924" fill="url(#bg)"/>
+  <rect y="745" width="1640" height="179" fill="url(#ground)"/>
+  <!-- warm glow behind the crowd, cool glow behind the police -->
+  <circle cx="300" cy="520" r="400" fill="url(#warm)"/>
+  <circle cx="1340" cy="540" r="380" fill="url(#cool)"/>
+  <ellipse cx="300" cy="752" rx="330" ry="20" fill="#000" opacity=".3"/>
+  <ellipse cx="1340" cy="752" rx="330" ry="20" fill="#000" opacity=".3"/>
+
+  <!-- the crowd -->
+  <g transform="translate(95 625) scale(8)" color="#e8e1c8" style="--skin:#8d5a3b"><use href="#topi"/></g>
+  <g transform="translate(200 625) scale(8)" color="#2f8f6a" style="--skin:#d9a679;--scarf:#f4f1e6"><use href="#hijab"/></g>
+  <g transform="translate(450 625) scale(8)" color="#dfe8ee" style="--skin:#f1c9a5"><use href="#band"/></g>
+  <g transform="translate(550 625) scale(8)" color="#c8102e" style="--skin:#b97d56"><use href="#long"/></g>
+  <g transform="translate(135 645) scale(10)" color="#f2d6a0" style="--skin:#b97d56"><use href="#band"/></g>
+  <g transform="translate(490 645) scale(10)" color="#7a3b7a" style="--skin:#d9a679;--scarf:#5a2f5a"><use href="#hijab"/></g>
+  <g transform="translate(318 625) scale(12.5) " color="#fbfbf7" style="--skin:#d9a679">
+    <g transform="translate(5.2 -5.2) rotate(-155)"><rect x="-1.6" y="-1" width="3.2" height="10.5" rx="1.4" fill="#fbfbf7" stroke="#00000030" stroke-width=".4"/><circle cy="10.6" r="2.2" fill="#d9a679" stroke="#00000030" stroke-width=".4"/></g>
+    <use href="#band"/>
+  </g>
+
+  <!-- police behind a barricade -->
+  <g transform="translate(1185 600) scale(9)" style="--skin:#d9a679"><use href="#cop"/></g>
+  <g transform="translate(1335 600) scale(9)" style="--skin:#8d5a3b"><use href="#cop"/></g>
+  <g transform="translate(1485 600) scale(9)" style="--skin:#f1c9a5"><use href="#cop"/></g>
+  <rect x="1090" y="655" width="500" height="48" rx="6" fill="url(#hazard)" stroke="#0b0b0b" stroke-width="5"/>
+  <rect x="1120" y="703" width="14" height="24" fill="#222"/><rect x="1546" y="703" width="14" height="24" fill="#222"/>
+
+  <!-- title -->
+  <g text-anchor="middle">
+    <text x="826" y="398" font-family="'Noto Sans Bengali','Nirmala UI','Kalpurush',sans-serif" font-weight="700" font-size="178" fill="#ffffff">আন্দোলন</text>
+    <text x="826" y="468" font-family="'Inter','Segoe UI',Arial,sans-serif" font-weight="700" font-size="44" letter-spacing="16" fill="#f6b93b">ANDOLON</text>
+    <text x="826" y="548" font-family="'Inter','Segoe UI',Arial,sans-serif" font-weight="600" font-size="38" fill="#ffffff">Gather a crowd.</text>
+    <text x="826" y="598" font-family="'Inter','Segoe UI',Arial,sans-serif" font-weight="600" font-size="38" fill="#ffffff">Break the barricades.</text>
+    <text x="826" y="664" font-family="'Inter','Segoe UI',Arial,sans-serif" font-weight="500" font-size="23" fill="#f6b93b">A fictional single-player march game</text>
+  </g>
+</svg>
