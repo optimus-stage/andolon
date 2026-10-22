@@ -15,7 +15,7 @@ function clash(r){
   if (!r.members.length) r.dead = true;
   player.morale = Math.max(0, player.morale - 4);
   fightSfx((r.x + player.x) / 2, (r.y + player.y) / 2);
-  say((pP === pR ? 'Equal crowds: the protesters win the clash! ' : 'Clash with a rival crowd! ') + 'You lost ' + dmgP + ', they lost ' + dmgR + (switched ? ' (' + switched + ' switched sides)' : ''), 2.5);
+  say(tr(pP === pR ? 'Equal crowds: the protesters win the clash! You lost {a}, they lost {b}{s}' : 'Clash with a rival crowd! You lost {a}, they lost {b}{s}', {a: dmgP, b: dmgR, s: switched ? tr(' ({n} switched sides)', {n: switched}) : ''}), 2.5);
 }
 
 // ---------- police strikes ----------
@@ -25,7 +25,7 @@ function strikePlayer(p){
   player.morale -= 25; player.injured = true;
   const a = Math.atan2(player.y - p.y, player.x - p.x); player.x += Math.cos(a) * 45; player.y += Math.sin(a) * 45; collide(player, player.r);
   const h = nearestHospital(player);
-  say('Beaten by the police! Find a hospital' + (h ? ' (' + h.name + ')' : '') + ' to recover.', 4);
+  say(tr('Beaten by the police! Find a hospital{h} to recover.', {h: h ? ' (' + tr(h.name) + ')' : ''}), 4);
 }
 function strikeFollower(p, idx){
   p.swing = 0.35; p.cool = 1.8;
@@ -33,13 +33,13 @@ function strikeFollower(p, idx){
   if (Math.random() < 0.4){ detainFollower(f); return; }   // taken to a station
   const a = Math.atan2(f.y - p.y, f.x - p.x);
   f.cool = 6; f.vx = Math.cos(a) * 80; f.vy = Math.sin(a) * 80; f.wt = 1; neutrals.push(f);
-  say('Police beat back part of your crowd', 2);
+  say(tr('Police beat back part of your crowd'), 2);
 }
 function detainFollower(f){
   const stn = nearestStations(f)[0];
   game.detainees.push({st: stn, skin: f.skin, t: DETAIN_HOLD});
   toasts.push({name: pick(NAMES), station: stn.name, skin: f.skin, t: 4});
-  say('Someone from your crowd was detained at ' + stn.name + '. Rescue them!');
+  say(tr('Someone from your crowd was detained at {s}. Rescue them!', {s: tr(stn.name)}));
 }
 const heldAt = stn => game.detainees.filter(d => d.st === stn);
 function nearestHeld(p){ let b = null; for (const d of game.detainees) if (!b || dist(d.st, p) < dist(b, p)) b = d.st; return b; }
@@ -69,7 +69,7 @@ function startArrest(police){
   sfxSiren();
   game.arrest = {phase: 0, t: 0, dest};
   game.van = {x: player.x + Math.cos(a) * 520, y: player.y + Math.sin(a) * 520, dir: 1, sx: 0, sy: 0};
-  say('The police have caught you!', 2);
+  say(tr('The police have caught you!'), 2);
 }
 function updateArrest(dt){
   const A = game.arrest, v = game.van;
@@ -80,7 +80,7 @@ function updateArrest(dt){
     if (k >= 1){
       A.phase = 2; A.t = 0; player.hidden = true;
       followers.forEach(f => { f.cool = 5; f.vx = rand(-40, 40); f.vy = rand(-40, 40); neutrals.push(f); }); followers = [];
-      v.sx = v.x; v.sy = v.y; A.dur = Math.max(2, Math.min(4, dist(v, A.dest) / 600)); say('Taken to ' + A.dest.name, 3);
+      v.sx = v.x; v.sy = v.y; A.dur = Math.max(2, Math.min(4, dist(v, A.dest) / 600)); say(tr('Taken to {s}', {s: tr(A.dest.name)}), 3);
     }
   } else {
     const k = Math.min(1, A.t / A.dur); v.x = v.sx + (A.dest.x - v.sx) * k; v.y = v.sy + (A.dest.y - v.sy) * k; v.dir = A.dest.x < v.sx ? -1 : 1;

@@ -48,8 +48,8 @@ function showRole(){
   const a = document.getElementById('role-prot'), b = document.getElementById('role-pol'); if (!a || !b) return;
   a.classList.toggle('sel', role === 'protester'); b.classList.toggle('sel', role === 'police');
   const r1 = document.getElementById('rules'), r2 = document.getElementById('rules2'); if (r1) r1.style.display = role === 'police' ? 'none' : ''; if (r2) r2.style.display = role === 'police' ? '' : 'none';
-  const pn = document.getElementById('pname'); if (pn) pn.placeholder = role === 'police' ? 'Officer' : 'Protester';
-  const go = document.getElementById('go'); if (go) go.textContent = role === 'police' ? 'Start patrol' : 'Start marching';
+  const pn = document.getElementById('pname'); if (pn) pn.placeholder = tr(role === 'police' ? 'Officer' : 'Protester');
+  const go = document.getElementById('go'); if (go) go.textContent = tr(role === 'police' ? 'Start patrol' : 'Start marching');
 }
 try { if (localStorage.getItem('da_role') === 'police') role = 'police'; } catch (e) {}
 if (document.getElementById('role-prot')){
@@ -83,7 +83,7 @@ function padSet(t){
 const onPad = t => { const g = padGeom(); return Math.hypot(t.clientX - g.x, t.clientY - g.y) < g.R * 1.5; };
 const screenWalk = t => { mouse.x = t.clientX; mouse.y = t.clientY; };
 const actIds = new Map();   // touches that are holding an action button (police side)
-const actGeom = () => { const H = innerHeight, W = innerWidth; if (role !== 'police') return [{id: 'strike', x: W - 64, y: H - 96, r: 42, t: 'STRIKE'}]; return [{id: 'strike', x: W - 64, y: H - 96, r: 42, t: 'STRIKE'}, {id: 'smoke', x: W - 150, y: H - 70, r: 30, t: 'SMOKE'}, {id: 'gun', x: W - 146, y: H - 142, r: 30, t: 'FIRE'}]; };
+const actGeom = () => { const H = innerHeight, W = innerWidth; if (role !== 'police') return [{id: 'strike', x: W - 64, y: H - 96, r: 42, t: tr('STRIKE')}]; return [{id: 'strike', x: W - 64, y: H - 96, r: 42, t: tr('STRIKE')}, {id: 'smoke', x: W - 150, y: H - 70, r: 30, t: tr('SMOKE')}, {id: 'gun', x: W - 146, y: H - 142, r: 30, t: tr('FIRE')}]; };
 const touchGo = e => {
   for (const t of e.changedTouches){
     if (e.type === 'touchstart'){
@@ -150,21 +150,21 @@ function supportHTML(){
   return (hasSupport() ? coffeeHTML() : '') + (hasWhatsapp() ? whatsappHTML() : '');
 }
 function whatsappHTML(){
-  let p = '<div class="wtext">New updates are coming. Join the WhatsApp group to hear first' + (WHATSAPP.qr ? ': scan the QR code.' : '.') + '</div>';
+  let p = '<div class="wtext">' + tr('New updates are coming. Join the WhatsApp group to hear first') + (WHATSAPP.qr ? tr(': scan the QR code.') : '.') + '</div>';
   if (WHATSAPP.qr) p += '<img class="waqr" alt="WhatsApp group QR code" src="' + WHATSAPP.qr + '">';
-  if (WHATSAPP.link) p += '<a class="wabtn" href="' + WHATSAPP.link + '" target="_blank" rel="noopener">Open WhatsApp group</a>';
-  return '<div class="support"><button type="button" class="supportbtn wa alt">Get game updates on WhatsApp</button><div class="supportpanel">' + p + '</div></div>';
+  if (WHATSAPP.link) p += '<a class="wabtn" href="' + WHATSAPP.link + '" target="_blank" rel="noopener">' + tr('Open WhatsApp group') + '</a>';
+  return '<div class="support"><button type="button" class="supportbtn wa alt">' + tr('Get game updates on WhatsApp') + '</button><div class="supportpanel">' + p + '</div></div>';
 }
 function coffeeHTML(){
   let p = '';
-  if (SUPPORT.bkashNumber) p += '<div class="bknum">bKash (Send Money): <b>' + SUPPORT.bkashNumber + '</b> <button type="button" class="copybtn alt" data-num="' + SUPPORT.bkashNumber + '">Copy</button></div>';
-  if (!SUPPORT.bkashNumber && SUPPORT.closedMessage) p += '<div class="bknum">' + SUPPORT.closedMessage + '</div>';
-  else p += '<small>Optional and non-refundable. It does not unlock anything in the game.</small>';
-  return '<div class="support"><button type="button" class="supportbtn alt">Enjoyed the game? Gift your Neta a cup of tea 🍵</button><div class="supportpanel">' + p + '</div></div>';
+  if (SUPPORT.bkashNumber) p += '<div class="bknum">bKash (Send Money): <b>' + SUPPORT.bkashNumber + '</b> <button type="button" class="copybtn alt" data-num="' + SUPPORT.bkashNumber + '">' + tr('Copy') + '</button></div>';
+  if (!SUPPORT.bkashNumber && SUPPORT.closedMessage) p += '<div class="bknum">' + tr(SUPPORT.closedMessage) + '</div>';
+  else p += '<small>' + tr('Optional and non-refundable. It does not unlock anything in the game.') + '</small>';
+  return '<div class="support"><button type="button" class="supportbtn alt">' + tr('Enjoyed the game? Gift your Neta a cup of tea 🍵') + '</button><div class="supportpanel">' + p + '</div></div>';
 }
 document.addEventListener('click', e => {
   const c = e.target.closest && e.target.closest('.copybtn'); if (!c) return;
-  const num = c.dataset.num, done = () => { c.textContent = 'Copied ✓'; setTimeout(() => { c.textContent = 'Copy'; }, 1800); };
+  const num = c.dataset.num, done = () => { c.textContent = tr('Copied ✓'); setTimeout(() => { c.textContent = tr('Copy'); }, 1800); };
   const fallback = () => { const t = document.createElement('textarea'); t.value = num; t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); done(); } catch (er) {} t.remove(); };
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(num).then(done, fallback); else fallback();
 });
@@ -188,4 +188,11 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) nav
   const tip = document.getElementById('installtip'); if (!tip) return;
   const installed = (matchMedia && matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches) || navigator.standalone;
   if (IS_TOUCH && !installed) tip.style.display = 'block';
+})();
+
+// language toggle (menu and end screens) and first paint in the saved language
+(function(){
+  const b = document.getElementById('langbtn'); if (b) b.onclick = () => setLang(isBn() ? 'en' : 'bn');
+  applyLang();
+  showRole();
 })();

@@ -68,7 +68,7 @@ function drawVan(c, v){
   c.fillStyle = '#f2f2f2'; c.strokeStyle = '#222'; c.lineWidth = 1.5; c.beginPath(); c.roundRect(-36, -14, 72, 30, 5); c.fill(); c.stroke();
   c.fillStyle = '#2f6fd0'; c.fillRect(-36, 2, 72, 6);
   c.fillStyle = '#9fd3f5'; c.fillRect(18, -11, 14, 11);
-  c.fillStyle = '#222'; c.font = 'bold 9px system-ui'; c.textAlign = 'center'; c.fillText('POLICE', -6, 0);
+  c.fillStyle = '#222'; c.font = 'bold 9px system-ui'; c.textAlign = 'center'; c.fillText(tr('POLICE'), -6, 0);
   c.fillStyle = '#111'; c.beginPath(); c.arc(-22, 16, 6, 0, 6.28); c.arc(22, 16, 6, 0, 6.28); c.fill();
   const flash = Math.floor((game ? game.t : 0) * 6) % 2;
   c.fillStyle = flash ? '#e53935' : '#1e88e5'; c.fillRect(-12, -19, 10, 5);
@@ -93,38 +93,38 @@ function drawMosque(c, m){
   c.fillStyle = '#2e8b57'; c.beginPath(); c.arc(m.x, m.y - 14, 15, Math.PI, 0); c.fill();
   c.fillStyle = '#e9efe6'; c.fillRect(m.x - 31, m.y - 34, 6, 52); c.fillRect(m.x + 25, m.y - 34, 6, 52);
   c.fillStyle = '#2e8b57'; c.beginPath(); c.arc(m.x - 28, m.y - 34, 4, Math.PI, 0); c.arc(m.x + 28, m.y - 34, 4, Math.PI, 0); c.fill();
-  label(c, m.name || 'Mosque', m.x, m.y + 32, '600 11px system-ui', '#2e5d44');
+  label(c, tr(m.name || 'Mosque'), m.x, m.y + 32, '600 11px system-ui', '#2e5d44');
 }
 function drawTemple(c, t){   // stepped shikhara tower with a flag
   c.fillStyle = '#f1dcc4'; c.strokeStyle = '#8a5a30'; c.lineWidth = 1.5; c.fillRect(t.x - 20, t.y - 4, 40, 20); c.strokeRect(t.x - 20, t.y - 4, 40, 20);
   c.fillStyle = '#e07a2f'; c.beginPath(); c.moveTo(t.x - 14, t.y - 4); c.lineTo(t.x, t.y - 34); c.lineTo(t.x + 14, t.y - 4); c.closePath(); c.fill(); c.stroke();
   c.strokeStyle = '#8a5a30'; c.beginPath(); c.moveTo(t.x, t.y - 34); c.lineTo(t.x, t.y - 44); c.stroke(); c.fillStyle = '#c8102e'; c.fillRect(t.x, t.y - 44, 9, 5);
-  label(c, 'Temple', t.x, t.y + 30, '600 11px system-ui', '#8a4a10');
+  label(c, tr('Temple'), t.x, t.y + 30, '600 11px system-ui', '#8a4a10');
 }
 function drawMonastery(c, m){   // golden-roofed hall with a stupa
   c.fillStyle = '#f4ead0'; c.strokeStyle = '#8a7020'; c.lineWidth = 1.5; c.fillRect(m.x - 20, m.y - 4, 40, 20); c.strokeRect(m.x - 20, m.y - 4, 40, 20);
   c.fillStyle = '#d9a82a'; c.beginPath(); c.moveTo(m.x - 26, m.y - 4); c.lineTo(m.x - 14, m.y - 18); c.lineTo(m.x + 14, m.y - 18); c.lineTo(m.x + 26, m.y - 4); c.closePath(); c.fill(); c.stroke();
   c.fillStyle = '#fff'; c.beginPath(); c.arc(m.x, m.y - 22, 8, Math.PI, 0); c.fill(); c.stroke(); c.fillStyle = '#d9a82a'; c.fillRect(m.x - 1.5, m.y - 36, 3, 10);
-  label(c, 'Monastery', m.x, m.y + 30, '600 11px system-ui', '#7a5f10');
+  label(c, tr('Monastery'), m.x, m.y + 30, '600 11px system-ui', '#7a5f10');
 }
 function drawChurch(c, s){   // gabled nave, bell tower and cross
   c.fillStyle = '#f3f1ec'; c.strokeStyle = '#6a6a78'; c.lineWidth = 1.5; c.fillRect(s.x - 20, s.y - 4, 40, 20); c.strokeRect(s.x - 20, s.y - 4, 40, 20);
   c.fillStyle = '#7a6a78'; c.beginPath(); c.moveTo(s.x - 22, s.y - 4); c.lineTo(s.x, s.y - 18); c.lineTo(s.x + 22, s.y - 4); c.closePath(); c.fill();
   c.fillStyle = '#f3f1ec'; c.fillRect(s.x + 8, s.y - 30, 10, 26); c.strokeRect(s.x + 8, s.y - 30, 10, 26);
   c.strokeStyle = '#333'; c.lineWidth = 2; c.beginPath(); c.moveTo(s.x + 13, s.y - 42); c.lineTo(s.x + 13, s.y - 32); c.moveTo(s.x + 9, s.y - 38); c.lineTo(s.x + 17, s.y - 38); c.stroke();
-  label(c, 'Church', s.x, s.y + 30, '600 11px system-ui', '#444458');
+  label(c, tr('Church'), s.x, s.y + 30, '600 11px system-ui', '#444458');
 }
 function drawCoffee(c, s){
   c.fillStyle = '#8b5a3c'; c.fillRect(s.x - 18, s.y - 10, 36, 24);
   for (let i = 0; i < 6; i++){ c.fillStyle = i % 2 ? '#fff' : '#c8102e'; c.fillRect(s.x - 20 + i * 7, s.y - 16, 7, 8); }
   c.fillStyle = '#fff'; c.beginPath(); c.arc(s.x, s.y + 4, 5, 0, 6.28); c.fill(); c.fillStyle = '#5a3a1a'; c.fillRect(s.x - 3, s.y + 1, 6, 2);
-  label(c, s.name || 'Coffee Shop', s.x, s.y + 28, '600 11px system-ui', '#5a3a1a');
+  label(c, tr(s.name || 'Coffee Shop'), s.x, s.y + 28, '600 11px system-ui', '#5a3a1a');
 }
 function drawHospital(c, h){
   c.fillStyle = '#fff'; c.strokeStyle = '#c8102e'; c.lineWidth = 2; c.fillRect(h.x - 30, h.y - 22, 60, 44); c.strokeRect(h.x - 30, h.y - 22, 60, 44);
   c.fillStyle = '#c8102e'; c.fillRect(h.x - 4, h.y - 14, 8, 24); c.fillRect(h.x - 12, h.y - 6, 24, 8);
   c.fillStyle = 'rgba(200,16,46,.12)'; c.beginPath(); c.arc(h.x, h.y, 62, 0, 6.28); c.fill();
-  label(c, h.name, h.x, h.y - 30, 'bold 11px system-ui', '#a00d26');
+  label(c, tr(h.name), h.x, h.y - 30, 'bold 11px system-ui', '#a00d26');
 }
 function drawBiriyani(c, s){
   c.fillStyle = 'rgba(255,170,40,.2)'; c.beginPath(); c.arc(s.x, s.y, s.r, 0, 6.28); c.fill();
@@ -233,7 +233,7 @@ function drawBarricades(c, v){
     for (const o of [-75, -25, 25, 75]) drawBar(c, g.x + tx * o + rx * j, g.y + ty * o + ry * j, ang, a);
     for (const o of [-50, 0, 50]) drawBar(c, g.x + tx * o - rx * 18 + rx * j, g.y + ty * o - ry * 18 + ry * j, ang, a);
     const lp = polar(g.ang, g.r + 72);
-    label(c, g.open >= 1 ? 'OPEN' : 'POLICE BARRICADE: ' + g.need + ' people' + (g.hits < GATE_HITS && !g.opening ? ' · ' + g.hits + ' hits left' : ''), lp.x, lp.y, 'bold ' + Math.round(14 / Z) + 'px system-ui', '#111');
+    label(c, g.open >= 1 ? tr('OPEN') : tr('POLICE BARRICADE: {n} people', {n: g.need}) + (g.hits < GATE_HITS && !g.opening ? tr(' · {n} hits left', {n: g.hits}) : ''), lp.x, lp.y, 'bold ' + Math.round(14 / Z) + 'px system-ui', '#111');
   });
 }
 function minarMark(c, x, y){   // blinking red star on the small map
@@ -267,7 +267,7 @@ function draw(){
   ctx.lineWidth = 64; for (const r of RINGS.concat([MAP_R - 60])){ ctx.beginPath(); ctx.arc(0, 0, r, 0, 6.283); ctx.stroke(); }
   ctx.strokeStyle = '#8ec3e6'; ctx.lineWidth = 90; ctx.lineJoin = 'round'; ctx.beginPath();
   RIVER.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.stroke();
-  label(ctx, 'Buriganga', -600, 1330, 'italic 16px system-ui', '#4b7ea3');
+  label(ctx, tr('Buriganga'), -600, 1330, 'italic 16px system-ui', '#4b7ea3');
   ctx.fillStyle = '#8ec3e6'; ctx.beginPath(); ctx.ellipse(130, -380, 110, 50, -0.5, 0, 6.28); ctx.fill();
 
   for (const t of TOWN.trees) if (v(t)) drawTree(ctx, t, false);
@@ -281,7 +281,7 @@ function draw(){
     ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.fillRect(h.x + 4, h.y + 8, h.w - 8, h.h - 13);   // lighter roof panel
     ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(h.x, h.y, h.w, 5);
   }
-  for (const l of LANDMARKS) label(ctx, l.name, l.x, l.y, '600 14px system-ui', 'rgba(40,40,40,.65)');
+  for (const l of LANDMARKS) label(ctx, tr(l.name), l.x, l.y, '600 14px system-ui', 'rgba(40,40,40,.65)');
   for (const m of TOWN.mosques) if (v(m)) drawMosque(ctx, m);
   for (const s of TOWN.coffee) if (v(s)) drawCoffee(ctx, s);
   for (const s of TOWN.temples) if (v(s)) drawTemple(ctx, s);
@@ -292,7 +292,7 @@ function draw(){
     const ay = s === AYNAGHOR;
     ctx.fillStyle = ay ? '#3a2a2a' : '#2f6fd0'; ctx.fillRect(s.x - 14, s.y - 10, 28, 20);
     ctx.fillStyle = '#fff'; ctx.fillRect(s.x - 4, s.y - 2, 8, 12);
-    label(ctx, s.name, s.x, s.y - 16, 'bold 12px system-ui', ay ? '#7a1a1a' : '#12306b');
+    label(ctx, tr(s.name), s.x, s.y - 16, 'bold 12px system-ui', ay ? '#7a1a1a' : '#12306b');
   }
   if (role !== 'police' && game.detainees){
     const tgt = nearestHeld(player);
@@ -303,14 +303,14 @@ function draw(){
       ctx.save(); ctx.strokeStyle = 'rgba(255,140,0,.8)'; ctx.lineWidth = 3; ctx.setLineDash([8, 8]); ctx.beginPath(); ctx.arc(stn.x, stn.y, RESCUE_R, 0, 6.28); ctx.stroke(); ctx.setLineDash([]);
       if (R.p > 0){ ctx.lineWidth = 8; ctx.strokeStyle = '#4caf50'; ctx.beginPath(); ctx.arc(stn.x, stn.y, RESCUE_R, -Math.PI / 2, -Math.PI / 2 + 6.283 * R.p / RESCUE_TIME); ctx.stroke(); }
       ctx.fillStyle = '#ff8c00'; ctx.beginPath(); ctx.arc(stn.x + 24, stn.y - 22, 13, 0, 6.28); ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = 'bold 15px system-ui'; ctx.textAlign = 'center'; ctx.fillText(String(n), stn.x + 24, stn.y - 17);
-      label(ctx, n + ' held · bring ' + RESCUE_NEED + ' people', stn.x, stn.y + 34, 'bold 12px system-ui', '#b35900');
+      label(ctx, tr('{n} held · bring {m} people', {n, m: RESCUE_NEED}), stn.x, stn.y + 34, 'bold 12px system-ui', '#b35900');
       ctx.restore();
     }
   }
   for (const s of shutdowns){
     ctx.fillStyle = 'rgba(60,60,90,.28)'; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.28); ctx.fill();
     ctx.strokeStyle = '#334'; ctx.lineWidth = 2; ctx.setLineDash([10, 8]); ctx.stroke(); ctx.setLineDash([]);
-    label(ctx, 'INTERNET SHUTDOWN', s.x, s.y, 'bold 16px system-ui', '#334');
+    label(ctx, tr('INTERNET SHUTDOWN'), s.x, s.y, 'bold 16px system-ui', '#334');
   }
   for (const s of stalls) if (v(s)) drawBiriyani(ctx, s);
   for (const t of teas) if (v(t)) drawTea(ctx, t);
@@ -336,11 +336,11 @@ function draw(){
     : person(ctx, f.x, f.y, {dress: WHITE, skin: f.skin, look: lookOf(f), moving: player.moving, flag: i % 6 === 0, hat: i % 4 === 0 ? 'band' : null})]); });
   for (const r of marchers){   // AI protester crowds (police side)
     r.members.forEach((m, i) => { if (v(m)) list.push([m.y, () => person(ctx, m.x, m.y, {dress: WHITE, skin: m.skin, look: lookOf(m), moving: r.moving, flag: i % 6 === 0, hat: i % 4 === 0 ? 'band' : null})]); });
-    list.push([r.y, () => { person(ctx, r.x, r.y, {dress: WHITE, skin: SKINS[1], hat: 'band', scale: 1.25, moving: r.moving, flag: true}); label(ctx, 'CROWD ' + (r.members.length + 1), r.x, r.y - 36, 'bold 11px system-ui', '#0b6b3a'); }]);
+    list.push([r.y, () => { person(ctx, r.x, r.y, {dress: WHITE, skin: SKINS[1], hat: 'band', scale: 1.25, moving: r.moving, flag: true}); label(ctx, tr('CROWD {n}', {n: r.members.length + 1}), r.x, r.y - 36, 'bold 11px system-ui', '#0b6b3a'); }]);
   }
   for (const r of rivals){
     r.members.forEach(m => { if (v(m)) list.push([m.y, () => person(ctx, m.x, m.y, {dress: BLACK, skin: m.skin, look: lookOf(m), hat: 'helmet', moving: r.moving})]); });
-    list.push([r.y, () => { person(ctx, r.x, r.y, {dress: BLACK, skin: SKINS[1], hat: 'helmet', scale: 1.25, moving: r.moving}); label(ctx, (r.armed ? 'ARMED ' : 'RIVAL ') + (r.members.length + 1), r.x, r.y - 34, 'bold 11px system-ui', r.armed ? '#c8102e' : '#111');
+    list.push([r.y, () => { person(ctx, r.x, r.y, {dress: BLACK, skin: SKINS[1], hat: 'helmet', scale: 1.25, moving: r.moving}); label(ctx, tr(r.armed ? 'ARMED {n}' : 'RIVAL {n}', {n: r.members.length + 1}), r.x, r.y - 34, 'bold 11px system-ui', r.armed ? '#c8102e' : '#111');
     if (r.armed){ ctx.strokeStyle = r.aim > 0 ? '#ff1744' : 'rgba(200,16,46,.6)'; ctx.lineWidth = r.aim > 0 ? 4 : 2; ctx.beginPath(); ctx.arc(r.x, r.y, 34, 0, 6.28); ctx.stroke(); if (r.aim > 0) label(ctx, '!', r.x, r.y - 52, 'bold 22px system-ui', '#ff1744'); } }]);
   }
   if (!player.hidden) list.push([player.y, () => {
@@ -348,10 +348,10 @@ function draw(){
     else person(ctx, player.x, player.y, {dress: WHITE, skin: player.skin, hat: 'band', scale: 1.35, moving: player.moving, flag: true});
     // name tag above the head so you can find yourself
     ctx.save(); ctx.translate(player.x, player.y - 46); ctx.scale(zf, zf);   // keeps the tag readable when zoomed out
-    ctx.font = 'bold 14px ' + BN_FONT; const nb = inkBounds(ctx.font, playerName), w = textW(ctx, playerName) + 18;
+    ctx.font = 'bold 14px ' + BN_FONT; const pname = dispName(playerName), nb = inkBounds(ctx.font, pname), w = textW(ctx, pname) + 18;
     const ta = Math.max(nb.ok ? nb.asc : 0, 14 * 0.95), td = Math.max(nb.ok ? nb.desc : 0, 14 * 0.35), th = ta + td + 10;
     ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.beginPath(); ctx.roundRect(-w / 2, -th, w, th, 7); ctx.fill();
-    ctx.fillStyle = '#ffd54f'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(playerName, 0, -(td + 5));
+    ctx.fillStyle = '#ffd54f'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(pname, 0, -(td + 5));
     ctx.restore();
   }]);
   list.sort((a, b) => a[0] - b[0]).forEach(e => e[1]());
@@ -438,15 +438,15 @@ function drawHUDPolice(){
   const barY = vw < 800 ? Math.round(vh * 0.62) : 20;
   ctx.save(); ctx.scale(k, k); ctx.textAlign = 'left';
   ctx.fillStyle = 'rgba(0,0,0,.68)'; ctx.fillRect(10, 10, 300, 58);
-  ctx.fillStyle = '#ffd54f'; ctx.font = 'bold 34px system-ui'; ctx.fillText('Day ' + G.day, 22, 52);
-  ctx.fillStyle = '#fff'; ctx.font = 'bold 17px system-ui'; ctx.textAlign = 'right'; ctx.fillText('Dispersed ' + st.dispersed + '/' + DISPERSE_GOAL, 300, 49); ctx.textAlign = 'left';
+  ctx.fillStyle = '#ffd54f'; ctx.font = 'bold 34px system-ui'; ctx.fillText(tr('Day {n}', {n: G.day}), 22, 52);
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 17px system-ui'; ctx.textAlign = 'right'; ctx.fillText(tr('Dispersed {a}/{b}', {a: st.dispersed, b: DISPERSE_GOAL}), 300, 49); ctx.textAlign = 'left';
   const y0 = 78; ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(10, y0, 240, IS_TOUCH ? 84 : 104);
-  ctx.fillStyle = '#fff'; ctx.font = 'bold 16px system-ui'; ctx.fillText('Squad: ' + (followers.length + 1), 20, y0 + 22);
-  ctx.font = '12px system-ui'; ctx.fillText('Anger', 20, y0 + 44);
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 16px system-ui'; ctx.fillText(tr('Squad: {n}', {n: followers.length + 1}), 20, y0 + 22);
+  ctx.font = '12px system-ui'; ctx.fillText(tr('Anger'), 20, y0 + 44);
   ctx.fillStyle = '#444'; ctx.fillRect(70, y0 + 35, 170, 10);
   ctx.fillStyle = G.anger > 70 ? '#e53935' : G.anger > 40 ? '#ffb300' : '#4caf50'; ctx.fillRect(70, y0 + 35, 1.7 * G.anger, 10);
-  ctx.fillStyle = '#fff'; ctx.fillText('Smoke ' + G.smoke + '/3     Rounds ' + G.gun + '/6', 20, y0 + 68);
-  if (!IS_TOUCH){ ctx.fillStyle = '#cfd8dc'; ctx.fillText('Click/Space strike · G smoke · F fire', 20, y0 + 92); }
+  ctx.fillStyle = '#fff'; ctx.fillText(tr('Smoke {a}/3     Rounds {b}/6', {a: G.smoke, b: G.gun}), 20, y0 + 68);
+  if (!IS_TOUCH){ ctx.fillStyle = '#cfd8dc'; ctx.fillText(tr('Click/Space strike · G smoke · F fire'), 20, y0 + 92); }
   // map top right, arrow to the nearest crowd under it
   const mr = 76, mx = vw - mr - 12, my = 12 + mr, ay = my + mr + 34, s = mr / MAP_R;
   ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.beginPath(); ctx.arc(mx, my, mr, 0, 6.28); ctx.fill();
@@ -459,13 +459,13 @@ function drawHUDPolice(){
   if (near){
     const a = Math.atan2(near.y - player.y, near.x - player.x);
     ctx.save(); ctx.translate(mx, ay); ctx.rotate(a); ctx.fillStyle = '#c8102e'; ctx.beginPath(); ctx.moveTo(24, 0); ctx.lineTo(-12, -14); ctx.lineTo(-6, 0); ctx.lineTo(-12, 14); ctx.fill(); ctx.restore();
-    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = '11px system-ui'; ctx.fillText((dist(player, near) / 190).toFixed(1) + ' km · ' + (near.members.length + 1) + ' people', mx, ay + 34);
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = '11px system-ui'; ctx.fillText(tr('{n} km · {m} people', {n: (dist(player, near) / 190).toFixed(1), m: near.members.length + 1}), mx, ay + 34);
   }
   ctx.textAlign = 'center';
   if (G.hold > 0){
     ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(vw / 2 - 150, barY, 300, 26);
     ctx.fillStyle = '#e53935'; ctx.fillRect(vw / 2 - 150, barY, 300 * G.hold / NEED_HOLD, 26);
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 14px system-ui'; ctx.fillText('A CROWD IS HOLDING THE MINAR', vw / 2, barY + 18);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 14px system-ui'; ctx.fillText(tr('A CROWD IS HOLDING THE MINAR'), vw / 2, barY + 18);
   }
   if (G.msgT > 0){
     let mf = 17; ctx.font = 'bold ' + mf + 'px ' + BN_FONT;
@@ -486,40 +486,40 @@ function drawHUD(){
   ctx.textAlign = 'left';
   const ph = 58;
   ctx.fillStyle = 'rgba(0,0,0,.68)'; ctx.fillRect(10, 10, 300, ph);
-  ctx.fillStyle = '#ffd54f'; ctx.font = 'bold 34px system-ui'; ctx.fillText('Day ' + game.day, 22, 52);
-  const dayW = ctx.measureText('Day ' + game.day).width;
-  ctx.fillStyle = '#cfd8dc'; ctx.font = '15px system-ui'; ctx.fillText('of ' + MAX_DAY, 22 + dayW + 8, 50);
-  ctx.fillStyle = '#fff'; ctx.font = 'bold 17px system-ui'; ctx.textAlign = 'right'; ctx.fillText('Score ' + computeScore(false, 'timeout', true).toLocaleString('en-US'), 300, 49); ctx.textAlign = 'left';
+  ctx.fillStyle = '#ffd54f'; ctx.font = 'bold 34px system-ui'; ctx.fillText(tr('Day {n}', {n: game.day}), 22, 52);
+  const dayW = ctx.measureText(tr('Day {n}', {n: game.day})).width;
+  ctx.fillStyle = '#cfd8dc'; ctx.font = '15px system-ui'; ctx.fillText(tr('of {n}', {n: MAX_DAY}), 22 + dayW + 8, 50);
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 17px system-ui'; ctx.textAlign = 'right'; ctx.fillText(tr('Score {n}', {n: computeScore(false, 'timeout', true).toLocaleString('en-US')}), 300, 49); ctx.textAlign = 'left';
   const y0 = 10 + ph + 10;
   ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(10, y0, 230, 78);
   ctx.fillStyle = '#fff'; ctx.font = 'bold 16px system-ui';
-  ctx.fillText('Crowd: ' + (followers.length + 1), 20, y0 + 22);
-  ctx.fillText('Time: ' + Math.floor(game.t) + 's', 130, y0 + 22);
-  ctx.font = '12px system-ui'; ctx.fillText('Morale', 20, y0 + 44);
+  ctx.fillText(tr('Crowd: {n}', {n: followers.length + 1}), 20, y0 + 22);
+  ctx.fillText(tr('Time: {n}s', {n: Math.floor(game.t)}), 130, y0 + 22);
+  ctx.font = '12px system-ui'; ctx.fillText(tr('Morale'), 20, y0 + 44);
   ctx.fillStyle = '#444'; ctx.fillRect(70, y0 + 35, 160, 10);
   ctx.fillStyle = player.morale > 30 ? '#4caf50' : '#e53935'; ctx.fillRect(70, y0 + 35, 1.6 * player.morale, 10);
   const ri = RINGS.findIndex(r => r < Math.hypot(player.x, player.y) - 20);
-  ctx.fillStyle = '#fff'; ctx.fillText(ri >= 0 ? 'Next police barricade needs ' + GATE_NEEDS[ri] + ' people' : 'All barricades passed!', 20, y0 + 68);
-  if (player.injured){ ctx.fillStyle = '#e53935'; ctx.font = 'bold 13px system-ui'; ctx.fillText('INJURED: find a hospital', 20, y0 + 96); }
+  ctx.fillStyle = '#fff'; ctx.fillText(ri >= 0 ? tr('Next police barricade needs {n} people', {n: GATE_NEEDS[ri]}) : tr('All barricades passed!'), 20, y0 + 68);
+  if (player.injured){ ctx.fillStyle = '#e53935'; ctx.font = 'bold 13px system-ui'; ctx.fillText(tr('INJURED: find a hospital'), 20, y0 + 96); }
 
   const mr = 96, mx = vw - mr - 12, my = 12 + mr, ay = my + mr + 34, s = mr / MAP_R;   // map top right, red arrow under it
   if (!inShutdown()){
     const a = Math.atan2(GOAL.y - player.y, GOAL.x - player.x);
     ctx.save(); ctx.translate(mx, ay); ctx.rotate(a);
     ctx.fillStyle = '#c8102e'; ctx.beginPath(); ctx.moveTo(24, 0); ctx.lineTo(-12, -14); ctx.lineTo(-6, 0); ctx.lineTo(-12, 14); ctx.fill(); ctx.restore();
-    ctx.fillStyle = '#111'; ctx.textAlign = 'center'; ctx.font = 'bold 12px system-ui'; ctx.fillText((dist(player, GOAL) / 190).toFixed(1) + ' km', mx, ay + 34);
+    ctx.fillStyle = '#111'; ctx.textAlign = 'center'; ctx.font = 'bold 12px system-ui'; ctx.fillText(tr('{d} km', {d: (dist(player, GOAL) / 190).toFixed(1)}), mx, ay + 34);
     if (player.injured){
       const h = nearestHospital(player), ha = Math.atan2(h.y - player.y, h.x - player.x);
       ctx.save(); ctx.translate(mx, ay + 78); ctx.rotate(ha);
       ctx.fillStyle = '#2e9e5b'; ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(-10, -11); ctx.lineTo(-5, 0); ctx.lineTo(-10, 11); ctx.fill(); ctx.restore();
-      ctx.fillStyle = '#111'; ctx.font = 'bold 12px system-ui'; ctx.fillText('Hospital ' + (dist(player, h) / 190).toFixed(1) + ' km', mx, ay + 106);
+      ctx.fillStyle = '#111'; ctx.font = 'bold 12px system-ui'; ctx.fillText(tr('Hospital {d} km', {d: (dist(player, h) / 190).toFixed(1)}), mx, ay + 106);
     }
     const hs = nearestHeld(player);
     if (hs){
       const oy = ay + (player.injured ? 150 : 78), ha2 = Math.atan2(hs.y - player.y, hs.x - player.x);
       ctx.save(); ctx.translate(mx, oy); ctx.rotate(ha2);
       ctx.fillStyle = '#ff8c00'; ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(-10, -11); ctx.lineTo(-5, 0); ctx.lineTo(-10, 11); ctx.fill(); ctx.restore();
-      ctx.fillStyle = '#111'; ctx.font = 'bold 12px system-ui'; ctx.textAlign = 'center'; ctx.fillText(hs.name.replace(' Thana', '') + ' ' + (dist(player, hs) / 190).toFixed(1) + ' km', mx, oy + 28);
+      ctx.fillStyle = '#111'; ctx.font = 'bold 12px system-ui'; ctx.textAlign = 'center'; ctx.fillText(shortStn(hs.name) + ' ' + tr('{d} km', {d: (dist(player, hs) / 190).toFixed(1)}), mx, oy + 28);
     }
     ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.beginPath(); ctx.arc(mx, my, mr, 0, 6.28); ctx.fill();
     ctx.strokeStyle = '#888'; ctx.lineWidth = 1; for (const r of RINGS){ ctx.beginPath(); ctx.arc(mx, my, r * s, 0, 6.28); ctx.stroke(); }
@@ -530,16 +530,16 @@ function drawHUD(){
     ctx.fillStyle = 'rgba(255,255,255,.28)'; ctx.beginPath(); ctx.arc(mx + player.x * s, my + player.y * s, 6 + Math.min(8, Math.sqrt(followers.length)), 0, 6.283); ctx.fill();   // your crowd
     miniDot(ctx, mx + player.x * s, my + player.y * s, 5, '#fff', '#0b6b3a');
     minarMark(ctx, mx, my);
-  } else { ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.beginPath(); ctx.arc(mx, my, mr, 0, 6.28); ctx.fill(); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = 'bold 12px system-ui'; ctx.fillText('NO SIGNAL', mx, my + 4); }
+  } else { ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.beginPath(); ctx.arc(mx, my, mr, 0, 6.28); ctx.fill(); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = 'bold 12px system-ui'; ctx.fillText(tr('NO SIGNAL'), mx, my + 4); }
 
   ctx.textAlign = 'center';
-  if (game.contested){ ctx.fillStyle = '#fff'; ctx.font = 'bold 16px system-ui'; ctx.fillText('A bigger rival crowd is in the square. Out-recruit them.', vw / 2, barY + 18); }
+  if (game.contested){ ctx.fillStyle = '#fff'; ctx.font = 'bold 16px system-ui'; ctx.fillText(tr('A bigger rival crowd is in the square. Out-recruit them.'), vw / 2, barY + 18); }
   else if (game.hold > 0){
     ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(vw / 2 - 150, barY, 300, 26);
     ctx.fillStyle = '#4caf50'; ctx.fillRect(vw / 2 - 150, barY, 300 * game.hold / NEED_HOLD, 26);
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 14px system-ui'; ctx.fillText('HOLDING THE SHAHEED MINAR', vw / 2, barY + 18);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 14px system-ui'; ctx.fillText(tr('HOLDING THE SHAHEED MINAR'), vw / 2, barY + 18);
   } else if (dist(player, GOAL) < GOAL.r && followers.length + 1 < NEED_CROWD){
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 16px system-ui'; ctx.fillText('You need ' + NEED_CROWD + ' people to hold the Shaheed Minar', vw / 2, barY + 18);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 16px system-ui'; ctx.fillText(tr('You need {n} people to hold the Shaheed Minar', {n: NEED_CROWD}), vw / 2, barY + 18);
   }
   if (game.msgT > 0){
     let mf = 17; ctx.font = 'bold ' + mf + 'px ' + BN_FONT;
@@ -555,8 +555,8 @@ function drawHUD(){
     ctx.fillStyle = '#fff'; ctx.fillRect(x, y, 100, 108); ctx.fillStyle = '#d7d3c8'; ctx.fillRect(x + 6, y + 6, 88, 66);
     person(ctx, x + 50, y + 62, {dress: WHITE, skin: t.skin, scale: 2.2, noBase: true});
     const rel = t.kind === 'released';
-    ctx.fillStyle = rel ? '#1b8a3e' : '#c8102e'; ctx.font = 'bold 12px system-ui'; ctx.textAlign = 'center'; ctx.fillText(rel ? 'RELEASED' : 'DETAINED', x + 50, y + 88);
-    ctx.fillStyle = '#222'; ctx.font = '11px ' + BN_FONT; ctx.fillText(rel ? t.count + ' freed · ' + t.station.replace(' Thana', '') : t.name + ' · ' + t.station.replace(' Thana', ''), x + 50, y + 102);
+    ctx.fillStyle = rel ? '#1b8a3e' : '#c8102e'; ctx.font = 'bold 12px system-ui'; ctx.textAlign = 'center'; ctx.fillText(tr(rel ? 'RELEASED' : 'DETAINED'), x + 50, y + 88);
+    ctx.fillStyle = '#222'; ctx.font = '11px ' + BN_FONT; ctx.fillText(rel ? tr('{n} freed · {s}', {n: t.count, s: shortStn(t.station)}) : t.name + ' · ' + shortStn(t.station), x + 50, y + 102);
     if (rel){ ctx.strokeStyle = '#1b8a3e'; ctx.lineWidth = 5; ctx.strokeRect(x + 2.5, y + 2.5, 95, 103); ctx.fillStyle = 'rgba(27,138,62,.18)'; ctx.fillRect(x + 6, y + 6, 88, 66); }
     ctx.restore();
   });

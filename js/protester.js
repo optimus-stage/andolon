@@ -6,10 +6,10 @@ function doBreak(){
   const g = gates.filter(g => g.open < 1 && !g.opening && dist(player, g) < 150).sort((a, b) => dist(a, player) - dist(b, player))[0];
   if (!g) return;
   sfxWhack();
-  if (followers.length < g.need){ say('This police barricade needs ' + g.need + ' people to break. You have ' + followers.length + '.'); return; }
+  if (followers.length < g.need){ say(tr('This police barricade needs {n} people to break. You have {m}.', {n: g.need, m: followers.length})); return; }
   g.hits -= 1; g.shake = 0.25; addFx(g.x, g.y, 'dust');
-  if (g.hits <= 0){ g.opening = true; say('The police barricade gives way. Keep moving!'); }
-  else say(g.hits + ' more strike' + (g.hits > 1 ? 's' : '') + ' to break it.', 1.5);
+  if (g.hits <= 0){ g.opening = true; say(tr('The police barricade gives way. Keep moving!')); }
+  else say(tr(g.hits > 1 ? '{n} more strikes to break it.' : '{n} more strike to break it.', {n: g.hits}), 1.5);
 }
 function update(dt){
   if (role === 'police'){ updatePolice(dt); return; }
@@ -61,11 +61,11 @@ function update(dt){
 
   updateRescue(dt);
   if (inShutdown()){   // internet shutdown: static on the radio, and the crowd drifts away after 4 seconds
-    if (game.shutT === 0) say('Internet shutdown! Leave within 4 seconds or you will lose your crowd.', 3);
+    if (game.shutT === 0) say(tr('Internet shutdown! Leave within 4 seconds or you will lose your crowd.'), 3);
     game.shutT += dt; game.staticT -= dt; if (game.staticT <= 0){ sfxStatic(); game.staticT = 0.45; }
     if (game.shutT >= 4 && followers.length){
       game.shutLoseT -= dt;
-      if (game.shutLoseT <= 0){ game.shutLoseT = 1.2; const n = Math.max(1, Math.ceil(followers.length * 0.2)); for (let i = 0; i < n && followers.length; i++){ const f = followers.pop(); f.cool = 6; f.rcool = 10; f.vx = rand(-70, 70); f.vy = rand(-70, 70); f.wt = 1; neutrals.push(f); } say('No signal: ' + n + ' people lost contact and left. Get out of the shutdown zone!', 2.5); }
+      if (game.shutLoseT <= 0){ game.shutLoseT = 1.2; const n = Math.max(1, Math.ceil(followers.length * 0.2)); for (let i = 0; i < n && followers.length; i++){ const f = followers.pop(); f.cool = 6; f.rcool = 10; f.vx = rand(-70, 70); f.vy = rand(-70, 70); f.wt = 1; neutrals.push(f); } say(tr('No signal: {n} people lost contact and left. Get out of the shutdown zone!', {n}), 2.5); }
     }
   } else { game.shutT = 0; game.shutLoseT = 0; }
 
@@ -107,7 +107,7 @@ function update(dt){
     r.fightT = (r.fightT || 0) - dt;
     if (r.fightT <= 0 && r.members.length && (dist(r, player) < 110 || followers.some(f => dist(f, r) < 55))){ r.fightT = 1.3; clash(r); }
   }
-  const nRiv = rivals.length; rivals = rivals.filter(r => !r.dead); if (rivals.length < nRiv) say('A rival crowd gave up and left', 3);
+  const nRiv = rivals.length; rivals = rivals.filter(r => !r.dead); if (rivals.length < nRiv) say(tr('A rival crowd gave up and left'), 3);
   if (rivals.length < RIVAL_TARGET){ game.rivalSpawnT -= dt; if (game.rivalSpawnT <= 0 && spawnRival()) game.rivalSpawnT = 20; }
 
   // police barricades
@@ -118,7 +118,7 @@ function update(dt){
     const near = dist(player, g) < 150;
     if (g.opening) g.open = Math.min(1, g.open + dt * 2.5);   // struck down: the barricade swings open
     else if (!rivals.some(r => dist(r, g) < 130 && r.members.length >= g.need)) g.open = Math.max(0, g.open - dt * 0.5);
-    if (near && game.msgT <= 0 && !g.opening) say(followers.length >= g.need ? 'Press STRIKE to break this police barricade.' : 'This police barricade needs ' + g.need + ' people to break. You have ' + followers.length + '.');
+    if (near && game.msgT <= 0 && !g.opening) say(followers.length >= g.need ? tr(IS_TOUCH ? 'Press STRIKE to break this police barricade.' : 'Click or press Space to break this police barricade.') : tr('This police barricade needs {n} people to break. You have {m}.', {n: g.need, m: followers.length}));
   }
 
   for (const g of gates) if (g.open >= 1 && !g.broken){   // the barricade just broke: crumble sound and dust (only if it is near you)
@@ -127,16 +127,16 @@ function update(dt){
   // morale: drains slowly; Biriyani stalls and hospitals restore it; Mama r Tong er Cha gives a boost
   const inStall = stalls.some(s => dist(s, player) < s.r + 10); let restoring = inStall ? 30 : 0; if (inStall) game.stats.stallT += dt;
   const hosp = HOSPITALS.find(h => dist(h, player) < 62);
-  if (hosp){ restoring = Math.max(restoring, 45); if (player.injured && player.morale > 60){ player.injured = false; game.stats.cures++; sfxChime(); say('Treated at ' + hosp.name + '. You are back on your feet!'); } }
+  if (hosp){ restoring = Math.max(restoring, 45); if (player.injured && player.morale > 60){ player.injured = false; game.stats.cures++; sfxChime(); say(tr('Treated at {h}. You are back on your feet!', {h: tr(hosp.name)})); } }
   if (restoring) player.morale = Math.min(100, player.morale + restoring * dt);
   else player.morale = Math.max(0, player.morale - (followers.length ? 0.9 : 0) * dt);
   for (const t of teas){
     t.cd = Math.max(0, t.cd - dt);
-    if (t.cd <= 0 && dist(t, player) < 34){ t.cd = 45; game.stats.teas++; player.morale = Math.min(100, player.morale + 50); game.boost = 6; sfxChime(); say('মামার টঙের চা! Morale boost and extra speed'); }
+    if (t.cd <= 0 && dist(t, player) < 34){ t.cd = 45; game.stats.teas++; player.morale = Math.min(100, player.morale + 50); game.boost = 6; sfxChime(); say(tr('মামার টঙের চা! Morale boost and extra speed')); }
   }
   if (player.morale <= 0){
     game.drain += dt;
-    if (game.drain > 2 && followers.length){ game.drain = 0; const f = followers.pop(); f.cool = 4; neutrals.push(f); say('Tired and hungry: someone headed home'); }
+    if (game.drain > 2 && followers.length){ game.drain = 0; const f = followers.pop(); f.cool = 4; neutrals.push(f); say(tr('Tired and hungry: someone headed home')); }
   }
 
   game.viralT -= dt;
@@ -145,7 +145,7 @@ function update(dt){
     let c = 0;
     for (let i = neutrals.length - 1; i >= 0; i--) if (dist(neutrals[i], player) < 380 && neutrals[i].cool <= 0){ followers.push(neutrals[i]); neutrals.splice(i, 1); c++; }
     if (c) sfxJoin();
-    say('A video goes viral. ' + c + ' more people join you!');
+    say(tr('A video goes viral. {n} more people join you!', {n: c}));
   }
 
   updateChant(dt);
