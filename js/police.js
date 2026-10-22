@@ -17,8 +17,8 @@ function newPoliceGame(){
   game = {t: 0, day: 1, hold: 0, started: true, mode: 'play', msg: '', msgT: 0, flash: 0, van: null, arrest: null, contested: false,
     anger: 0, lastForce: 0, smoke: 3, gun: 6, refSmoke: 18, refGun: 12, cdS: 0, cdG: 0, cdSm: 0, spawnT: 3, bystT: 4, reinT: 30, chantT: 6, cone: null, hit: null,
     stats: {dispersed: 0, squadPeak: 1, smokes: 0, shots: 0, strikes: 0}};
-  game.daily = DAILY;
-  for (let i = 0; i < 5 + (DAILY && DAILY.twist === 'more' ? 2 : 0); i++){ const p = spawnIn(2400, 2900); marchers.push(mkCrowd(p.x, p.y, 3 + (DAILY && DAILY.twist === 'big' ? 2 : 0), 10 + i * 3)); }
+  game.daily = DAILY; game.seed = RUNSEED; game.challenge = CH_NOW;
+  for (let i = 0; i < 5 + (TWIST === 'more' ? 2 : 0); i++){ const p = spawnIn(2400, 2900); marchers.push(mkCrowd(p.x, p.y, 3 + (TWIST === 'big' ? 2 : 0), 10 + i * 3)); }
   say(tr(IS_TOUCH ? 'Use STRIKE, SMOKE and FIRE. Walk into officers to recruit them.' : 'Click or Space: strike. G: smoke. F: fire. Walk into officers to recruit them.'), 6);
 }
 function mkCrowd(x, y, n, delay){
@@ -214,7 +214,8 @@ function endPolice(won, why){
   if (dl){ const ds = dailyLocal(); ds.best[dl.role] = Math.max(ds.best[dl.role] || 0, score); dailySave(ds); dailyStreak = bumpStreak(); }
   const dLeft = dl ? attemptsLeft(dl.role) : 0;
   const dChip = () => dl ? '<p class="dailychip">★ ' + tr('Daily Challenge') + ' · ' + dayLabel() + (dailyStreak > 1 ? ' · ' + tr('🔥 {n}-day streak', {n: dailyStreak}) : '') + '</p>' : '';
-  const newAch = recordRun({role: 'police', won, outcome: won ? 'win' : why, score, dispersed: st.dispersed, squadPeak: st.squadPeak, smokes: st.smokes, anger: game.anger, secs: Math.round(game.t), daily: !!dl, streak: dailyStreak});
+  const seed = game.seed, ch = game.challenge, chRes = ch ? challengeResult(ch, score) : null, runTwist = TWIST;   // a run can be shared as a challenge
+  const newAch = recordRun({role: 'police', won, outcome: won ? 'win' : why, score, dispersed: st.dispersed, squadPeak: st.squadPeak, smokes: st.smokes, anger: game.anger, secs: Math.round(game.t), daily: !!dl, streak: dailyStreak, challenge: !!ch, challengeWon: !!(chRes && chRes.win)});
   const mkInfo = () => ({role: 'police', tier: rank, name: playerName, skin: player.skin, score, rankBn: rank.bn, tagBn: tag.bn, tagDesc: tr(tag.desc), day: game.day, best, newBest,
     nextText: nxt ? [tr('NEXT: {n}', {n: isBn() ? tr(nxt.metal) : nxt.metal.toUpperCase()}), tr('{n} pts', {n: loc(nxt.min - score)})] : [tr('NEXT RANK'), tr('Maxed')],
     stampLabel: tr(won ? 'ORDER HELD' : why === 'anger' ? 'STOOD DOWN' : 'LINE BROKEN'), stampSub: tr(won ? 'SQUARE SECURED' : why === 'anger' ? 'TOO MUCH FORCE' : 'MINAR HELD'),
@@ -228,9 +229,9 @@ function endPolice(won, why){
     const head = won ? '<h1>' + tr('Order <span>restored!</span>') + '</h1><p>' + tr('Your squad dispersed <b>{n}</b> crowds by <b>Day {d}</b>.', {n: st.dispersed, d: game.day}) + '</p>'
       : why === 'anger' ? '<h1>' + tr('Stood <span>down</span>') + '</h1><p>' + tr('Too much force: public anger reached its limit and you were pulled back.') + '</p>'
       : '<h1>' + tr('The Minar <span>was held</span>') + '</h1><p>' + tr('A crowd held the Shaheed Minar. Break up marches sooner next time.') + '</p>';
-    box.innerHTML = '<button id="langbtn" class="langbtn" type="button">' + (isBn() ? 'English' : 'বাংলা') + '</button>' + dChip() + head + achHTML(newAch) + '<img id="cardimg" alt="Photo card" src="' + canvas.toDataURL('image/png') + '">' +
+    box.innerHTML = '<button id="langbtn" class="langbtn" type="button">' + (isBn() ? 'English' : 'বাংলা') + '</button>' + dChip() + (chRes ? chRes.html : '') + head + achHTML(newAch) + '<img id="cardimg" alt="Photo card" src="' + canvas.toDataURL('image/png') + '">' +
       '<label>' + tr('Put your own photo on the card (optional)') + '<input id="photo2" type="file" accept="image/*"></label>' +
-      '<button id="share">' + tr('Share card') + '</button><button id="dl" class="alt">' + tr(IS_TOUCH ? 'Save to Photos' : 'Download') + '</button><button id="go">' + tr(dLeft > 0 ? 'Try again ({n} left)' : 'Patrol again', {n: dLeft}) + '</button>' +
+      '<button id="share">' + tr('Share card') + '</button><button id="dl" class="alt">' + tr(IS_TOUCH ? 'Save to Photos' : 'Download') + '</button><button id="chbtn" class="alt">' + tr('Challenge a friend') + '</button><button id="go">' + tr(ch ? 'Try the challenge again' : dLeft > 0 ? 'Try again ({n} left)' : 'Patrol again', {n: dLeft}) + '</button>' +
       (IS_TOUCH ? '<small>' + tr('Tip: tap Save to Photos, or press and hold the card, to keep it in your Gallery.') + '</small><br>' : '') +
       (playerPhoto ? '<button id="nophoto" class="alt">' + tr('Use default avatar') + '</button>' : '') +
       supportHTML() + '<a href="#" class="aboutlink">' + tr('About &amp; Disclaimer') + '</a><br>' +
@@ -240,9 +241,10 @@ function endPolice(won, why){
     const refresh = () => { canvas = build(); document.getElementById('cardimg').src = canvas.toDataURL('image/png'); const b = document.getElementById('nophoto'); if (!b && playerPhoto){ const n = document.createElement('button'); n.id = 'nophoto'; n.className = 'alt'; n.textContent = tr('Use default avatar'); n.onclick = () => { playerPhoto = null; n.remove(); refresh(); }; document.getElementById('go').after(n); } };
     document.getElementById('photo2').onchange = e => loadPhoto(e.target.files[0], refresh);
     const np = document.getElementById('nophoto'); if (np) np.onclick = () => { playerPhoto = null; np.remove(); refresh(); };
-    document.getElementById('share').onclick = () => shareCard(canvas, text);
+    document.getElementById('share').onclick = () => shareCard(canvas, text + '\n' + challengeLink({role: 'police', seed, score, name: playerName, twist: runTwist}));
     document.getElementById('dl').onclick = () => downloadCard(canvas);
-    document.getElementById('go').onclick = dLeft > 0 ? startDaily : start;
+    document.getElementById('go').onclick = ch ? startChallenge : dLeft > 0 ? startDaily : start;
+    document.getElementById('chbtn').onclick = () => shareChallenge({role: 'police', seed, score, name: playerName, twist: runTwist});
     document.getElementById('langbtn').onclick = () => { setLang(isBn() ? 'en' : 'bn'); show(); };
     addSwitch();
     addLeaderboard('police', {score, rank: rank.en, stat: st.dispersed, day: game.day}, dl ? {streak: dailyStreak} : undefined);

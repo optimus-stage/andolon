@@ -204,3 +204,10 @@ button.role small{font-size:12px !important;margin-top:2px !important}
 .achbar u{display:block;height:100%;background:#0b6b3a}
 #profsync{margin-top:12px;text-align:center} #profsync small{display:block;margin:4px 0;font-size:12px}
 @media (max-width:640px){.achlist,.statgrid{grid-template-columns:1fr}}
+
+/* "Beat my score" challenge */
+#chbanner{margin:10px 0 4px;padding:10px 12px;background:#ffe3e0;border:2px solid #e08a82;border-radius:12px;color:#5a1a14}
+#chbanner b{font-size:16px} #chbanner small{display:block;margin:3px 0 4px;color:#7a3a33;font-size:13px}
+#chbanner button{margin:4px 6px 0 0} #chbanner button#chgo{background:#c8102e}
+.chresult{margin:0 0 8px;font-weight:700;text-align:center;font-size:16px}
+.chresult.win{color:#0b6b3a} .chresult.lose{color:#a32d2d}

@@ -80,6 +80,15 @@ const BN = {
   'Veteran': 'অভিজ্ঞ', 'Play 25 games.': '২৫টি খেলা খেলুন।',
   'Both Sides': 'দুই পক্ষই', 'Win as Andolonkari and as Police.': 'আন্দোলনকারী ও পুলিশ দুই পক্ষ হয়েই জিতুন।',
   'Legend of the Minar': 'মিনারের কিংবদন্তি', 'Score 5,000 points as Andolonkari.': 'আন্দোলনকারী হয়ে ৫,০০০ পয়েন্ট স্কোর করুন।',
+  '{n} challenges you!': '{n} আপনাকে চ্যালেঞ্জ করেছেন!', 'Beat {s} points as {r} on the same map.': 'একই মানচিত্রে {r} হয়ে {s} পয়েন্ট ছাড়িয়ে যান।',
+  'Accept the challenge': 'চ্যালেঞ্জ নিন', 'Play normally': 'সাধারণভাবে খেলুন', 'Challenge a friend': 'বন্ধুকে চ্যালেঞ্জ করুন', 'Try the challenge again': 'চ্যালেঞ্জ আবার খেলুন',
+  'Challenge from {n}: {s}': 'চ্যালেঞ্জ {n}-এর কাছ থেকে: {s}',
+  'You beat {n} by {d} points!': 'আপনি {n}-কে {d} পয়েন্টে হারিয়েছেন!', 'A tie with {n}!': '{n}-এর সঙ্গে সমান সমান!',
+  'You fell short of {n} by {d} points. Try again!': '{n}-এর চেয়ে {d} পয়েন্ট কম হলো। আবার চেষ্টা করুন!',
+  'I scored {s} as {r} in Andolon. Beat my score!': 'আন্দোলনে {r} হয়ে আমি {s} পয়েন্ট পেয়েছি। আমাকে হারাতে পারবেন?',
+  'Link copied. Paste it in a chat to challenge a friend.': 'লিংক কপি হয়েছে। বন্ধুকে চ্যালেঞ্জ করতে চ্যাটে পেস্ট করুন।',
+  'Challenge Accepted': 'চ্যালেঞ্জ গ্রহণ', "Play a friend's challenge link.": 'বন্ধুর চ্যালেঞ্জ লিংকে খেলুন।',
+  'Challenge Won': 'চ্যালেঞ্জ জয়', "Beat a friend's score.": 'বন্ধুর স্কোর ছাড়িয়ে যান।',
   'Close': 'বন্ধ করুন', 'Report an inappropriate name': 'অনুপযুক্ত নাম জানান',
   'Barishal': 'বরিশাল', 'Chattogram': 'চট্টগ্রাম', 'Dhaka': 'ঢাকা', 'Khulna': 'খুলনা', 'Mymensingh': 'ময়মনসিংহ', 'Rajshahi': 'রাজশাহী', 'Rangpur': 'রংপুর', 'Sylhet': 'সিলেট', 'Outside Bangladesh': 'বাংলাদেশের বাইরে',
   'Get game updates on WhatsApp': 'হোয়াটসঅ্যাপে গেমের আপডেট পান',
@@ -286,6 +295,7 @@ function applyLang(){
   if (typeof repaintAccounts === 'function') repaintAccounts();
   if (typeof refreshDaily === 'function') refreshDaily();
   if (typeof refreshProfileBtn === 'function') refreshProfileBtn();
+  if (typeof showChallengeBanner === 'function') showChallengeBanner();
   const slot = document.getElementById('supportslot'); if (slot && typeof supportHTML === 'function') slot.innerHTML = supportHTML();
 }
 function setLang(l){

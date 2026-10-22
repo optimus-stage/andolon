@@ -59,12 +59,12 @@ service cloud.firestore {
     match /stats/global {
       allow read: if true;
       allow create: if request.auth != null
-        && request.resource.data.keys().hasOnly(['players', 'games', 'games_protester', 'games_police'])
+        && request.resource.data.keys().hasOnly(['players', 'games', 'games_protester', 'games_police', 'challenges'])
         && request.resource.data.get('players', 1) == 1 && request.resource.data.get('games', 1) == 1
-        && request.resource.data.get('games_protester', 1) == 1 && request.resource.data.get('games_police', 1) == 1;
+        && request.resource.data.get('games_protester', 1) == 1 && request.resource.data.get('games_police', 1) == 1 && request.resource.data.get('challenges', 1) == 1;
       allow update: if request.auth != null
-        && request.resource.data.keys().hasOnly(['players', 'games', 'games_protester', 'games_police'])
-        && bump('players') && bump('games') && bump('games_protester') && bump('games_police');
+        && request.resource.data.keys().hasOnly(['players', 'games', 'games_protester', 'games_police', 'challenges'])
+        && bump('players') && bump('games') && bump('games_protester') && bump('games_police') && bump('challenges');
     }
     // one record per signed-in user: the nickname (changeable once every 7 days) and division
     match /players/{uid} {

@@ -41,3 +41,10 @@ Each time someone starts a game, the page adds 1 to `stats/global` in Firestore:
 - Players signed in with Google also keep a private copy in `profiles/{uid}` (owner-only). On sign-in, or after a game, the device and the copy are merged: the larger counter wins, achievements are combined. Playing on two devices before signing in therefore keeps the larger counters, not the sum.
 - To add an achievement, append an entry to `ACHIEVEMENTS` in `js/profile.js` and add its Bangla text to `js/i18n.js`.
 - Republish `firestore.rules` after pulling this update (new `profiles` rules: counters can only go up).
+
+## "Beat my score" challenge links
+
+- Every game runs on a seed. The end screen has **Challenge a friend** (and the Share card text also carries the link): `?seed=...&r=p|c&s=score&n=name[&t=twist]`. Nothing is stored on a server; the link is the whole challenge.
+- A friend opening it sees a banner, accepts, and plays the same map and starting crowds as the sharer (the same seed; what happens after the start depends on how each person plays). The end screen then says whether they beat the score, with "Try the challenge again" and "Challenge a friend" to send one back.
+- Links are validated (integer seed and score in range, known side, name stripped of control characters and `<>`, shown as plain text), and ignored if malformed.
+- `stats/global` gets a `challenges` counter: games started from a challenge link, to measure how well sharing works. Republish `firestore.rules` after pulling this update.

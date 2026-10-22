@@ -11,6 +11,7 @@ addEventListener('resize', resize); resize();
 // game randomness: normally Math.random; the daily challenge swaps in a generator seeded from the date so everyone gets the same day
 let RNG = Math.random;
 let DAILY = null;   // set while a daily challenge run is active: {key, role, seed, twist}
+let TWIST = null, CH_NOW = null, RUNSEED = null;   // twist in use, the friend challenge being played, and the seed of the current run (so a run can be shared as a challenge)
 const seedGame = s => { RNG = s == null ? Math.random : mulberry(s); };
 const rand = (a, b) => a + RNG() * (b - a);
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
