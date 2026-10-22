@@ -47,7 +47,7 @@ function openLeaderboard(startRole){
   o.innerHTML = '<div id="lbbox"><button id="lbx" aria-label="' + tr('Close') + '">&times;</button><h2>' + tr('Leaderboard') + '</h2>' +
     '<div id="lbtabs"><button type="button" data-r="protester">' + tr('Andolonkari') + '</button><button type="button" data-r="police">' + tr('Police') + '</button></div>' +
     '<select id="lbdiv"><option value="">' + tr('All divisions') + '</option>' + DIVISIONS.map(d => '<option value="' + d + '">' + tr(d) + '</option>').join('') + '</select>' +
-    '<div id="lbmsg"></div><ol id="lblist"></ol></div>';
+    '<div id="lbmsg"></div><ol id="lblist"></ol><a id="lbreport" href="mailto:bizwithsabbir@gmail.com?subject=Andolon%20leaderboard%20report">' + tr('Report an inappropriate name') + '</a></div>';
   document.body.appendChild(o);
   const close = () => o.remove(); o.querySelector('#lbx').onclick = close; o.addEventListener('click', e => { if (e.target === o) close(); });
   const msg = o.querySelector('#lbmsg'), list = o.querySelector('#lblist');

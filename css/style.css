@@ -137,3 +137,4 @@ select{width:100%;box-sizing:border-box;padding:10px;font-size:16px;border:1px s
 #card h1{padding:0 70px}
 body.bn #ticker b{white-space:nowrap}
 body.bn #lblist li::before{content:counter(lb, bengali)}
+#lbreport{display:block;margin-top:14px;text-align:center;font-size:13px;color:#777}
