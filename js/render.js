@@ -17,11 +17,13 @@ function person(c, x, y, o){
     c.fillStyle = o.legs || (L ? L.legs : '#2b2b2b'); c.fillRect(-4 + sw, 3, 3, 7); c.fillRect(1 - sw, 3, 3, 7);
   }
   // hair behind the head
-  if (L && !o.hat && L.hair === 'long' && L.head !== 'hijab'){ c.fillStyle = L.hc; c.fillRect(-5.4, -14 + bob, 10.8, 10); }
+  if (L && (!o.hat || o.hairBack) && L.hair === 'long' && L.head !== 'hijab'){ c.fillStyle = L.hc; c.fillRect(-5.4, -14 + bob, 10.8, 10); }
   // body
+  const bw = L && L.g === 1 ? 5.2 : 6, ax = 6 - bw;   // a slightly narrower build for women
   c.fillStyle = o.dress; c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 1;
-  c.beginPath(); c.roundRect(-6, -7 + bob, 12, outfit === 'panjabi' ? 16 : 12, 3); c.fill(); c.stroke();
-  c.fillStyle = o.dress; c.fillRect(-8, -6 + bob, 2.5, 8); c.fillRect(5.5, -6 + bob, 2.5, 8);
+  c.beginPath(); c.roundRect(-bw, -7 + bob, bw * 2, outfit === 'panjabi' || outfit === 'kameez' ? 16 : 12, 3); c.fill(); c.stroke();
+  c.fillStyle = o.dress; c.fillRect(-8 + ax, -6 + bob, 2.5, 8); c.fillRect(5.5 - ax, -6 + bob, 2.5, 8);
+  if (o.badge){ c.fillStyle = '#f0c419'; for (let i = 0; i < o.badge; i++){ c.beginPath(); c.arc(2.6, -4.2 + i * 2.6 + bob, 0.95, 0, 6.28); c.fill(); } }   // rank stars on the chest
   if (outfit === 'saree'){ c.fillStyle = 'rgba(0,0,0,.16)'; c.beginPath(); c.moveTo(-6, -7 + bob); c.lineTo(6, 3 + bob); c.lineTo(6, 5 + bob); c.lineTo(-6, -4 + bob); c.closePath(); c.fill(); }
   if (L && L.bag){ c.fillStyle = '#6b4a2a'; c.fillRect(-9.5, -1 + bob, 4, 6); c.fillRect(-7.5, -6 + bob, 1, 5); }
   // head
@@ -31,11 +33,16 @@ function person(c, x, y, o){
   } else {
     c.fillStyle = o.skin; c.beginPath(); c.arc(0, -12 + bob, 5, 0, 6.28); c.fill();
   }
+  if (L && L.glasses){ c.strokeStyle = '#111'; c.lineWidth = 0.7; c.beginPath(); c.arc(-2.1, -12.2 + bob, 1.4, 0, 6.28); c.moveTo(3.5, -12.2 + bob); c.arc(2.1, -12.2 + bob, 1.4, 0, 6.28); c.moveTo(-0.5, -12.2 + bob); c.lineTo(0.5, -12.2 + bob); c.stroke(); }
+  if (L && L.mask){ c.fillStyle = '#dfe3e6'; c.beginPath(); c.roundRect(-4.3, -11 + bob, 8.6, 4.6, 1.8); c.fill(); }
   if (o.hat === 'helmet'){
     c.fillStyle = '#1a1a1a'; c.beginPath(); c.arc(0, -13 + bob, 5.8, Math.PI, 0); c.fill(); c.fillRect(-6, -13 + bob, 12, 2.5);
     c.fillStyle = 'rgba(180,200,220,.6)'; c.fillRect(-4, -11 + bob, 8, 2);
   } else if (o.hat === 'cap'){
-    c.fillStyle = '#12306b'; c.beginPath(); c.arc(0, -13 + bob, 5.5, Math.PI, 0); c.fill(); c.fillRect(-1, -13 + bob, 8, 2);
+    c.fillStyle = o.capC || '#12306b'; c.beginPath(); c.arc(0, -13 + bob, 5.5, Math.PI, 0); c.fill(); c.fillRect(-1, -13 + bob, 8, 2);
+  } else if (o.hat === 'beret'){
+    c.fillStyle = o.capC || '#12306b'; c.beginPath(); c.ellipse(0.8, -16 + bob, 6.4, 2.9, -0.18, 0, 6.28); c.fill();
+    c.fillStyle = 'rgba(255,255,255,.18)'; c.beginPath(); c.arc(-3.4, -14.6 + bob, 0.9, 0, 6.28); c.fill();
   } else if (o.hat === 'band'){
     c.fillStyle = L && L.hair !== 'bald' ? L.hc : '#2a1a10'; c.beginPath(); c.arc(0, -14 + bob, 5, Math.PI, 0); c.fill();
     c.fillStyle = '#c8102e'; c.fillRect(-5, -15 + bob, 10, 2.5);
@@ -46,6 +53,7 @@ function person(c, x, y, o){
     } else if (L.head !== 'hijab' && L.hair !== 'bald'){
       c.fillStyle = L.hc; c.beginPath(); c.arc(0, -14 + bob, 5.2, Math.PI, 0); c.fill();
       if (L.hair === 'bun'){ c.beginPath(); c.arc(0, -19.5 + bob, 2.6, 0, 6.28); c.fill(); }
+      if (L.hair === 'curly'){ for (let k = -1; k <= 1; k++){ c.beginPath(); c.arc(k * 3.3, -17.6 + bob + Math.abs(k) * 1.2, 2.3, 0, 6.28); c.fill(); } }
     }
   } else { c.fillStyle = '#2a1a10'; c.beginPath(); c.arc(0, -14 + bob, 5, Math.PI, 0); c.fill(); }
   if (o.flag){  // Bangladesh flag: green field, red disc (only protesters carry it)
@@ -344,8 +352,8 @@ function draw(){
     if (r.armed){ ctx.strokeStyle = r.aim > 0 ? '#ff1744' : 'rgba(200,16,46,.6)'; ctx.lineWidth = r.aim > 0 ? 4 : 2; ctx.beginPath(); ctx.arc(r.x, r.y, 34, 0, 6.28); ctx.stroke(); if (r.aim > 0) label(ctx, '!', r.x, r.y - 52, 'bold 22px system-ui', '#ff1744'); } }]);
   }
   if (!player.hidden) list.push([player.y, () => {
-    if (role === 'police') person(ctx, player.x, player.y, {dress: BLUE, skin: player.skin, hat: 'cap', legs: '#14284f', scale: 1.4, moving: player.moving, stick: true, swing: player.swing / 0.35});
-    else person(ctx, player.x, player.y, {dress: WHITE, skin: player.skin, hat: 'band', scale: 1.35, moving: player.moving, flag: true});
+    if (role === 'police') person(ctx, player.x, player.y, Object.assign({scale: 1.4, moving: player.moving, stick: true, swing: player.swing / 0.35}, player.avp));
+    else person(ctx, player.x, player.y, Object.assign({scale: 1.35, moving: player.moving}, player.avp));
     // name tag above the head so you can find yourself
     ctx.save(); ctx.translate(player.x, player.y - 46); ctx.scale(zf, zf);   // keeps the tag readable when zoomed out
     ctx.font = 'bold 14px ' + BN_FONT; const pname = dispName(playerName), nb = inkBounds(ctx.font, pname), w = textW(ctx, pname) + 18;

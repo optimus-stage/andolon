@@ -26,10 +26,11 @@ async function submitScore(r, name, division, e){
   const {fs, db, uid} = await fbInit(), ref = fs.doc(db, boardName(r), uid), old = await fs.getDoc(ref);
   const score = Math.max(0, Math.min(100000, Math.round(e.score)));
   const data = {uid, name: name.slice(0, 24), division, score, rank: String(e.rank).slice(0, 40), stat: Math.max(0, Math.round(e.stat)), day: Math.round(e.day), updatedAt: fs.serverTimestamp()};
+  if (avStr(r)) data.av = avStr(r);   // the avatar is public, like the nickname; a photo is never uploaded
   let mine = score;
   if (!old.exists()) await fs.setDoc(ref, data);
   else if (score > old.data().score) await fs.setDoc(ref, data);
-  else { mine = old.data().score; await fs.updateDoc(ref, {name: data.name, division, updatedAt: data.updatedAt}); }   // lower run: keep the best, refresh name and division
+  else { mine = old.data().score; await fs.updateDoc(ref, Object.assign({name: data.name, division, updatedAt: data.updatedAt}, data.av ? {av: data.av} : {})); }   // lower run: keep the best, refresh name, division and avatar
   const col = fs.collection(db, boardName(r));
   const [above, all] = await Promise.all([fs.getCountFromServer(fs.query(col, fs.where('score', '>', mine))), fs.getCountFromServer(col)]);
   return {place: above.data().count + 1, total: all.data().count, best: mine};
@@ -46,9 +47,10 @@ async function submitDaily(r, name, division, e, streak){
   const {fs, db, uid} = await fbInit(), day = dayKey(), ref = fs.doc(db, 'daily', day, r, uid), old = await fs.getDoc(ref);
   const score = Math.max(0, Math.min(100000, Math.round(e.score)));
   const data = {uid, name: name.slice(0, 24), division, score, rank: String(e.rank).slice(0, 40), stat: Math.max(0, Math.round(e.stat)), day: Math.round(e.day), streak: Math.max(0, Math.min(1000, streak || 0)), updatedAt: fs.serverTimestamp()};
+  if (avStr(r)) data.av = avStr(r);
   let mine = score;
   if (!old.exists() || score > old.data().score) await fs.setDoc(ref, data);
-  else { mine = old.data().score; await fs.updateDoc(ref, {name: data.name, division, streak: data.streak, updatedAt: data.updatedAt}); }
+  else { mine = old.data().score; await fs.updateDoc(ref, Object.assign({name: data.name, division, streak: data.streak, updatedAt: data.updatedAt}, data.av ? {av: data.av} : {})); }
   const col = fs.collection(db, 'daily', day, r);
   const [above, all] = await Promise.all([fs.getCountFromServer(fs.query(col, fs.where('score', '>', mine))), fs.getCountFromServer(col)]);
   return {place: above.data().count + 1, total: all.data().count, best: mine};
@@ -96,15 +98,18 @@ const nameErrText = er => er && er.code === 'invalid' ? tr(er.msg) : er && er.co
 // ---------- optional Google sign-in: links the anonymous player to a Google account so the record follows them to any device ----------
 // keep the lifetime profile (profile.js) in profiles/{uid} for players signed in with Google; the larger counter wins on merge
 let syncing = false, syncAgain = false;
-async function syncProfile(){
+async function syncProfile(pullAv){
   if (!LB_ON || !fbp) return;
   if (syncing){ syncAgain = true; return; }
   syncing = true;
   try {
     const {fs, db, au, uid} = await fbInit(); if (!au.currentUser || au.currentUser.isAnonymous) return;
     const ref = fs.doc(db, 'profiles', uid), snap = await fs.getDoc(ref);
-    if (snap.exists()) mergeProfile(snap.data());
-    await fs.setDoc(ref, {n: profile.n, ach: profile.ach, updatedAt: fs.serverTimestamp()});
+    if (snap.exists()){ mergeProfile(snap.data()); if (pullAv === true) avApplyCloud(snap.data().av); }
+    const out = {n: profile.n, ach: profile.ach, updatedAt: fs.serverTimestamp()}, av = avCloud();
+    if (Object.keys(av).length) out.av = av;   // your avatars follow your Google account
+    await fs.setDoc(ref, out);
+    try { localStorage.removeItem('da_avatar_dirty'); } catch (e) {}
   } catch (e) {}
   finally { syncing = false; if (syncAgain){ syncAgain = false; syncProfile(); } }
 }
@@ -113,7 +118,7 @@ async function loadProfile(){   // after signing in on a new device: bring back 
     const {fs, db, uid} = await fbInit(), s = await fs.getDoc(fs.doc(db, 'players', uid));
     if (s.exists()){ const p = s.data(); setPlayerName(p.name); setDivision(p.division); const m = document.getElementById('mdiv'); if (m) m.value = p.division; }
   } catch (e) {}
-  syncProfile();
+  syncProfile(true);
 }
 async function googleLink(){
   const {au, A} = await fbInit(), prov = new A.GoogleAuthProvider(); let how = 'linked';
@@ -122,6 +127,7 @@ async function googleLink(){
     if (e && (e.code === 'auth/credential-already-in-use' || e.code === 'auth/email-already-in-use')){   // this Google account already has a record: switch to it
       const cred = A.GoogleAuthProvider.credentialFromError(e); if (!cred) throw e;
       await A.signInWithCredential(au, cred); how = 'switched';
+      try { localStorage.removeItem('da_avatar_dirty'); } catch (e2) {}   // this account's saved looks win over edits made while anonymous
     } else throw e;
   }
   try { localStorage.setItem('da_google', '1'); } catch (e) {}
@@ -187,6 +193,7 @@ function openLeaderboard(startRole, startToday){
         const n = document.createElement('b'); n.textContent = dispName(x.name);
         const d = document.createElement('small'); d.textContent = tr(x.division) + ' · ' + tr(x.rank) + (today && x.streak > 1 ? ' · ' + tr('🔥 {n}-day streak', {n: x.streak}) : '');
         const s = document.createElement('span'); s.textContent = loc(x.score);
+        const av = document.createElement('canvas'); av.className = 'lbav'; li.appendChild(av); drawAvatar(av, x.av, r, 1.7);
         const w = document.createElement('div'); w.append(n, d); li.append(w, s); list.appendChild(li);
       });
     } catch (e) { msg.textContent = tr('Could not load the leaderboard. Check your connection and try again.'); }

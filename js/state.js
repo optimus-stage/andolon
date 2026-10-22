@@ -21,6 +21,7 @@ function newGame(){
   }
   shutdowns.push({x: -900, y: -1100, r: 300}, {x: 700, y: 900, r: 260});
   player = {x: START.x, y: START.y, r: 12, morale: 100, injured: false, skin: pick(SKINS), moving: false, hidden: false};
+  applyAvatar(player, 'protester');   // the pick above still runs so seeded games stay the same; then your chosen look replaces it
   game = {t: 0, day: 1, hold: 0, started: true, spawnT: 4, rivalSpawnT: 20, stats: {recruits: 0, peak: 1, rings: 0, clashWins: 0, beaten: 0, cures: 0, teas: 0, stallT: 0, breaks: 0}, mode: 'play', msg: '', msgT: 0, viralT: 40 + rand(0, 20), detainees: [], rescue: {}, shutT: 0, staticT: 0, shutLoseT: 0, drain: 0, boost: 0, flash: 0, van: null, arrest: null, contested: false};
   chant = {i: 0, timer: 3, phase: 0}; game.daily = DAILY; game.seed = RUNSEED; game.challenge = CH_NOW;
   for (let z = 0; z < 4; z++) for (let i = 0; i < (TWIST === 'surge' ? 4 : 3); i++) mkRival(z, 60 + rand(0, 180));

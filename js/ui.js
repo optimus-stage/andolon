@@ -61,8 +61,7 @@ function renderCard(kind, info){
     const im = info.photo, k = Math.max(AW / im.width, AH / im.height), dw = im.width * k, dh = im.height * k;
     if (!win) g.filter = 'grayscale(0.7)';
     g.drawImage(im, (AW - dw) / 2 - AW / 2, (AH - dh) / 2, dw, dh); g.filter = 'none';
-  } else if (pol) person(g, 0, AH - 100, {dress: BLUE, skin: info.skin, hat: 'cap', legs: '#14284f', scale: 9, stick: true, noBase: true});
-  else person(g, 0, AH - 100, {dress: WHITE, skin: info.skin, hat: 'band', scale: 9, flag: win, noBase: true});
+  } else person(g, 0, AH - 100, Object.assign({scale: 9, noBase: true, stick: pol}, avatarProps(getAvatar(pol ? 'police' : 'protester'), pol ? 'police' : 'protester')));   // your avatar, unless you added a photo
   g.save(); g.translate(0, info.photo || tier ? AH - 90 : 80); g.rotate(-0.2);
   const col = info.stampCol || (win ? '#27500a' : info.station ? '#c8102e' : '#5f5e5a');
   const label = info.stampLabel || tr(win ? 'VICTORY' : info.station ? 'DETAINED' : 'TIME UP');
@@ -144,7 +143,7 @@ function saveOverlay(canvas, androidExtra){
 }
 
 // ---------- player photo (optional, stays in the browser) ----------
-let playerPhoto = null;
+let playerPhoto = null, cardRefresh = null;   // cardRefresh redraws the result card (set by the result screen)
 function loadPhoto(file, cb){
   if (!file) return;
   const rd = new FileReader();
@@ -224,7 +223,7 @@ function end(won, info){
     const text = dl ? tr('Andolon Daily Challenge {d}: {s} pts. Can you beat me?', {d: dayLabel(), s: loc(score)}) : won ? tr('I held the Central Shaheed Minar in Andolon! {r}, {s} pts.', {r: isBn() ? rank.bn : rank.en, s: loc(score)})
       : outcome === 'timeout' ? tr('Andolon called me "{t}". Can you do better?', {t: tagBn})
       : tr('I was detained at {st} in Andolon. {s} pts.', {st: tr(info.station), s: loc(score)});
-    const refresh = () => { canvas = build(); document.getElementById('cardimg').src = canvas.toDataURL('image/png'); const b = document.getElementById('nophoto'); if (!b && playerPhoto){ const n = document.createElement('button'); n.id = 'nophoto'; n.className = 'alt'; n.textContent = tr('Use default avatar'); n.onclick = () => { playerPhoto = null; n.remove(); refresh(); }; document.getElementById('go').after(n); } };
+    const refresh = cardRefresh = () => { canvas = build(); document.getElementById('cardimg').src = canvas.toDataURL('image/png'); const b = document.getElementById('nophoto'); if (!b && playerPhoto){ const n = document.createElement('button'); n.id = 'nophoto'; n.className = 'alt'; n.textContent = tr('Use default avatar'); n.onclick = () => { playerPhoto = null; n.remove(); refresh(); }; document.getElementById('go').after(n); } };
     document.getElementById('photo2').onchange = e => loadPhoto(e.target.files[0], refresh);
     const np = document.getElementById('nophoto'); if (np) np.onclick = () => { playerPhoto = null; np.remove(); refresh(); };
     document.getElementById('share').onclick = () => shareCard(canvas, text + '\n' + challengeLink({role: 'protester', seed, score, name: playerName, twist: runTwist}));

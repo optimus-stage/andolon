@@ -14,6 +14,7 @@ function newPoliceGame(){
     for (let i = 0; i < POLICE_PER_ZONE[z]; i++) patrols.push(mkPatrol(z));   // officers waiting to join you
   }
   player = {x: -57, y: -320, r: 12, morale: 100, injured: false, skin: pick(SKINS), moving: false, hidden: false, swing: 0, fx: 0, fy: 1, police: true};
+  applyAvatar(player, 'police');
   game = {t: 0, day: 1, hold: 0, started: true, mode: 'play', msg: '', msgT: 0, flash: 0, van: null, arrest: null, contested: false,
     anger: 0, lastForce: 0, smoke: 3, gun: 6, refSmoke: 18, refGun: 12, cdS: 0, cdG: 0, cdSm: 0, spawnT: 3, bystT: 4, reinT: 30, chantT: 6, cone: null, hit: null,
     stats: {dispersed: 0, squadPeak: 1, smokes: 0, shots: 0, strikes: 0}};
@@ -239,7 +240,7 @@ function endPolice(won, why){
       '<small>' + tr('Your photo stays on your device. It is only drawn onto this card. Fictional game; characters and events are not real people or incidents.') + '</small>';
     const text = dl ? tr('Andolon Daily Challenge {d}: {s} pts. Can you beat me?', {d: dayLabel(), s: loc(score)}) : won ? tr('I led the police squad in Andolon and dispersed {n} crowds. {r}, {s} pts.', {n: st.dispersed, r: isBn() ? rank.bn : rank.en, s: loc(score)})
       : tr('The crowds beat my police squad in Andolon. {s} pts. Can you do better?', {s: loc(score)});
-    const refresh = () => { canvas = build(); document.getElementById('cardimg').src = canvas.toDataURL('image/png'); const b = document.getElementById('nophoto'); if (!b && playerPhoto){ const n = document.createElement('button'); n.id = 'nophoto'; n.className = 'alt'; n.textContent = tr('Use default avatar'); n.onclick = () => { playerPhoto = null; n.remove(); refresh(); }; document.getElementById('go').after(n); } };
+    const refresh = cardRefresh = () => { canvas = build(); document.getElementById('cardimg').src = canvas.toDataURL('image/png'); const b = document.getElementById('nophoto'); if (!b && playerPhoto){ const n = document.createElement('button'); n.id = 'nophoto'; n.className = 'alt'; n.textContent = tr('Use default avatar'); n.onclick = () => { playerPhoto = null; n.remove(); refresh(); }; document.getElementById('go').after(n); } };
     document.getElementById('photo2').onchange = e => loadPhoto(e.target.files[0], refresh);
     const np = document.getElementById('nophoto'); if (np) np.onclick = () => { playerPhoto = null; np.remove(); refresh(); };
     document.getElementById('share').onclick = () => shareCard(canvas, text + '\n' + challengeLink({role: 'police', seed, score, name: playerName, twist: runTwist}));
@@ -258,6 +259,7 @@ function addSwitch(){   // button on the result screen to play the other side
   const b = document.createElement('button'); b.className = 'alt'; b.textContent = tr(role === 'police' ? 'Play as Andolonkari' : 'Play as Police');
   b.onclick = () => { role = role === 'police' ? 'protester' : 'police'; try { localStorage.setItem('da_role', role); } catch (e) {} start(); };
   const pb = document.createElement('button'); pb.className = 'alt'; pb.textContent = tr('My profile'); pb.onclick = openProfile;
-  go.after(b); b.after(pb); pb.after(orientRow());
+  const ab = avatarButton('alt');
+  go.after(b); b.after(pb); pb.after(ab); ab.after(orientRow());
 }
 

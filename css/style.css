@@ -218,3 +218,26 @@ button.role small{font-size:12px !important;margin-top:2px !important}
 #card .orient button{margin:0;padding:7px 12px;font-size:14px;background:#e6e1d0;color:#222;border:2px solid transparent;width:auto}
 #card .orient button.on{background:#0b6b3a;color:#fff;border-color:#ffd54f}
 #rotate button{margin-top:18px;background:#0b6b3a;color:#fff;border:0;border-radius:10px;padding:12px 20px;font-size:16px;width:auto}
+
+/* avatar */
+#avatarrow{display:flex;align-items:center;gap:12px;margin:10px 0 4px;padding:8px 10px;background:#e4efe6;border-radius:10px}
+#avatarrow b{display:block;color:#1d3a27;font-size:16px}
+#avprev{flex:none;width:100px;height:104px;background:#f6f1e3;border-radius:8px}
+#avatarrow button{margin-top:6px}
+#avedit{position:fixed;inset:0;z-index:66;display:flex;background:rgba(10,20,15,.88);overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+#avbox{position:relative;background:#f6f1e3;color:#222;max-width:520px;width:calc(100% - 24px);margin:auto;padding:18px 16px 14px;border-radius:14px;box-shadow:0 10px 40px #0008}
+#avbox h2{margin:0 0 6px;font-size:22px;color:#0b6b3a;text-align:center}
+#avx{position:absolute;right:8px;top:6px;width:40px;height:40px;border:0;border-radius:50%;background:transparent;color:#444;font-size:30px;line-height:1;padding:0;margin:0}
+#avbig{display:block;margin:0 auto 8px;width:220px;height:190px;background:#e4efe6;border-radius:12px}
+.avrow{margin:8px 0}
+.avrow>span{display:block;font-size:13px;font-weight:700;color:#1d3a27;margin-bottom:3px}
+.avrow>div{display:flex;flex-wrap:wrap;gap:6px}
+.avchip{margin:0;width:auto;padding:7px 12px;font-size:14px;background:#e6e1d0;color:#222;border:2px solid transparent;border-radius:999px}
+.avchip:hover{background:#d9d3bd}
+.avchip.on,.avchip.on:hover{background:#0b6b3a;color:#fff;border-color:#ffd54f}
+.avsw{margin:0;width:30px;height:30px;padding:0;border-radius:50%;border:2px solid #0004}
+.avsw.on{border:3px solid #0b6b3a;box-shadow:0 0 0 2px #ffd54f}
+.avbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.avbtns button{margin:0;width:auto;flex:1}
+#avbox small{display:block;margin-top:8px;color:#555}
+.lbav{flex:none;width:56px;height:64px}
