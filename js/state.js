@@ -11,7 +11,7 @@ function newGame(){
     for (let k = 0; k < n; k++){ const ang = base + k * 2 * Math.PI / n, p = polar(ang, r); gates.push({r, ring: i, ang, x: p.x, y: p.y, need: GATE_NEEDS[i], open: 0, hits: GATE_HITS}); }
   });
   neutrals = []; followers = []; patrols = []; rivals = [];
-  const counts = BYSTANDERS.map(n => Math.round(n * (DAILY && DAILY.twist === 'turnout' ? 1.35 : DAILY && DAILY.twist === 'thin' ? 0.75 : 1)));   // daily twists
+  const counts = BYSTANDERS.map(n => Math.round(n * (TWIST === 'turnout' ? 1.35 : TWIST === 'thin' ? 0.75 : 1)));   // daily twists
   for (let z = 0; z < 4; z++){
     const r0 = ZR[z + 1] + 70, r1 = ZR[z] - 70;
     for (let i = 0; i < counts[z]; i++){ const p = spawnIn(Math.max(r0, 60), r1); neutrals.push(mkNeutral(p.x, p.y)); }
@@ -22,8 +22,8 @@ function newGame(){
   shutdowns.push({x: -900, y: -1100, r: 300}, {x: 700, y: 900, r: 260});
   player = {x: START.x, y: START.y, r: 12, morale: 100, injured: false, skin: pick(SKINS), moving: false, hidden: false};
   game = {t: 0, day: 1, hold: 0, started: true, spawnT: 4, rivalSpawnT: 20, stats: {recruits: 0, peak: 1, rings: 0, clashWins: 0, beaten: 0, cures: 0, teas: 0, stallT: 0, breaks: 0}, mode: 'play', msg: '', msgT: 0, viralT: 40 + rand(0, 20), detainees: [], rescue: {}, shutT: 0, staticT: 0, shutLoseT: 0, drain: 0, boost: 0, flash: 0, van: null, arrest: null, contested: false};
-  chant = {i: 0, timer: 3, phase: 0}; game.daily = DAILY;
-  for (let z = 0; z < 4; z++) for (let i = 0; i < (DAILY && DAILY.twist === 'surge' ? 4 : 3); i++) mkRival(z, 60 + rand(0, 180));
+  chant = {i: 0, timer: 3, phase: 0}; game.daily = DAILY; game.seed = RUNSEED; game.challenge = CH_NOW;
+  for (let z = 0; z < 4; z++) for (let i = 0; i < (TWIST === 'surge' ? 4 : 3); i++) mkRival(z, 60 + rand(0, 180));
   if ('ontouchstart' in window || navigator.maxTouchPoints > 0) say(tr('Touch and hold a direction on the round pad to walk. Lift to stop.'), 6);
 }
 // Each person gets a stable look: height, hair, head covering, outfit and legs. It is drawn by person() in render.js.

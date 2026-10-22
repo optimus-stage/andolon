@@ -30,7 +30,7 @@ if (IS_TOUCH){
   addEventListener('click', firstTouch, true);
 }
 function start(isDaily){
-  if (isDaily !== true){ DAILY = null; seedGame(null); }   // normal games use real randomness
+  if (isDaily !== true){ DAILY = null; TWIST = null; CH_NOW = null; RUNSEED = (Math.random() * 4294967296) >>> 0; seedGame(RUNSEED); }   // every game gets its own seed, so it can be shared as a challenge
   const inp = document.getElementById('pname');
   const typed = inp ? inp.value.trim() : '';
   if (typed && typed !== 'Protester' && typed !== 'Officer') playerName = typed;

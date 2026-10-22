@@ -198,7 +198,8 @@ function end(won, info){
   if (dl){ const ds = dailyLocal(); ds.best[dl.role] = Math.max(ds.best[dl.role] || 0, score); dailySave(ds); dailyStreak = bumpStreak(); }
   const dLeft = dl ? attemptsLeft(dl.role) : 0;
   const dChip = () => dl ? '<p class="dailychip">★ ' + tr('Daily Challenge') + ' · ' + dayLabel() + (dailyStreak > 1 ? ' · ' + tr('🔥 {n}-day streak', {n: dailyStreak}) : '') + '</p>' : '';
-  const newAch = recordRun({role: 'protester', won, outcome, score, peak: st.peak, rings: st.rings, beaten: st.beaten, cures: st.cures, teas: st.teas, clashWins: st.clashWins, recruits: st.recruits, breaks: st.breaks || 0, secs: Math.round(game.t), daily: !!dl, streak: dailyStreak});
+  const seed = game.seed, ch = game.challenge, chRes = ch ? challengeResult(ch, score) : null, runTwist = TWIST;   // a run can be shared as a challenge
+  const newAch = recordRun({role: 'protester', won, outcome, score, peak: st.peak, rings: st.rings, beaten: st.beaten, cures: st.cures, teas: st.teas, clashWins: st.clashWins, recruits: st.recruits, breaks: st.breaks || 0, secs: Math.round(game.t), daily: !!dl, streak: dailyStreak, challenge: !!ch, challengeWon: !!(chRes && chRes.win)});
   const mkInfo = () => ({dayText: dl ? tr('Andolon Daily · {d}', {d: dayLabel()}) : undefined, name: playerName, skin: player.skin, station: info.station, timeout: !!info.timeout, score, rankBn: rank.bn, tagBn, tagDesc: tr(tag.desc), peak: st.peak, rings: st.rings, day: game.day, best, newBest,
     nextText: nxt ? [tr('NEXT: {n}', {n: nxt.bn}), tr('{n} pts', {n: loc(nxt.min - score)})] : [tr('NEXT RANK'), tr('Maxed')]});
   let canvas;
@@ -211,9 +212,9 @@ function end(won, info){
     else if (outcome === 'timeout') head = '<h1>' + tr('Day {n} <span>is over</span>', {n: MAX_DAY}) + '</h1><p>' + tr('You are a <b>{t}</b>. {d}', {t: tagBn, d: tr(tag.desc)}) + '</p>';
     else if (info.aynaghor) head = '<h1>' + tr('Taken to <span>Aynaghor</span>') + '</h1><p>' + tr('The police van took you to Aynaghor. The game is over.') + '</p>';
     else head = '<h1>' + tr('Detained at <span>{s}</span>', {s: tr(info.station)}) + '</h1><p>' + tr('You were caught by the police and taken by van. The game is over.') + '</p>';
-    box.innerHTML = '<button id="langbtn" class="langbtn" type="button">' + (isBn() ? 'English' : 'বাংলা') + '</button>' + dChip() + head + achHTML(newAch) + '<img id="cardimg" alt="Photo card" src="' + canvas.toDataURL('image/png') + '">' +
+    box.innerHTML = '<button id="langbtn" class="langbtn" type="button">' + (isBn() ? 'English' : 'বাংলা') + '</button>' + dChip() + (chRes ? chRes.html : '') + head + achHTML(newAch) + '<img id="cardimg" alt="Photo card" src="' + canvas.toDataURL('image/png') + '">' +
       '<label>' + tr('Put your own photo on the card (optional)') + '<input id="photo2" type="file" accept="image/*"></label>' +
-      '<button id="share">' + tr('Share card') + '</button><button id="dl" class="alt">' + tr(IS_TOUCH ? 'Save to Photos' : 'Download') + '</button><button id="go">' + tr(dLeft > 0 ? 'Try again ({n} left)' : 'March again', {n: dLeft}) + '</button>' +
+      '<button id="share">' + tr('Share card') + '</button><button id="dl" class="alt">' + tr(IS_TOUCH ? 'Save to Photos' : 'Download') + '</button><button id="chbtn" class="alt">' + tr('Challenge a friend') + '</button><button id="go">' + tr(ch ? 'Try the challenge again' : dLeft > 0 ? 'Try again ({n} left)' : 'March again', {n: dLeft}) + '</button>' +
       (IS_TOUCH ? '<small>' + tr('Tip: tap Save to Photos, or press and hold the card, to keep it in your Gallery.') + '</small><br>' : '') +
       (playerPhoto ? '<button id="nophoto" class="alt">' + tr('Use default avatar') + '</button>' : '') +
       supportHTML() + '<a href="#" class="aboutlink">' + tr('About &amp; Disclaimer') + '</a><br>' +
@@ -224,9 +225,10 @@ function end(won, info){
     const refresh = () => { canvas = build(); document.getElementById('cardimg').src = canvas.toDataURL('image/png'); const b = document.getElementById('nophoto'); if (!b && playerPhoto){ const n = document.createElement('button'); n.id = 'nophoto'; n.className = 'alt'; n.textContent = tr('Use default avatar'); n.onclick = () => { playerPhoto = null; n.remove(); refresh(); }; document.getElementById('go').after(n); } };
     document.getElementById('photo2').onchange = e => loadPhoto(e.target.files[0], refresh);
     const np = document.getElementById('nophoto'); if (np) np.onclick = () => { playerPhoto = null; np.remove(); refresh(); };
-    document.getElementById('share').onclick = () => shareCard(canvas, text);
+    document.getElementById('share').onclick = () => shareCard(canvas, text + '\n' + challengeLink({role: 'protester', seed, score, name: playerName, twist: runTwist}));
     document.getElementById('dl').onclick = () => downloadCard(canvas);
-    document.getElementById('go').onclick = dLeft > 0 ? startDaily : start;
+    document.getElementById('go').onclick = ch ? startChallenge : dLeft > 0 ? startDaily : start;
+    document.getElementById('chbtn').onclick = () => shareChallenge({role: 'protester', seed, score, name: playerName, twist: runTwist});
     document.getElementById('langbtn').onclick = () => { setLang(isBn() ? 'en' : 'bn'); show(); };
     addSwitch();
     addLeaderboard('protester', {score, rank: rank.en, stat: st.peak, day: game.day}, dl ? {streak: dailyStreak} : undefined);

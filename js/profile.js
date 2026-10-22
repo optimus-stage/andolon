@@ -28,6 +28,8 @@ const ACHIEVEMENTS = [
   {id: 'smoke_master', icon: '💨', name: 'Smoke Master', desc: 'Use 5 smoke grenades in one run.', test: (p, r) => !!r && r.role === 'police' && r.smokes >= 5},
   {id: 'veteran', icon: '🎖️', name: 'Veteran', desc: 'Play 25 games.', test: p => p.games >= 25, prog: p => [p.games, 25]},
   {id: 'both_sides', icon: '⚖️', name: 'Both Sides', desc: 'Win as Andolonkari and as Police.', test: p => p.winsP >= 1 && p.winsPol >= 1},
+  {id: 'challenge_accept', icon: '⚔️', name: 'Challenge Accepted', desc: "Play a friend's challenge link.", test: (p, r) => !!r && !!r.challenge},
+  {id: 'challenge_win', icon: '🤝', name: 'Challenge Won', desc: "Beat a friend's score.", test: (p, r) => !!r && !!r.challengeWon},
   {id: 'minar_legend', icon: '👑', name: 'Legend of the Minar', desc: 'Score 5,000 points as Andolonkari.', test: p => p.bestP >= 5000, prog: p => [p.bestP, 5000]},
 ];
 

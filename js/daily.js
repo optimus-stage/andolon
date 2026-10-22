@@ -34,7 +34,7 @@ function bumpStreak(){   // call when a daily run finishes
 function startDaily(){
   if (attemptsLeft(role) <= 0) return;
   const s = dailyLocal(); s.n[role]++; dailySave(s);
-  DAILY = dailyInfo(role); seedGame(DAILY.seed);
+  DAILY = dailyInfo(role); TWIST = DAILY.twist; CH_NOW = null; RUNSEED = DAILY.seed; seedGame(RUNSEED);
   start(true);
 }
 
