@@ -24,7 +24,7 @@ th,td{padding:6px 8px;text-align:right;border-bottom:1px solid #eee} th:first-ch
 </head>
 <body><main>
 <h1>Andolon: Stats</h1>
-<small>Totals only, no personal data. Live from Firebase. Numbers count browsers/devices, not people.</small>
+<small>Private: only the owner's Google account can read this. Totals only, no personal data. Numbers count browsers/devices, not people.</small>
 <div id="msg">Loading...</div>
 <div id="out" hidden>
   <h2>Players and play</h2><div class="cards" id="cards"></div>
@@ -39,16 +39,39 @@ th,td{padding:6px 8px;text-align:right;border-bottom:1px solid #eee} th:first-ch
 </main>
 <script src="js/firebase-config.js"></script>
 <script type="module">
-const msg = document.getElementById('msg');
+// Private: the Firestore rules let only the owner's verified Google account read the stats. This page uses its own Firebase app instance,
+// so signing in here never changes the player identity the game itself uses in this browser.
+const OWNER = 'techlearners44@gmail.com';
+const msg = document.getElementById('msg'), out = document.getElementById('out');
 if (!FIREBASE_CONFIG.apiKey){ msg.textContent = 'Firebase is not configured.'; }
-else try {
+else {
   const base = 'https://www.gstatic.com/firebasejs/10.12.2/';
-  const [app, fs] = await Promise.all([import(base + 'firebase-app.js'), import(base + 'firebase-firestore.js')]);
-  const db = fs.getFirestore(app.initializeApp(FIREBASE_CONFIG));
+  const [app, auth, fs] = await Promise.all([import(base + 'firebase-app.js'), import(base + 'firebase-auth.js'), import(base + 'firebase-firestore.js')]);
+  const a = app.initializeApp(FIREBASE_CONFIG, 'stats'), au = auth.getAuth(a), db = fs.getFirestore(a);
+  const signIn = async () => { try { await auth.signInWithPopup(au, new auth.GoogleAuthProvider()); } catch (e) { msg.textContent = 'Sign-in did not finish. ' + (e && e.code || ''); } };
+  const showLogin = text => {
+    out.hidden = true; msg.hidden = false; msg.style.color = '#444';
+    msg.innerHTML = text + '<br><button id="si" style="margin-top:10px;padding:10px 18px;font-size:15px;border:0;border-radius:8px;background:#0b6b3a;color:#fff;cursor:pointer">Sign in with Google</button>';
+    document.getElementById('si').onclick = signIn;
+  };
+  auth.onAuthStateChanged(au, async user => {
+    if (!user) return showLogin('This page is private. Sign in with the owner Google account to see the stats.');
+    if (user.email !== OWNER){
+      msg.hidden = false; msg.style.color = '#a32d2d'; out.hidden = true;
+      msg.innerHTML = 'This page is private, and ' + (user.email || 'this account').replace(/[<>&]/g, '') + ' is not the owner account.<br><button id="so" style="margin-top:10px;padding:10px 18px;font-size:15px;border:0;border-radius:8px;background:#333;color:#fff;cursor:pointer">Sign out</button>';
+      document.getElementById('so').onclick = () => auth.signOut(au);
+      return;
+    }
+    msg.hidden = false; msg.style.color = '#666'; msg.textContent = 'Loading...';
+    try { await render(fs, db); msg.hidden = true; out.hidden = false; }
+    catch (e) { msg.style.color = '#a32d2d'; msg.textContent = 'Could not load the stats. ' + (e && e.message || ''); }
+  });
+}
+async function render(fs, db){
   const keyOf = d => 'd' + d.getUTCFullYear() + String(d.getUTCMonth() + 1).padStart(2, '0') + String(d.getUTCDate()).padStart(2, '0');
   const bd = new Date(Date.now() + 6 * 36e5), keys = [];
   for (let i = 0; i < 14; i++) keys.push(keyOf(new Date(bd.getTime() - i * 864e5)));
-  const get = async id => { try { const s = await fs.getDoc(fs.doc(db, 'stats', id)); return s.exists() ? s.data() : {}; } catch (e) { return {}; } };
+  const get = async id => { const s = await fs.getDoc(fs.doc(db, 'stats', id)); return s.exists() ? s.data() : {}; };
   const [g, ...days] = await Promise.all([get('global'), ...keys.map(get)]);
   const n = k => g[k] || 0, pct = (a, b) => b ? Math.round(a * 100 / b) + '%' : '-', f = v => v.toLocaleString('en-US');
   const card = (v, l) => '<div class="card"><b>' + v + '</b><span>' + l + '</span></div>';
@@ -72,8 +95,7 @@ else try {
     bar('Played as Andolonkari', n('games_protester'), side) + bar('Played as Police', n('games_police'), side);
   document.getElementById('days').innerHTML = '<tr><th>Day</th><th>New</th><th>Started</th><th>Finished</th><th>Wins</th><th>Daily</th><th>Shares</th></tr>' +
     keys.map((k, i) => { const d = days[i], x = q => d[q] || 0; return '<tr><td>' + k.slice(7) + '/' + k.slice(5, 7) + '</td><td>' + f(x('players')) + '</td><td>' + f(x('games')) + '</td><td>' + f(x('fin_p') + x('fin_c')) + '</td><td>' + f(x('win_p') + x('win_c')) + '</td><td>' + f(x('daily_start')) + '</td><td>' + f(x('share_card') + x('share_challenge')) + '</td></tr>'; }).join('');
-  msg.hidden = true; document.getElementById('out').hidden = false;
-} catch (e) { msg.textContent = 'Could not load the stats. ' + (e && e.message || ''); }
+}
 </script>
 </body>
 </html>

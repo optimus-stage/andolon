@@ -58,10 +58,12 @@ service cloud.firestore {
         || (request.resource.data[k] - resource.data.get(k, 0) >= 1 && request.resource.data[k] - resource.data.get(k, 0) <= 5);
     }
     function first(k) { return request.resource.data.get(k, 1) >= 1 && request.resource.data.get(k, 1) <= 5; }
+    // only the owner's verified Google account may read the analytics; everybody can still add to the counters
+    function isOwner() { return request.auth != null && request.auth.token.email == 'techlearners44@gmail.com' && request.auth.token.email_verified == true; }
     function statsKeys() { return request.resource.data.keys().hasOnly(['players', 'games', 'games_protester', 'games_police', 'challenges', 'lang_bn', 'lang_en', 'dev_touch', 'dev_desktop', 'daily_start', 'ret_d1', 'ret_d7', 'fin_p', 'fin_c', 'win_p', 'win_c', 'end_detained', 'end_timeout', 'pend_held', 'pend_anger', 'ring0', 'ring1', 'ring2', 'ring3', 'daily_fin', 'challenge_wins', 'share_card', 'share_challenge', 'tut_done', 'tut_skip', 'lb_submits', 'daily_submits', 'google_links', 'profile_opens']); }
     function statsDoc(doc) { return doc == 'global' || doc == dayKey(bdTime()); }
     match /stats/{doc} {
-      allow read: if true;
+      allow read: if isOwner();
       allow create: if request.auth != null && statsDoc(doc) && statsKeys()
         && first('players') && first('games') && first('games_protester') && first('games_police') && first('challenges') && first('lang_bn') && first('lang_en') && first('dev_touch') && first('dev_desktop') && first('daily_start') && first('ret_d1') && first('ret_d7') && first('fin_p') && first('fin_c') && first('win_p') && first('win_c') && first('end_detained') && first('end_timeout') && first('pend_held') && first('pend_anger') && first('ring0') && first('ring1') && first('ring2') && first('ring3') && first('daily_fin') && first('challenge_wins') && first('share_card') && first('share_challenge') && first('tut_done') && first('tut_skip') && first('lb_submits') && first('daily_submits') && first('google_links') && first('profile_opens');
       allow update: if request.auth != null && statsDoc(doc) && statsKeys()
