@@ -49,6 +49,37 @@ const BN = {
   'Try again ({n} left)': 'আবার চেষ্টা করুন ({n}টি বাকি)', 'Andolon Daily · {d}': 'আন্দোলন দৈনিক · {d}',
   'Andolon Daily Challenge {d}: {s} pts. Can you beat me?': 'আন্দোলন দৈনিক চ্যালেঞ্জ {d}: {s} পয়েন্ট। আমাকে হারাতে পারবেন?',
   'Big turnout': 'বিশাল জমায়েত', 'Rival surge': 'প্রতিপক্ষের ঢল', 'Thin crowds': 'পাতলা ভিড়', 'Big marches': 'বড় মিছিল', 'More marches': 'বেশি মিছিল', 'Standard day': 'সাধারণ দিন',
+  'Profile': 'প্রোফাইল', 'My profile': 'আমার প্রোফাইল', 'Achievements': 'অর্জন', '{n} of {m} unlocked': '{m}টির মধ্যে {n}টি অর্জিত',
+  'New achievement': 'নতুন অর্জন', 'New achievements': 'নতুন অর্জনসমূহ',
+  'Games played': 'খেলা হয়েছে', 'Wins': 'জয়', 'Win rate': 'জয়ের হার', 'Time played': 'খেলার সময়', 'Best crowd': 'সর্বোচ্চ জনতা',
+  'Best score (Andolonkari)': 'সেরা স্কোর (আন্দোলনকারী)', 'Best score (Police)': 'সেরা স্কোর (পুলিশ)', 'Barricades broken': 'ভাঙা ব্যারিকেড',
+  'Rival clashes won': 'জেতা সংঘাত', 'Crowds dispersed (total)': 'মোট ছত্রভঙ্গ জনতা', 'Daily challenges': 'দৈনিক চ্যালেঞ্জ', 'Best streak': 'সেরা ধারা', 'Times detained': 'আটক হয়েছেন',
+  '{n} min': '{n} মিনিট', '{h} h {m} min': '{h} ঘণ্টা {m} মিনিট',
+  'Your profile is saved on this device. Sign in with Google to keep it on any device.': 'আপনার প্রোফাইল এই ডিভাইসে সংরক্ষিত। যেকোনো ডিভাইসে রাখতে গুগল দিয়ে সাইন ইন করুন।',
+  'Your profile is saved on this device.': 'আপনার প্রোফাইল এই ডিভাইসে সংরক্ষিত।',
+  'First Steps': 'প্রথম পদক্ষেপ', 'Finish your first game.': 'আপনার প্রথম খেলা শেষ করুন।',
+  'Minar Held': 'মিনার দখলে', 'Hold the Shaheed Minar as Andolonkari.': 'আন্দোলনকারী হয়ে শহীদ মিনার ধরে রাখুন।',
+  'Growing Crowd': 'বাড়ন্ত জনতা', 'March with 25 people at once.': 'একসঙ্গে ২৫ জন নিয়ে মিছিল করুন।',
+  'Sea of People': 'জনসমুদ্র', 'March with 60 people at once.': 'একসঙ্গে ৬০ জন নিয়ে মিছিল করুন।',
+  'Wall Breaker': 'প্রাচীরভাঙা', 'Break 10 police barricades.': '১০টি পুলিশ ব্যারিকেড ভাঙুন।',
+  'Deep Inside': 'গভীরে', 'Reach the inner ring in one run.': 'এক খেলায় ভেতরের বলয়ে পৌঁছান।',
+  'Unbreakable': 'অপরাজেয়', 'Win without a single beating.': 'একবারও মার না খেয়ে জিতুন।',
+  'Storm Speed': 'বজ্রগতি', 'Win in under 150 seconds.': '১৫০ সেকেন্ডের কম সময়ে জিতুন।',
+  'Rival Breaker': 'প্রতিপক্ষ-দমন', 'Win 10 clashes against rival crowds.': 'প্রতিপক্ষ জনতার সঙ্গে ১০টি সংঘাতে জিতুন।',
+  'Back on Your Feet': 'আবার উঠে দাঁড়ানো', 'Recover at hospitals 5 times.': '৫ বার হাসপাতালে সেরে উঠুন।',
+  'Chai Break': 'চা-বিরতি', "Drink Mamar Tong's tea 5 times.": 'মামার টঙের চা ৫ বার খান।',
+  'Taken to Thana': 'থানায় যাত্রা', 'Get detained once. It happens to the best.': 'একবার আটক হোন। সেরাদেরও হয়।',
+  'Daily Starter': 'দৈনিক শুরু', 'Finish a daily challenge.': 'একটি দৈনিক চ্যালেঞ্জ শেষ করুন।',
+  'Daily Habit': 'দৈনিক অভ্যাস', 'Reach a 3-day streak.': 'টানা ৩ দিন খেলুন।',
+  'Daily Devotion': 'দৈনিক নিষ্ঠা', 'Reach a 7-day streak.': 'টানা ৭ দিন খেলুন।',
+  'Order Restored': 'শৃঙ্খলা ফিরেছে', 'Win as Police.': 'পুলিশ হয়ে জিতুন।',
+  'Cool Head': 'ঠান্ডা মাথা', 'Win as Police with public anger under 25.': 'জনরোষ ২৫-এর নিচে রেখে পুলিশ হয়ে জিতুন।',
+  'Full Force': 'পূর্ণ বাহিনী', 'Lead a squad of 10 officers.': '১০ জন অফিসারের দলের নেতৃত্ব দিন।',
+  'Crowd Control': 'ভিড় নিয়ন্ত্রণ', 'Disperse 50 crowds in total.': 'মোট ৫০টি জনতা ছত্রভঙ্গ করুন।',
+  'Smoke Master': 'ধোঁয়াশা-ওস্তাদ', 'Use 5 smoke grenades in one run.': 'এক খেলায় ৫টি ধোঁয়ার গ্রেনেড ব্যবহার করুন।',
+  'Veteran': 'অভিজ্ঞ', 'Play 25 games.': '২৫টি খেলা খেলুন।',
+  'Both Sides': 'দুই পক্ষই', 'Win as Andolonkari and as Police.': 'আন্দোলনকারী ও পুলিশ দুই পক্ষ হয়েই জিতুন।',
+  'Legend of the Minar': 'মিনারের কিংবদন্তি', 'Score 5,000 points as Andolonkari.': 'আন্দোলনকারী হয়ে ৫,০০০ পয়েন্ট স্কোর করুন।',
   'Close': 'বন্ধ করুন', 'Report an inappropriate name': 'অনুপযুক্ত নাম জানান',
   'Barishal': 'বরিশাল', 'Chattogram': 'চট্টগ্রাম', 'Dhaka': 'ঢাকা', 'Khulna': 'খুলনা', 'Mymensingh': 'ময়মনসিংহ', 'Rajshahi': 'রাজশাহী', 'Rangpur': 'রংপুর', 'Sylhet': 'সিলেট', 'Outside Bangladesh': 'বাংলাদেশের বাইরে',
   'Get game updates on WhatsApp': 'হোয়াটসঅ্যাপে গেমের আপডেট পান',
@@ -254,6 +285,7 @@ function applyLang(){
   const sel = document.getElementById('mdiv'); if (sel && typeof divOptions === 'function') sel.innerHTML = divOptions(getDivision());
   if (typeof repaintAccounts === 'function') repaintAccounts();
   if (typeof refreshDaily === 'function') refreshDaily();
+  if (typeof refreshProfileBtn === 'function') refreshProfileBtn();
   const slot = document.getElementById('supportslot'); if (slot && typeof supportHTML === 'function') slot.innerHTML = supportHTML();
 }
 function setLang(l){

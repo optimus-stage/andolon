@@ -34,3 +34,10 @@ Each time someone starts a game, the page adds 1 to `stats/global` in Firestore:
 - `firestore.rules` accepts only today's board, or yesterday's for a run that finishes just after midnight, and the entry name must be the player's registered nickname.
 - Streak: consecutive days with at least one finished daily run, kept on the device and shown on the board.
 - Republish `firestore.rules` after pulling this update.
+
+## Profile and achievements
+
+- `js/profile.js` keeps a lifetime profile on the device (`da_profile` in localStorage): games, wins, best scores, time played, barricades broken and so on, plus 23 achievements. Every finished game updates it; new achievements show on the end screen, and the Profile button (menu and end screen) opens the full view.
+- Players signed in with Google also keep a private copy in `profiles/{uid}` (owner-only). On sign-in, or after a game, the device and the copy are merged: the larger counter wins, achievements are combined. Playing on two devices before signing in therefore keeps the larger counters, not the sum.
+- To add an achievement, append an entry to `ACHIEVEMENTS` in `js/profile.js` and add its Bangla text to `js/i18n.js`.
+- Republish `firestore.rules` after pulling this update (new `profiles` rules: counters can only go up).

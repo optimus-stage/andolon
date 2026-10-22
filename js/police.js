@@ -214,6 +214,7 @@ function endPolice(won, why){
   if (dl){ const ds = dailyLocal(); ds.best[dl.role] = Math.max(ds.best[dl.role] || 0, score); dailySave(ds); dailyStreak = bumpStreak(); }
   const dLeft = dl ? attemptsLeft(dl.role) : 0;
   const dChip = () => dl ? '<p class="dailychip">★ ' + tr('Daily Challenge') + ' · ' + dayLabel() + (dailyStreak > 1 ? ' · ' + tr('🔥 {n}-day streak', {n: dailyStreak}) : '') + '</p>' : '';
+  const newAch = recordRun({role: 'police', won, outcome: won ? 'win' : why, score, dispersed: st.dispersed, squadPeak: st.squadPeak, smokes: st.smokes, anger: game.anger, secs: Math.round(game.t), daily: !!dl, streak: dailyStreak});
   const mkInfo = () => ({role: 'police', tier: rank, name: playerName, skin: player.skin, score, rankBn: rank.bn, tagBn: tag.bn, tagDesc: tr(tag.desc), day: game.day, best, newBest,
     nextText: nxt ? [tr('NEXT: {n}', {n: isBn() ? tr(nxt.metal) : nxt.metal.toUpperCase()}), tr('{n} pts', {n: loc(nxt.min - score)})] : [tr('NEXT RANK'), tr('Maxed')],
     stampLabel: tr(won ? 'ORDER HELD' : why === 'anger' ? 'STOOD DOWN' : 'LINE BROKEN'), stampSub: tr(won ? 'SQUARE SECURED' : why === 'anger' ? 'TOO MUCH FORCE' : 'MINAR HELD'),
@@ -227,7 +228,7 @@ function endPolice(won, why){
     const head = won ? '<h1>' + tr('Order <span>restored!</span>') + '</h1><p>' + tr('Your squad dispersed <b>{n}</b> crowds by <b>Day {d}</b>.', {n: st.dispersed, d: game.day}) + '</p>'
       : why === 'anger' ? '<h1>' + tr('Stood <span>down</span>') + '</h1><p>' + tr('Too much force: public anger reached its limit and you were pulled back.') + '</p>'
       : '<h1>' + tr('The Minar <span>was held</span>') + '</h1><p>' + tr('A crowd held the Shaheed Minar. Break up marches sooner next time.') + '</p>';
-    box.innerHTML = '<button id="langbtn" class="langbtn" type="button">' + (isBn() ? 'English' : 'বাংলা') + '</button>' + dChip() + head + '<img id="cardimg" alt="Photo card" src="' + canvas.toDataURL('image/png') + '">' +
+    box.innerHTML = '<button id="langbtn" class="langbtn" type="button">' + (isBn() ? 'English' : 'বাংলা') + '</button>' + dChip() + head + achHTML(newAch) + '<img id="cardimg" alt="Photo card" src="' + canvas.toDataURL('image/png') + '">' +
       '<label>' + tr('Put your own photo on the card (optional)') + '<input id="photo2" type="file" accept="image/*"></label>' +
       '<button id="share">' + tr('Share card') + '</button><button id="dl" class="alt">' + tr(IS_TOUCH ? 'Save to Photos' : 'Download') + '</button><button id="go">' + tr(dLeft > 0 ? 'Try again ({n} left)' : 'Patrol again', {n: dLeft}) + '</button>' +
       (IS_TOUCH ? '<small>' + tr('Tip: tap Save to Photos, or press and hold the card, to keep it in your Gallery.') + '</small><br>' : '') +
@@ -253,6 +254,7 @@ function addSwitch(){   // button on the result screen to play the other side
   const go = document.getElementById('go'); if (!go) return;
   const b = document.createElement('button'); b.className = 'alt'; b.textContent = tr(role === 'police' ? 'Play as Andolonkari' : 'Play as Police');
   b.onclick = () => { role = role === 'police' ? 'protester' : 'police'; try { localStorage.setItem('da_role', role); } catch (e) {} start(); };
-  go.after(b);
+  const pb = document.createElement('button'); pb.className = 'alt'; pb.textContent = tr('My profile'); pb.onclick = openProfile;
+  go.after(b); b.after(pb);
 }
 

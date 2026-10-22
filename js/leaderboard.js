@@ -97,11 +97,26 @@ const nameErrText = er => er && er.code === 'invalid' ? tr(er.msg) : er && er.co
   : tr('Could not submit. Check your connection and try again.');
 
 // ---------- optional Google sign-in: links the anonymous player to a Google account so the record follows them to any device ----------
+// keep the lifetime profile (profile.js) in profiles/{uid} for players signed in with Google; the larger counter wins on merge
+let syncing = false, syncAgain = false;
+async function syncProfile(){
+  if (!LB_ON || !fbp) return;
+  if (syncing){ syncAgain = true; return; }
+  syncing = true;
+  try {
+    const {fs, db, au, uid} = await fbInit(); if (!au.currentUser || au.currentUser.isAnonymous) return;
+    const ref = fs.doc(db, 'profiles', uid), snap = await fs.getDoc(ref);
+    if (snap.exists()) mergeProfile(snap.data());
+    await fs.setDoc(ref, {n: profile.n, ach: profile.ach, updatedAt: fs.serverTimestamp()});
+  } catch (e) {}
+  finally { syncing = false; if (syncAgain){ syncAgain = false; syncProfile(); } }
+}
 async function loadProfile(){   // after signing in on a new device: bring back the saved nickname and division
   try {
-    const {fs, db, uid} = await fbInit(), s = await fs.getDoc(fs.doc(db, 'players', uid)); if (!s.exists()) return;
-    const p = s.data(); setPlayerName(p.name); setDivision(p.division); const m = document.getElementById('mdiv'); if (m) m.value = p.division;
+    const {fs, db, uid} = await fbInit(), s = await fs.getDoc(fs.doc(db, 'players', uid));
+    if (s.exists()){ const p = s.data(); setPlayerName(p.name); setDivision(p.division); const m = document.getElementById('mdiv'); if (m) m.value = p.division; }
   } catch (e) {}
+  syncProfile();
 }
 async function googleLink(){
   const {au, A} = await fbInit(), prov = new A.GoogleAuthProvider(); let how = 'linked';

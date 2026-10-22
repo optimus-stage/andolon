@@ -21,7 +21,7 @@ function newGame(){
   }
   shutdowns.push({x: -900, y: -1100, r: 300}, {x: 700, y: 900, r: 260});
   player = {x: START.x, y: START.y, r: 12, morale: 100, injured: false, skin: pick(SKINS), moving: false, hidden: false};
-  game = {t: 0, day: 1, hold: 0, started: true, spawnT: 4, rivalSpawnT: 20, stats: {recruits: 0, peak: 1, rings: 0, clashWins: 0, beaten: 0, cures: 0, teas: 0, stallT: 0}, mode: 'play', msg: '', msgT: 0, viralT: 40 + rand(0, 20), detainees: [], rescue: {}, shutT: 0, staticT: 0, shutLoseT: 0, drain: 0, boost: 0, flash: 0, van: null, arrest: null, contested: false};
+  game = {t: 0, day: 1, hold: 0, started: true, spawnT: 4, rivalSpawnT: 20, stats: {recruits: 0, peak: 1, rings: 0, clashWins: 0, beaten: 0, cures: 0, teas: 0, stallT: 0, breaks: 0}, mode: 'play', msg: '', msgT: 0, viralT: 40 + rand(0, 20), detainees: [], rescue: {}, shutT: 0, staticT: 0, shutLoseT: 0, drain: 0, boost: 0, flash: 0, van: null, arrest: null, contested: false};
   chant = {i: 0, timer: 3, phase: 0}; game.daily = DAILY;
   for (let z = 0; z < 4; z++) for (let i = 0; i < (DAILY && DAILY.twist === 'surge' ? 4 : 3); i++) mkRival(z, 60 + rand(0, 180));
   if ('ontouchstart' in window || navigator.maxTouchPoints > 0) say(tr('Touch and hold a direction on the round pad to walk. Lift to stop.'), 6);
