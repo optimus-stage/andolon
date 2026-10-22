@@ -4,31 +4,54 @@ let last = 0;
 let rotShown = false;
 function frame(ts){
   const dt = Math.min(0.05, (ts - last) / 1000 || 0); last = ts;
-  // on a phone held upright, ask for landscape and pause the game until it is turned
-  const needRotate = IS_TOUCH && !!(game && game.started) && innerHeight > innerWidth;
+  // only if the player chose horizontal play and holds the phone upright: ask them to turn it (or switch to vertical), and pause meanwhile
+  const needRotate = IS_TOUCH && ORIENT === 'landscape' && !!(game && game.started) && innerHeight > innerWidth;
   if (needRotate !== rotShown){ rotShown = needRotate; document.getElementById('rotate').classList.toggle('open', needRotate); }
   if (game && game.started && !rotShown) update(dt);
   if (game) draw();
   requestAnimationFrame(frame);
 }
-// phones: go landscape by themselves. Installed/home-screen apps follow the manifest; in a browser tab Android Chrome allows the lock once fullscreen.
-function lockLandscape(){ try { return screen.orientation && screen.orientation.lock ? screen.orientation.lock('landscape') : Promise.reject(); } catch (e) { return Promise.reject(); } }
-function goLandscape(){
-  if (!IS_TOUCH) return;
-  lockLandscape().catch(() => {
-    try {
-      const el = document.documentElement, rf = el.requestFullscreen || el.webkitRequestFullscreen;
-      Promise.resolve(rf ? rf.call(el) : null).then(lockLandscape).catch(() => {});
-    } catch (e) {}
-  });
+// ---------- vertical or horizontal play: the player's choice ----------
+// Vertical is the default and needs nothing. Horizontal asks the browser to lock landscape (Android Chrome allows it in fullscreen);
+// the screen layout always follows the real shape of the window.
+let ORIENT = 'portrait'; try { if (localStorage.getItem('da_orient') === 'landscape') ORIENT = 'landscape'; } catch (e) {}
+function applyOrientation(){
+  if (!IS_TOUCH || !(screen.orientation && screen.orientation.lock)) return;
+  try {
+    if (ORIENT === 'landscape'){
+      const lock = () => screen.orientation.lock('landscape').catch(() => {});
+      screen.orientation.lock('landscape').catch(() => {
+        const el = document.documentElement, rf = el.requestFullscreen || el.webkitRequestFullscreen;
+        if (rf) Promise.resolve(rf.call(el)).then(lock).catch(() => {});
+      });
+    } else {   // vertical: release any landscape lock and leave fullscreen, so the phone is free again
+      if (screen.orientation.unlock) screen.orientation.unlock();
+      if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+    }
+  } catch (e) {}
 }
-// no tap needed from the player: try at once, and again on the first touch (browsers only allow fullscreen after a touch)
-if (IS_TOUCH){
-  lockLandscape().catch(() => {});
-  const firstTouch = () => { goLandscape(); if (document.fullscreenElement || (screen.orientation && /landscape/.test(screen.orientation.type))) removeEventListener('touchend', firstTouch, true); };
-  addEventListener('touchend', firstTouch, true);
-  addEventListener('click', firstTouch, true);
+function setOrient(o){
+  ORIENT = o === 'landscape' ? 'landscape' : 'portrait';
+  try { localStorage.setItem('da_orient', ORIENT); } catch (e) {}
+  applyOrientation(); refreshOrient();
 }
+const orientRows = [];
+function refreshOrient(){
+  for (let i = orientRows.length - 1; i >= 0; i--){
+    const r = orientRows[i]; if (!r.isConnected){ orientRows.splice(i, 1); continue; }
+    r.querySelector('span').textContent = tr('Play style');
+    r.querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.o === ORIENT); b.textContent = (b.dataset.o === 'portrait' ? '▯ ' : '▭ ') + tr(b.dataset.o === 'portrait' ? 'Vertical' : 'Horizontal'); });
+  }
+}
+function orientRow(){   // touch screens only: a computer cannot be turned
+  const r = document.createElement('div'); r.className = 'orient';
+  r.innerHTML = '<span></span><button type="button" data-o="portrait"></button><button type="button" data-o="landscape"></button>';
+  r.querySelectorAll('button').forEach(b => { b.onclick = () => setOrient(b.dataset.o); });
+  if (!IS_TOUCH) r.style.display = 'none';
+  orientRows.push(r); refreshOrient();
+  return r;
+}
+document.addEventListener('click', e => { if (e.target && e.target.id === 'rotportrait') setOrient('portrait'); });
 function start(isDaily){
   if (isDaily !== true){ DAILY = null; TWIST = null; CH_NOW = null; RUNSEED = (Math.random() * 4294967296) >>> 0; seedGame(RUNSEED); }   // every game gets its own seed, so it can be shared as a challenge
   const inp = document.getElementById('pname');
@@ -37,7 +60,7 @@ function start(isDaily){
   else if (playerName === 'Protester' || playerName === 'Officer') playerName = role === 'police' ? 'Officer' : 'Protester';
   try { localStorage.setItem('da_name', playerName); } catch (e) {}
   ac();   // unlock audio on the user's click
-  goLandscape();
+  applyOrientation();
   document.getElementById('menu').style.display = 'none';
   if (role === 'police') newPoliceGame(); else newGame();
   if (typeof trackStart === 'function') trackStart(role);
@@ -73,7 +96,8 @@ addEventListener('keyup', e => { if (e.code === 'Space') input.strike = false; }
 // touch: a round pad at the bottom left. Touch and hold a direction on it to walk that way; lift to stop.
 // (touching anywhere else on the screen still walks toward the finger)
 const pad = {id: null, kx: 0, ky: 0, ux: 0, uy: 0};
-const padGeom = () => { const R = Math.max(46, Math.min(66, innerWidth * 0.16)); return {x: R + 18, y: innerHeight - R - (innerHeight < 500 ? 30 : 46), R}; };
+const isTall = () => innerHeight > innerWidth;   // vertical play: the movement pad sits at the bottom middle
+const padGeom = () => { const R = Math.max(46, Math.min(66, innerWidth * 0.16)); return {x: isTall() ? innerWidth / 2 : R + 18, y: innerHeight - R - (innerHeight < 500 ? 30 : 46), R}; };
 const stopWalk = () => { mouse.x = vw / 2; mouse.y = vh / 2; };
 function padSet(t){
   const g = padGeom(); let dx = t.clientX - g.x, dy = t.clientY - g.y; const d = Math.hypot(dx, dy);
@@ -84,7 +108,12 @@ function padSet(t){
 const onPad = t => { const g = padGeom(); return Math.hypot(t.clientX - g.x, t.clientY - g.y) < g.R * 1.5; };
 const screenWalk = t => { mouse.x = t.clientX; mouse.y = t.clientY; };
 const actIds = new Map();   // touches that are holding an action button (police side)
-const actGeom = () => { const H = innerHeight, W = innerWidth; if (role !== 'police') return [{id: 'strike', x: W - 64, y: H - 96, r: 42, t: tr('STRIKE')}]; return [{id: 'strike', x: W - 64, y: H - 96, r: 42, t: tr('STRIKE')}, {id: 'smoke', x: W - 150, y: H - 70, r: 30, t: tr('SMOKE')}, {id: 'gun', x: W - 146, y: H - 142, r: 30, t: tr('FIRE')}]; };
+const actGeom = () => { const H = innerHeight, W = innerWidth;
+  if (isTall()){   // vertical: the action buttons stack on the right, beside the middle pad
+    const x = W - 50, y = H - 92;
+    return role !== 'police' ? [{id: 'strike', x, y, r: 38, t: tr('STRIKE')}] : [{id: 'strike', x, y, r: 38, t: tr('STRIKE')}, {id: 'smoke', x, y: y - 80, r: 28, t: tr('SMOKE')}, {id: 'gun', x, y: y - 140, r: 28, t: tr('FIRE')}];
+  }
+  if (role !== 'police') return [{id: 'strike', x: W - 64, y: H - 96, r: 42, t: tr('STRIKE')}]; return [{id: 'strike', x: W - 64, y: H - 96, r: 42, t: tr('STRIKE')}, {id: 'smoke', x: W - 150, y: H - 70, r: 30, t: tr('SMOKE')}, {id: 'gun', x: W - 146, y: H - 142, r: 30, t: tr('FIRE')}]; };
 const touchGo = e => {
   for (const t of e.changedTouches){
     if (e.type === 'touchstart'){
@@ -197,3 +226,6 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) nav
   applyLang();
   showRole();
 })();
+
+// vertical / horizontal choice on the menu (the end screens add their own copy)
+(function(){ const row = orientRow(), at = document.getElementById('dailybox') || document.getElementById('roles'); if (at) at.after(row); })();

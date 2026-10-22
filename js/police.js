@@ -258,6 +258,6 @@ function addSwitch(){   // button on the result screen to play the other side
   const b = document.createElement('button'); b.className = 'alt'; b.textContent = tr(role === 'police' ? 'Play as Andolonkari' : 'Play as Police');
   b.onclick = () => { role = role === 'police' ? 'protester' : 'police'; try { localStorage.setItem('da_role', role); } catch (e) {} start(); };
   const pb = document.createElement('button'); pb.className = 'alt'; pb.textContent = tr('My profile'); pb.onclick = openProfile;
-  go.after(b); b.after(pb);
+  go.after(b); b.after(pb); pb.after(orientRow());
 }
 

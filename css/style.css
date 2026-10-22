@@ -211,3 +211,10 @@ button.role small{font-size:12px !important;margin-top:2px !important}
 #chbanner button{margin:4px 6px 0 0} #chbanner button#chgo{background:#c8102e}
 .chresult{margin:0 0 8px;font-weight:700;text-align:center;font-size:16px}
 .chresult.win{color:#0b6b3a} .chresult.lose{color:#a32d2d}
+
+/* vertical / horizontal play choice */
+.orient{display:flex;align-items:center;gap:6px;margin:10px 0 2px;flex-wrap:wrap}
+.orient span{font-size:14px;color:#333;margin-right:2px}
+#card .orient button{margin:0;padding:7px 12px;font-size:14px;background:#e6e1d0;color:#222;border:2px solid transparent;width:auto}
+#card .orient button.on{background:#0b6b3a;color:#fff;border-color:#ffd54f}
+#rotate button{margin-top:18px;background:#0b6b3a;color:#fff;border:0;border-radius:10px;padding:12px 20px;font-size:16px;width:auto}
