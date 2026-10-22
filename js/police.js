@@ -17,7 +17,8 @@ function newPoliceGame(){
   game = {t: 0, day: 1, hold: 0, started: true, mode: 'play', msg: '', msgT: 0, flash: 0, van: null, arrest: null, contested: false,
     anger: 0, lastForce: 0, smoke: 3, gun: 6, refSmoke: 18, refGun: 12, cdS: 0, cdG: 0, cdSm: 0, spawnT: 3, bystT: 4, reinT: 30, chantT: 6, cone: null, hit: null,
     stats: {dispersed: 0, squadPeak: 1, smokes: 0, shots: 0, strikes: 0}};
-  for (let i = 0; i < 5; i++){ const p = spawnIn(2400, 2900); marchers.push(mkCrowd(p.x, p.y, 3, 10 + i * 3)); }
+  game.daily = DAILY;
+  for (let i = 0; i < 5 + (DAILY && DAILY.twist === 'more' ? 2 : 0); i++){ const p = spawnIn(2400, 2900); marchers.push(mkCrowd(p.x, p.y, 3 + (DAILY && DAILY.twist === 'big' ? 2 : 0), 10 + i * 3)); }
   say(tr(IS_TOUCH ? 'Use STRIKE, SMOKE and FIRE. Walk into officers to recruit them.' : 'Click or Space: strike. G: smoke. F: fire. Walk into officers to recruit them.'), 6);
 }
 function mkCrowd(x, y, n, delay){
@@ -78,7 +79,7 @@ function doGun(){
 function doAction(id){ if (role !== 'police'){ doBreak(); return; } if (id === 'strike'){ input.strike = true; doStrike(); } else if (id === 'smoke') doSmoke(); else if (id === 'gun') doGun(); }
 function crowdNeed(r){ const dr = Math.hypot(r.x, r.y), ri = RINGS.findIndex(rr => rr < dr - 20); return ri >= 0 ? GATE_NEEDS[ri] : NEED_CROWD; }
 function spawnCrowd(){
-  const z = Math.random() < 0.65 ? 0 : 1, p = spawnIn(ZR[z + 1] + 100, ZR[z] - 120);
+  const z = RNG() < 0.65 ? 0 : 1, p = spawnIn(ZR[z + 1] + 100, ZR[z] - 120);
   if (Math.hypot(p.x - player.x, p.y - player.y) < 700) return false;
   marchers.push(mkCrowd(p.x, p.y, 3, game.t + 8)); return true;
 }
@@ -175,7 +176,7 @@ function updatePolice(dt){
       sfxJoin(); addFx(p.x, p.y, 'join'); say(tr('An officer joins your squad ({n})', {n: followers.length + 1}), 2);
     }
   }
-  G.reinT -= dt; if (G.reinT <= 0){ G.reinT = 30; if (patrols.length < 6) patrols.push(mkPatrol(Math.floor(Math.random() * 4))); }
+  G.reinT -= dt; if (G.reinT <= 0){ G.reinT = 30; if (patrols.length < 6) patrols.push(mkPatrol(Math.floor(RNG() * 4))); }
 
   // crowds
   updateCrowds(dt);
@@ -209,10 +210,14 @@ function endPolice(won, why){
   else tag = why === 'anger' ? PTAGS.overreach : st.squadPeak < 5 ? PTAGS.outnumbered : PTAGS.slow;
   const nxt = PRANKS.find(r => r.min > score);
   let best = 0, newBest = false; try { best = +localStorage.getItem('da_best_police') || 0; if (score > best){ newBest = best > 0; localStorage.setItem('da_best_police', String(score)); best = score; } } catch (e) {}
+  const dl = game.daily; let dailyStreak = 0;   // a daily challenge run: remember the best score and keep the streak
+  if (dl){ const ds = dailyLocal(); ds.best[dl.role] = Math.max(ds.best[dl.role] || 0, score); dailySave(ds); dailyStreak = bumpStreak(); }
+  const dLeft = dl ? attemptsLeft(dl.role) : 0;
+  const dChip = () => dl ? '<p class="dailychip">★ ' + tr('Daily Challenge') + ' · ' + dayLabel() + (dailyStreak > 1 ? ' · ' + tr('🔥 {n}-day streak', {n: dailyStreak}) : '') + '</p>' : '';
   const mkInfo = () => ({role: 'police', tier: rank, name: playerName, skin: player.skin, score, rankBn: rank.bn, tagBn: tag.bn, tagDesc: tr(tag.desc), day: game.day, best, newBest,
     nextText: nxt ? [tr('NEXT: {n}', {n: isBn() ? tr(nxt.metal) : nxt.metal.toUpperCase()}), tr('{n} pts', {n: loc(nxt.min - score)})] : [tr('NEXT RANK'), tr('Maxed')],
     stampLabel: tr(won ? 'ORDER HELD' : why === 'anger' ? 'STOOD DOWN' : 'LINE BROKEN'), stampSub: tr(won ? 'SQUARE SECURED' : why === 'anger' ? 'TOO MUCH FORCE' : 'MINAR HELD'),
-    stampCol: won ? '#1f4e79' : '#a32d2d', dayText: tr('Andolon · Day {n}', {n: game.day}),
+    stampCol: won ? '#1f4e79' : '#a32d2d', dayText: dl ? tr('Andolon Daily · {d}', {d: dayLabel()}) : tr('Andolon · Day {n}', {n: game.day}),
     row2Title: tr('Crowds dispersed'), row2Value: st.dispersed, row2Desc: tr('Marches broken up before the Minar.'), foot3: [tr('SQUAD PEAK'), nd(st.squadPeak)]});
   let canvas;
   const build = () => renderCard(won ? 'win' : 'lose', Object.assign({photo: playerPhoto}, mkInfo()));
@@ -222,24 +227,24 @@ function endPolice(won, why){
     const head = won ? '<h1>' + tr('Order <span>restored!</span>') + '</h1><p>' + tr('Your squad dispersed <b>{n}</b> crowds by <b>Day {d}</b>.', {n: st.dispersed, d: game.day}) + '</p>'
       : why === 'anger' ? '<h1>' + tr('Stood <span>down</span>') + '</h1><p>' + tr('Too much force: public anger reached its limit and you were pulled back.') + '</p>'
       : '<h1>' + tr('The Minar <span>was held</span>') + '</h1><p>' + tr('A crowd held the Shaheed Minar. Break up marches sooner next time.') + '</p>';
-    box.innerHTML = '<button id="langbtn" class="langbtn" type="button">' + (isBn() ? 'English' : 'বাংলা') + '</button>' + head + '<img id="cardimg" alt="Photo card" src="' + canvas.toDataURL('image/png') + '">' +
+    box.innerHTML = '<button id="langbtn" class="langbtn" type="button">' + (isBn() ? 'English' : 'বাংলা') + '</button>' + dChip() + head + '<img id="cardimg" alt="Photo card" src="' + canvas.toDataURL('image/png') + '">' +
       '<label>' + tr('Put your own photo on the card (optional)') + '<input id="photo2" type="file" accept="image/*"></label>' +
-      '<button id="share">' + tr('Share card') + '</button><button id="dl" class="alt">' + tr(IS_TOUCH ? 'Save to Photos' : 'Download') + '</button><button id="go">' + tr('Patrol again') + '</button>' +
+      '<button id="share">' + tr('Share card') + '</button><button id="dl" class="alt">' + tr(IS_TOUCH ? 'Save to Photos' : 'Download') + '</button><button id="go">' + tr(dLeft > 0 ? 'Try again ({n} left)' : 'Patrol again', {n: dLeft}) + '</button>' +
       (IS_TOUCH ? '<small>' + tr('Tip: tap Save to Photos, or press and hold the card, to keep it in your Gallery.') + '</small><br>' : '') +
       (playerPhoto ? '<button id="nophoto" class="alt">' + tr('Use default avatar') + '</button>' : '') +
       supportHTML() + '<a href="#" class="aboutlink">' + tr('About &amp; Disclaimer') + '</a><br>' +
       '<small>' + tr('Your photo stays on your device. It is only drawn onto this card. Fictional game; characters and events are not real people or incidents.') + '</small>';
-    const text = won ? tr('I led the police squad in Andolon and dispersed {n} crowds. {r}, {s} pts.', {n: st.dispersed, r: isBn() ? rank.bn : rank.en, s: loc(score)})
+    const text = dl ? tr('Andolon Daily Challenge {d}: {s} pts. Can you beat me?', {d: dayLabel(), s: loc(score)}) : won ? tr('I led the police squad in Andolon and dispersed {n} crowds. {r}, {s} pts.', {n: st.dispersed, r: isBn() ? rank.bn : rank.en, s: loc(score)})
       : tr('The crowds beat my police squad in Andolon. {s} pts. Can you do better?', {s: loc(score)});
     const refresh = () => { canvas = build(); document.getElementById('cardimg').src = canvas.toDataURL('image/png'); const b = document.getElementById('nophoto'); if (!b && playerPhoto){ const n = document.createElement('button'); n.id = 'nophoto'; n.className = 'alt'; n.textContent = tr('Use default avatar'); n.onclick = () => { playerPhoto = null; n.remove(); refresh(); }; document.getElementById('go').after(n); } };
     document.getElementById('photo2').onchange = e => loadPhoto(e.target.files[0], refresh);
     const np = document.getElementById('nophoto'); if (np) np.onclick = () => { playerPhoto = null; np.remove(); refresh(); };
     document.getElementById('share').onclick = () => shareCard(canvas, text);
     document.getElementById('dl').onclick = () => downloadCard(canvas);
-    document.getElementById('go').onclick = start;
+    document.getElementById('go').onclick = dLeft > 0 ? startDaily : start;
     document.getElementById('langbtn').onclick = () => { setLang(isBn() ? 'en' : 'bn'); show(); };
     addSwitch();
-    addLeaderboard('police', {score, rank: rank.en, stat: st.dispersed, day: game.day});
+    addLeaderboard('police', {score, rank: rank.en, stat: st.dispersed, day: game.day}, dl ? {streak: dailyStreak} : undefined);
   };
   show();
   document.getElementById('menu').style.display = 'flex';

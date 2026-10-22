@@ -10,6 +10,22 @@ service cloud.firestore {
         && n.matches('^[\\p{L}\\p{M}\\p{N}_.-]([\\p{L}\\p{M}\\p{N} _.-]{0,22}[\\p{L}\\p{M}\\p{N}_.-])?$')
         && !(n.lower() in ['protester', 'officer', 'admin', 'administrator', 'andolon', 'আন্দোলন', 'আন্দোলনকারী', 'অফিসার']);
     }
+    // daily challenge boards use Bangladesh time (UTC+6); a run finished just after midnight may still use yesterday's board
+    function bdTime() { return request.time + duration.value(6, 'h'); }
+    function dayKey(t) { return 'd' + string(t.year() * 10000 + t.month() * 100 + t.day()); }
+    function validDay(day) { return day == dayKey(bdTime()) || day == dayKey(bdTime() - duration.value(1, 'd')); }
+    function validDaily(d, uid) {
+      return d.keys().hasOnly(['uid', 'name', 'division', 'score', 'rank', 'stat', 'day', 'streak', 'updatedAt'])
+        && d.uid == uid
+        && d.name == getAfter(playerDoc(uid)).data.name
+        && validDivision(d.division)
+        && d.score is int && d.score >= 0 && d.score <= 100000
+        && d.rank is string && d.rank.size() <= 40
+        && d.stat is int && d.stat >= 0 && d.stat <= 1000
+        && d.day is int && d.day >= 0 && d.day <= 1000
+        && d.streak is int && d.streak >= 0 && d.streak <= 1000
+        && d.updatedAt == request.time;
+    }
     function nameDoc(n) { return /databases/$(database)/documents/names/$(n.lower()); }
     function playerDoc(uid) { return /databases/$(database)/documents/players/$(uid); }
     function validDoc(d, uid) {
@@ -68,6 +84,13 @@ service cloud.firestore {
         && validName(request.resource.data.name) && key == request.resource.data.name.lower()
         && getAfter(playerDoc(request.auth.uid)).data.name == request.resource.data.name;
       allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
+    }
+    match /daily/{day}/{role}/{uid} {
+      allow read: if role in ['protester', 'police'];
+      allow create: if role in ['protester', 'police'] && request.auth != null && request.auth.uid == uid && validDay(day) && validDaily(request.resource.data, uid);
+      allow update: if role in ['protester', 'police'] && request.auth != null && request.auth.uid == uid && validDay(day) && validDaily(request.resource.data, uid)
+        && request.resource.data.score >= resource.data.score;
+      allow delete: if role in ['protester', 'police'] && request.auth != null && request.auth.uid == uid;
     }
     match /{board}/{uid} {
       allow read: if board in ['lb_protester', 'lb_police'];

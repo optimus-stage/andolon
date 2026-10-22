@@ -173,3 +173,15 @@ button.role small{font-size:12px !important;margin-top:2px !important}
   #installtip{margin-top:6px}
 }
 .acct{margin-top:10px;padding-top:8px;border-top:1px solid #c5d6c8}.acct small{margin:4px 0}.acct button{margin-top:4px}
+
+/* daily challenge */
+#dailybox{margin:10px 0 2px;padding:9px 12px;background:#fff3c4;border:2px solid #e9c64a;border-radius:12px}
+#dailybox .dailyhead{font-size:16px;color:#5a4300} #dailybox .dailyhead span{font-weight:400;color:#7a6320}
+#dailybox small{display:block;margin:3px 0 4px;color:#6b5a1c;font-size:12px}
+#dailybox button{margin:4px 6px 0 0}
+#dailybox button#dailygo{background:#b58900} #dailybox button#dailygo:disabled{background:#b8ad8a;cursor:default}
+.dailychip{margin:0 0 6px;font-weight:700;color:#8a6500;font-size:14px;text-align:center}
+#lbmode{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px}
+#lbmode button{margin:0;width:auto;padding:8px;background:#e6e1d0;color:#222;font-weight:700}
+#lbmode button.on{background:#b58900;color:#fff}
+#lbreset{font-size:12px;color:#7a6320;margin:2px 0 6px;text-align:center;min-height:14px}

@@ -8,9 +8,13 @@ function resize(){
 }
 addEventListener('resize', resize); resize();
 
-const rand = (a, b) => a + Math.random() * (b - a);
+// game randomness: normally Math.random; the daily challenge swaps in a generator seeded from the date so everyone gets the same day
+let RNG = Math.random;
+let DAILY = null;   // set while a daily challenge run is active: {key, role, seed, twist}
+const seedGame = s => { RNG = s == null ? Math.random : mulberry(s); };
+const rand = (a, b) => a + RNG() * (b - a);
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
-const pick = a => a[Math.floor(Math.random() * a.length)];
+const pick = a => a[Math.floor(RNG() * a.length)];
 const wrap = a => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
 const polar = (ang, r) => ({x: Math.cos(ang) * r, y: Math.sin(ang) * r});
 const SKINS = ['#f1c9a5', '#d9a679', '#b97d56', '#8d5a3b'];

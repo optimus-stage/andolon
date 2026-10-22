@@ -41,6 +41,14 @@ const BN = {
   'Sign out? This device will become a new anonymous player. Your record stays on your Google account.': 'সাইন আউট করবেন? এই ডিভাইস নতুন বেনামি খেলোয়াড় হয়ে যাবে। আপনার রেকর্ড আপনার গুগল অ্যাকাউন্টেই থাকবে।',
   'Signed in. Welcome back, {n}!': 'সাইন ইন হয়েছে। আবার স্বাগতম, {n}!', 'Saved. Your record now follows your Google account.': 'সংরক্ষিত। আপনার রেকর্ড এখন আপনার গুগল অ্যাকাউন্টের সঙ্গে থাকবে।',
   'Sign-in was cancelled.': 'সাইন ইন বাতিল করা হয়েছে।', 'Could not sign in. Try again.': 'সাইন ইন করা যায়নি। আবার চেষ্টা করুন।',
+  'Daily Challenge': 'দৈনিক চ্যালেঞ্জ', "Today's twist: {t}": 'আজকের বিশেষত্ব: {t}', '{n} of {m} attempts left': '{m}টির মধ্যে {n}টি সুযোগ বাকি',
+  '🔥 {n}-day streak': '🔥 টানা {n} দিন', 'Resets in {t}': 'নতুন চ্যালেঞ্জ {t} পরে',
+  "Play today's challenge": 'আজকের চ্যালেঞ্জ খেলুন', 'Come back tomorrow': 'কাল আবার আসুন', "Today's board": 'আজকের বোর্ড', 'Today': 'আজ', 'All-time': 'সর্বকালের',
+  "Submit to today's board": 'আজকের বোর্ডে জমা দিন',
+  "You are #{n} of {m} on today's board (your best today: {b}).": 'আজকের বোর্ডে {m} জনের মধ্যে আপনি {n} নম্বরে (আজকের সেরা: {b})।',
+  'Try again ({n} left)': 'আবার চেষ্টা করুন ({n}টি বাকি)', 'Andolon Daily · {d}': 'আন্দোলন দৈনিক · {d}',
+  'Andolon Daily Challenge {d}: {s} pts. Can you beat me?': 'আন্দোলন দৈনিক চ্যালেঞ্জ {d}: {s} পয়েন্ট। আমাকে হারাতে পারবেন?',
+  'Big turnout': 'বিশাল জমায়েত', 'Rival surge': 'প্রতিপক্ষের ঢল', 'Thin crowds': 'পাতলা ভিড়', 'Big marches': 'বড় মিছিল', 'More marches': 'বেশি মিছিল', 'Standard day': 'সাধারণ দিন',
   'Close': 'বন্ধ করুন', 'Report an inappropriate name': 'অনুপযুক্ত নাম জানান',
   'Barishal': 'বরিশাল', 'Chattogram': 'চট্টগ্রাম', 'Dhaka': 'ঢাকা', 'Khulna': 'খুলনা', 'Mymensingh': 'ময়মনসিংহ', 'Rajshahi': 'রাজশাহী', 'Rangpur': 'রংপুর', 'Sylhet': 'সিলেট', 'Outside Bangladesh': 'বাংলাদেশের বাইরে',
   'Get game updates on WhatsApp': 'হোয়াটসঅ্যাপে গেমের আপডেট পান',
@@ -245,6 +253,7 @@ function applyLang(){
   const mdiv = document.getElementById('mdivlbl'); if (mdiv) mdiv.firstChild.nodeValue = tr('Your division (for the leaderboard)') + ' ';
   const sel = document.getElementById('mdiv'); if (sel && typeof divOptions === 'function') sel.innerHTML = divOptions(getDivision());
   if (typeof repaintAccounts === 'function') repaintAccounts();
+  if (typeof refreshDaily === 'function') refreshDaily();
   const slot = document.getElementById('supportslot'); if (slot && typeof supportHTML === 'function') slot.innerHTML = supportHTML();
 }
 function setLang(l){

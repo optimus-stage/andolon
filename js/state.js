@@ -11,7 +11,7 @@ function newGame(){
     for (let k = 0; k < n; k++){ const ang = base + k * 2 * Math.PI / n, p = polar(ang, r); gates.push({r, ring: i, ang, x: p.x, y: p.y, need: GATE_NEEDS[i], open: 0, hits: GATE_HITS}); }
   });
   neutrals = []; followers = []; patrols = []; rivals = [];
-  const counts = BYSTANDERS;
+  const counts = BYSTANDERS.map(n => Math.round(n * (DAILY && DAILY.twist === 'turnout' ? 1.35 : DAILY && DAILY.twist === 'thin' ? 0.75 : 1)));   // daily twists
   for (let z = 0; z < 4; z++){
     const r0 = ZR[z + 1] + 70, r1 = ZR[z] - 70;
     for (let i = 0; i < counts[z]; i++){ const p = spawnIn(Math.max(r0, 60), r1); neutrals.push(mkNeutral(p.x, p.y)); }
@@ -22,15 +22,15 @@ function newGame(){
   shutdowns.push({x: -900, y: -1100, r: 300}, {x: 700, y: 900, r: 260});
   player = {x: START.x, y: START.y, r: 12, morale: 100, injured: false, skin: pick(SKINS), moving: false, hidden: false};
   game = {t: 0, day: 1, hold: 0, started: true, spawnT: 4, rivalSpawnT: 20, stats: {recruits: 0, peak: 1, rings: 0, clashWins: 0, beaten: 0, cures: 0, teas: 0, stallT: 0}, mode: 'play', msg: '', msgT: 0, viralT: 40 + rand(0, 20), detainees: [], rescue: {}, shutT: 0, staticT: 0, shutLoseT: 0, drain: 0, boost: 0, flash: 0, van: null, arrest: null, contested: false};
-  chant = {i: 0, timer: 3, phase: 0};
-  for (let z = 0; z < 4; z++) for (let i = 0; i < 3; i++) mkRival(z, 60 + rand(0, 180));
+  chant = {i: 0, timer: 3, phase: 0}; game.daily = DAILY;
+  for (let z = 0; z < 4; z++) for (let i = 0; i < (DAILY && DAILY.twist === 'surge' ? 4 : 3); i++) mkRival(z, 60 + rand(0, 180));
   if ('ontouchstart' in window || navigator.maxTouchPoints > 0) say(tr('Touch and hold a direction on the round pad to walk. Lift to stop.'), 6);
 }
 // Each person gets a stable look: height, hair, head covering, outfit and legs. It is drawn by person() in render.js.
 function mkLook(){
-  const r = Math.random(), hr = Math.random(), or = Math.random();
+  const r = RNG(), hr = RNG(), or = RNG();
   return {
-    h: 0.9 + Math.random() * 0.22,                                         // height
+    h: 0.9 + RNG() * 0.22,                                         // height
     hair: hr < 0.55 ? 'short' : hr < 0.8 ? 'long' : hr < 0.9 ? 'bun' : 'bald',
     hc: pick(['#1b1210', '#1b1210', '#2a1a10', '#3a2418', '#5a4a40']),      // hair colour
     head: r < 0.12 ? 'topi' : r < 0.22 ? 'hijab' : null,                    // prayer cap or head scarf
@@ -38,7 +38,7 @@ function mkLook(){
     outfit: or < 0.5 ? 'shirt' : or < 0.72 ? 'panjabi' : or < 0.86 ? 'saree' : 'lungi',
     legs: pick(['#2b2b2b', '#3a4a6a', '#4a3a2a', '#5a5a60', '#27432f']),
     lungi: pick(['#2f6fd0', '#7a3b7a', '#2e7d5b', '#b5651d', '#8a2f3f']),
-    bag: Math.random() < 0.15,
+    bag: RNG() < 0.15,
   };
 }
 function mkNeutral(x, y){
@@ -53,7 +53,7 @@ function pickWaypoint(p){ const s = spawnIn(Math.max(ZR[p.z + 1] + 70, 60), ZR[p
 function say(m, t){ game.msg = m; game.msgT = t || 3; }
 function spawnBystander(){   // slow refill so the map never runs empty
   if (neutrals.length >= 640) return;
-  const w = [0.35, 0.3, 0.2, 0.15]; let z = 0, x = Math.random(); while (z < 3 && x > w[z]){ x -= w[z]; z++; }
+  const w = [0.35, 0.3, 0.2, 0.15]; let z = 0, x = RNG(); while (z < 3 && x > w[z]){ x -= w[z]; z++; }
   const p = spawnIn(Math.max(ZR[z + 1] + 70, 60), ZR[z] - 70);
   if (Math.hypot(p.x - player.x, p.y - player.y) < 450) return;
   neutrals.push(mkNeutral(p.x, p.y));
@@ -62,11 +62,11 @@ function mkRival(z, delay){   // a small rival crowd; about 1 in 4 is armed
   let p, ok = false; const ref = player || START;
   for (let i = 0; i < 20 && !ok; i++){ p = spawnIn(Math.max(ZR[z + 1] + 100, 100), ZR[z] - 100); ok = Math.hypot(p.x - ref.x, p.y - ref.y) > 700; }
   if (!ok) return false;
-  const r = {x: p.x, y: p.y, members: [], delay: game ? game.t + delay : delay, moving: false, armed: Math.random() < RIVAL_ARMED_CHANCE, patrol: Math.random() < 0.7, hunt: false, gunCd: 0, aim: 0};
-  for (let i = 0, n = 2 + Math.floor(Math.random() * 3); i < n; i++) r.members.push({x: r.x + rand(-30, 30), y: r.y + rand(-30, 30), skin: pick(SKINS)});
+  const r = {x: p.x, y: p.y, members: [], delay: game ? game.t + delay : delay, moving: false, armed: RNG() < RIVAL_ARMED_CHANCE, patrol: RNG() < 0.7, hunt: false, gunCd: 0, aim: 0};
+  for (let i = 0, n = 2 + Math.floor(RNG() * 3); i < n; i++) r.members.push({x: r.x + rand(-30, 30), y: r.y + rand(-30, 30), skin: pick(SKINS)});
   rivals.push(r); return true;
 }
-function spawnRival(){ return mkRival(Math.floor(Math.random() * 4), 30); }
+function spawnRival(){ return mkRival(Math.floor(RNG() * 4), 30); }
 function clearShot(a, b){   // no building between the two points
   const n = Math.ceil(dist(a, b) / 16);
   for (let i = 1; i < n; i++){

@@ -194,7 +194,11 @@ function end(won, info){
   const nxt = RANKS.find(r => r.min > score);
   const nextText = nxt ? ['NEXT: ' + nxt.bn, loc((nxt.min - score)) + ' pts'] : ['NEXT RANK', 'Maxed'];
   let best = 0, newBest = false; try { best = +localStorage.getItem('da_best') || 0; if (score > best){ newBest = best > 0; localStorage.setItem('da_best', String(score)); best = score; } } catch (e) {}
-  const mkInfo = () => ({name: playerName, skin: player.skin, station: info.station, timeout: !!info.timeout, score, rankBn: rank.bn, tagBn, tagDesc: tr(tag.desc), peak: st.peak, rings: st.rings, day: game.day, best, newBest,
+  const dl = game.daily; let dailyStreak = 0;   // a daily challenge run: remember the best score and keep the streak
+  if (dl){ const ds = dailyLocal(); ds.best[dl.role] = Math.max(ds.best[dl.role] || 0, score); dailySave(ds); dailyStreak = bumpStreak(); }
+  const dLeft = dl ? attemptsLeft(dl.role) : 0;
+  const dChip = () => dl ? '<p class="dailychip">★ ' + tr('Daily Challenge') + ' · ' + dayLabel() + (dailyStreak > 1 ? ' · ' + tr('🔥 {n}-day streak', {n: dailyStreak}) : '') + '</p>' : '';
+  const mkInfo = () => ({dayText: dl ? tr('Andolon Daily · {d}', {d: dayLabel()}) : undefined, name: playerName, skin: player.skin, station: info.station, timeout: !!info.timeout, score, rankBn: rank.bn, tagBn, tagDesc: tr(tag.desc), peak: st.peak, rings: st.rings, day: game.day, best, newBest,
     nextText: nxt ? [tr('NEXT: {n}', {n: nxt.bn}), tr('{n} pts', {n: loc(nxt.min - score)})] : [tr('NEXT RANK'), tr('Maxed')]});
   let canvas;
   const build = () => renderCard(won ? 'win' : 'lose', Object.assign({photo: playerPhoto}, mkInfo()));
@@ -206,14 +210,14 @@ function end(won, info){
     else if (outcome === 'timeout') head = '<h1>' + tr('Day {n} <span>is over</span>', {n: MAX_DAY}) + '</h1><p>' + tr('You are a <b>{t}</b>. {d}', {t: tagBn, d: tr(tag.desc)}) + '</p>';
     else if (info.aynaghor) head = '<h1>' + tr('Taken to <span>Aynaghor</span>') + '</h1><p>' + tr('The police van took you to Aynaghor. The game is over.') + '</p>';
     else head = '<h1>' + tr('Detained at <span>{s}</span>', {s: tr(info.station)}) + '</h1><p>' + tr('You were caught by the police and taken by van. The game is over.') + '</p>';
-    box.innerHTML = '<button id="langbtn" class="langbtn" type="button">' + (isBn() ? 'English' : 'বাংলা') + '</button>' + head + '<img id="cardimg" alt="Photo card" src="' + canvas.toDataURL('image/png') + '">' +
+    box.innerHTML = '<button id="langbtn" class="langbtn" type="button">' + (isBn() ? 'English' : 'বাংলা') + '</button>' + dChip() + head + '<img id="cardimg" alt="Photo card" src="' + canvas.toDataURL('image/png') + '">' +
       '<label>' + tr('Put your own photo on the card (optional)') + '<input id="photo2" type="file" accept="image/*"></label>' +
-      '<button id="share">' + tr('Share card') + '</button><button id="dl" class="alt">' + tr(IS_TOUCH ? 'Save to Photos' : 'Download') + '</button><button id="go">' + tr('March again') + '</button>' +
+      '<button id="share">' + tr('Share card') + '</button><button id="dl" class="alt">' + tr(IS_TOUCH ? 'Save to Photos' : 'Download') + '</button><button id="go">' + tr(dLeft > 0 ? 'Try again ({n} left)' : 'March again', {n: dLeft}) + '</button>' +
       (IS_TOUCH ? '<small>' + tr('Tip: tap Save to Photos, or press and hold the card, to keep it in your Gallery.') + '</small><br>' : '') +
       (playerPhoto ? '<button id="nophoto" class="alt">' + tr('Use default avatar') + '</button>' : '') +
       supportHTML() + '<a href="#" class="aboutlink">' + tr('About &amp; Disclaimer') + '</a><br>' +
       '<small>' + tr('Your photo stays on your device. It is only drawn onto this card. Fictional game; characters and events are not real people or incidents.') + '</small>';
-    const text = won ? tr('I held the Central Shaheed Minar in Andolon! {r}, {s} pts.', {r: isBn() ? rank.bn : rank.en, s: loc(score)})
+    const text = dl ? tr('Andolon Daily Challenge {d}: {s} pts. Can you beat me?', {d: dayLabel(), s: loc(score)}) : won ? tr('I held the Central Shaheed Minar in Andolon! {r}, {s} pts.', {r: isBn() ? rank.bn : rank.en, s: loc(score)})
       : outcome === 'timeout' ? tr('Andolon called me "{t}". Can you do better?', {t: tagBn})
       : tr('I was detained at {st} in Andolon. {s} pts.', {st: tr(info.station), s: loc(score)});
     const refresh = () => { canvas = build(); document.getElementById('cardimg').src = canvas.toDataURL('image/png'); const b = document.getElementById('nophoto'); if (!b && playerPhoto){ const n = document.createElement('button'); n.id = 'nophoto'; n.className = 'alt'; n.textContent = tr('Use default avatar'); n.onclick = () => { playerPhoto = null; n.remove(); refresh(); }; document.getElementById('go').after(n); } };
@@ -221,10 +225,10 @@ function end(won, info){
     const np = document.getElementById('nophoto'); if (np) np.onclick = () => { playerPhoto = null; np.remove(); refresh(); };
     document.getElementById('share').onclick = () => shareCard(canvas, text);
     document.getElementById('dl').onclick = () => downloadCard(canvas);
-    document.getElementById('go').onclick = start;
+    document.getElementById('go').onclick = dLeft > 0 ? startDaily : start;
     document.getElementById('langbtn').onclick = () => { setLang(isBn() ? 'en' : 'bn'); show(); };
     addSwitch();
-    addLeaderboard('protester', {score, rank: rank.en, stat: st.peak, day: game.day});
+    addLeaderboard('protester', {score, rank: rank.en, stat: st.peak, day: game.day}, dl ? {streak: dailyStreak} : undefined);
   };
   show();
   document.getElementById('menu').style.display = 'flex';
