@@ -59,7 +59,7 @@ async function topDaily(r){
   return {uid, rows: s.docs.map(d => d.data())};
 }
 
-// ---------- nicknames: unique, and changeable once every 7 days (enforced by firestore.rules) ----------
+// ---------- nicknames: unique (enforced by firestore.rules) ----------
 const NAME_RE = /^[\p{L}\p{M}\p{N}_.-]([\p{L}\p{M}\p{N} _.-]{0,22}[\p{L}\p{M}\p{N}_.-])?$/u;
 const RESERVED_NAMES = ['protester', 'officer', 'admin', 'administrator', 'andolon', 'আন্দোলন', 'আন্দোলনকারী', 'অফিসার'];
 const cleanName = n => String(n || '').replace(/\s+/g, ' ').trim();
@@ -77,8 +77,6 @@ async function registerName(raw, division){
       if (cur.division !== division) await fs.updateDoc(pref, {division});
       return cur.name;
     }
-    const wait = cur.nameChangedAt.toMillis() + 7 * 864e5 - Date.now();
-    if (wait > 0) throw {code: 'wait', days: Math.ceil(wait / 864e5)};
   }
   const key = name.toLowerCase(), taken = await fs.getDoc(fs.doc(db, 'names', key));
   if (taken.exists() && taken.data().uid !== uid) throw {code: 'taken'};
@@ -92,7 +90,6 @@ async function registerName(raw, division){
   return name;
 }
 const nameErrText = er => er && er.code === 'invalid' ? tr(er.msg) : er && er.code === 'taken' ? tr('That nickname is already taken. Please pick another.')
-  : er && er.code === 'wait' ? tr('You can change your nickname again in {n} days.', {n: er.days})
   : er && er.code === 'permission-denied' ? tr('Could not save that nickname. It may be taken or reserved. Please try another.')
   : tr('Could not submit. Check your connection and try again.');
 
@@ -204,7 +201,7 @@ function openLeaderboard(startRole, startToday){
 function addLeaderboard(r, e, daily){
   const go = document.getElementById('go'); if (!go || !LB_ON) return;
   const w = document.createElement('div'); w.className = 'lbsubmit';
-  w.innerHTML = '<label>' + tr('Nickname') + '<input id="lbname" maxlength="24" value="' + escH(['Protester', 'Officer'].indexOf(lbName()) >= 0 ? '' : lbName()) + '" placeholder="' + escH(tr('Choose a nickname')) + '"></label><small>' + tr('Shown on the leaderboard. You can change it once every 7 days.') + '</small><label>' + tr('Division') + '<select id="lbsel">' + divOptions(getDivision()) + '</select></label>' +
+  w.innerHTML = '<label>' + tr('Nickname') + '<input id="lbname" maxlength="24" value="' + escH(['Protester', 'Officer'].indexOf(lbName()) >= 0 ? '' : lbName()) + '" placeholder="' + escH(tr('Choose a nickname')) + '"></label><small>' + tr('Shown on the leaderboard.') + '</small><label>' + tr('Division') + '<select id="lbsel">' + divOptions(getDivision()) + '</select></label>' +
     '<button type="button" id="lbsend">' + tr(daily ? "Submit to today's board" : 'Submit score to leaderboard') + '</button><button type="button" id="lbview" class="alt">' + tr('View leaderboard') + '</button><small id="lbstat">' + tr('Submits your name, division and score. Your photo is never uploaded.') + '</small>';
   w.appendChild(accountRow()); go.before(w);
   const st = w.querySelector('#lbstat'), send = w.querySelector('#lbsend'), sel = w.querySelector('#lbsel'), nick = w.querySelector('#lbname');
