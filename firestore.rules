@@ -69,7 +69,7 @@ service cloud.firestore {
       allow update: if request.auth != null && statsDoc(doc) && statsKeys()
         && bump('players') && bump('games') && bump('games_protester') && bump('games_police') && bump('challenges') && bump('lang_bn') && bump('lang_en') && bump('dev_touch') && bump('dev_desktop') && bump('daily_start') && bump('ret_d1') && bump('ret_d7') && bump('fin_p') && bump('fin_c') && bump('win_p') && bump('win_c') && bump('end_detained') && bump('end_timeout') && bump('pend_held') && bump('pend_anger') && bump('ring0') && bump('ring1') && bump('ring2') && bump('ring3') && bump('daily_fin') && bump('challenge_wins') && bump('share_card') && bump('share_challenge') && bump('tut_done') && bump('tut_skip') && bump('lb_submits') && bump('daily_submits') && bump('google_links') && bump('profile_opens');
     }
-    // one record per signed-in user: the nickname (changeable once every 7 days) and division
+    // one record per signed-in user: the nickname and division
     match /players/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
       allow create: if request.auth != null && request.auth.uid == uid
@@ -83,9 +83,8 @@ service cloud.firestore {
         && (
           // only the division changed
           (request.resource.data.name == resource.data.name && request.resource.data.nameChangedAt == resource.data.nameChangedAt)
-          // new nickname: at most once every 7 days, the new name must be claimed and the old one released in the same write
+          // new nickname: the new name must be claimed and the old one released in the same write
           || (request.resource.data.nameChangedAt == request.time
-              && request.time >= resource.data.nameChangedAt + duration.value(7, 'd')
               && getAfter(nameDoc(request.resource.data.name)).data.uid == uid
               && !existsAfter(nameDoc(resource.data.name)))
         );

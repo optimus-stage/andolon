@@ -20,7 +20,7 @@ Each time someone starts a game, the page adds 1 to `stats/global` in Firestore:
 
 ## Nicknames and accounts
 
-- `players/{uid}`: the player's nickname, division and when the nickname last changed (only the owner can read it). A nickname can be changed once every 7 days.
+- `players/{uid}`: the player's nickname, division and when the nickname last changed (only the owner can read it). A nickname can be changed at any time, as long as the new one is not taken.
 - `names/{lower-case nickname}`: claims a nickname so two players can never share one. Claiming, releasing and the player record are written together, and `firestore.rules` rejects any attempt to hold a nickname without owning it.
 - Leaderboard entries must carry the owner's registered nickname.
 - Optional Google sign-in links the anonymous account to a Google account (same user id), so the record follows the player to other devices. If that Google account already has a record, the game switches to it.
