@@ -74,6 +74,7 @@ const achHTML = list => list.length ? '<div class="achnew"><b>🏅 ' + tr(list.l
   list.map(a => '<div>' + a.icon + ' <b>' + escH(tr(a.name)) + '</b><small>' + escH(tr(a.desc)) + '</small></div>').join('') + '</div>' : '';
 
 function openProfile(){
+  if (typeof trackEvent === 'function') trackEvent('profile_opens');
   const n = profile.n, o = document.createElement('div'); o.id = 'lb'; o.className = 'profile';
   const rankP = n.bestP > 0 ? rankFor(n.bestP) : null, rankC = n.bestPol > 0 ? PRANKS.reduce((b, r) => n.bestPol >= r.min ? r : b, PRANKS[0]) : null;
   const div = typeof getDivision === 'function' ? getDivision() : '';

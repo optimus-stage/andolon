@@ -216,6 +216,7 @@ function endPolice(won, why){
   const dChip = () => dl ? '<p class="dailychip">★ ' + tr('Daily Challenge') + ' · ' + dayLabel() + (dailyStreak > 1 ? ' · ' + tr('🔥 {n}-day streak', {n: dailyStreak}) : '') + '</p>' : '';
   const seed = game.seed, ch = game.challenge, chRes = ch ? challengeResult(ch, score) : null, runTwist = TWIST;   // a run can be shared as a challenge
   const newAch = recordRun({role: 'police', won, outcome: won ? 'win' : why, score, dispersed: st.dispersed, squadPeak: st.squadPeak, smokes: st.smokes, anger: game.anger, secs: Math.round(game.t), daily: !!dl, streak: dailyStreak, challenge: !!ch, challengeWon: !!(chRes && chRes.win)});
+  if (typeof trackEnd === 'function') trackEnd({role: 'police', won, why, daily: !!dl, challengeWon: !!(chRes && chRes.win)});
   const mkInfo = () => ({role: 'police', tier: rank, name: playerName, skin: player.skin, score, rankBn: rank.bn, tagBn: tag.bn, tagDesc: tr(tag.desc), day: game.day, best, newBest,
     nextText: nxt ? [tr('NEXT: {n}', {n: isBn() ? tr(nxt.metal) : nxt.metal.toUpperCase()}), tr('{n} pts', {n: loc(nxt.min - score)})] : [tr('NEXT RANK'), tr('Maxed')],
     stampLabel: tr(won ? 'ORDER HELD' : why === 'anger' ? 'STOOD DOWN' : 'LINE BROKEN'), stampSub: tr(won ? 'SQUARE SECURED' : why === 'anger' ? 'TOO MUCH FORCE' : 'MINAR HELD'),

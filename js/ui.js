@@ -107,6 +107,7 @@ function renderCard(kind, info){
 const cardBlob = canvas => new Promise(r => canvas.toBlob(r, 'image/png'));
 // On phones the share sheet is the way into the gallery ("Save Image" / "Save to Photos"); a plain download goes to Files on iPhone.
 async function shareCard(canvas, text, saveMode){
+  if (typeof trackEvent === 'function') trackEvent('share_card');
   const blob = await cardBlob(canvas);
   const file = new File([blob], 'andolon.png', {type: 'image/png'});
   if (navigator.canShare && navigator.canShare({files: [file]})){
@@ -200,6 +201,7 @@ function end(won, info){
   const dChip = () => dl ? '<p class="dailychip">★ ' + tr('Daily Challenge') + ' · ' + dayLabel() + (dailyStreak > 1 ? ' · ' + tr('🔥 {n}-day streak', {n: dailyStreak}) : '') + '</p>' : '';
   const seed = game.seed, ch = game.challenge, chRes = ch ? challengeResult(ch, score) : null, runTwist = TWIST;   // a run can be shared as a challenge
   const newAch = recordRun({role: 'protester', won, outcome, score, peak: st.peak, rings: st.rings, beaten: st.beaten, cures: st.cures, teas: st.teas, clashWins: st.clashWins, recruits: st.recruits, breaks: st.breaks || 0, secs: Math.round(game.t), daily: !!dl, streak: dailyStreak, challenge: !!ch, challengeWon: !!(chRes && chRes.win)});
+  if (typeof trackEnd === 'function') trackEnd({role: 'protester', won, outcome, rings: st.rings, daily: !!dl, challengeWon: !!(chRes && chRes.win)});
   const mkInfo = () => ({dayText: dl ? tr('Andolon Daily · {d}', {d: dayLabel()}) : undefined, name: playerName, skin: player.skin, station: info.station, timeout: !!info.timeout, score, rankBn: rank.bn, tagBn, tagDesc: tr(tag.desc), peak: st.peak, rings: st.rings, day: game.day, best, newBest,
     nextText: nxt ? [tr('NEXT: {n}', {n: nxt.bn}), tr('{n} pts', {n: loc(nxt.min - score)})] : [tr('NEXT RANK'), tr('Maxed')]});
   let canvas;

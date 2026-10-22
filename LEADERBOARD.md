@@ -48,3 +48,18 @@ Each time someone starts a game, the page adds 1 to `stats/global` in Firestore:
 - A friend opening it sees a banner, accepts, and plays the same map and starting crowds as the sharer (the same seed; what happens after the start depends on how each person plays). The end screen then says whether they beat the score, with "Try the challenge again" and "Challenge a friend" to send one back.
 - Links are validated (integer seed and score in range, known side, name stripped of control characters and `<>`, shown as plain text), and ignored if malformed.
 - `stats/global` gets a `challenges` counter: games started from a challenge link, to measure how well sharing works. Republish `firestore.rules` after pulling this update.
+
+## Analytics counters
+
+Totals only (no names, ids or per-player history), written to `stats/global` and to one document per Bangladesh day (`stats/d20261022`) in small batches (`statsAdd` in `js/leaderboard.js`). Only the owner can read them: the rules allow reading `stats` only for the verified Google account `bizwithsabbir@gmail.com` (everyone can still add to the counters). Read them on **`/stats.html`** after signing in with that account (a live page with finish rate, win rate, where protesters' games end, barricade rings passed, return rate, shares, language and device split, and the last 14 days) or in the Firebase console under Firestore > stats.
+
+| Group | Counters |
+|---|---|
+| Start | `games`, `games_protester`, `games_police`, `players` (new devices), `lang_bn`, `lang_en`, `dev_touch`, `dev_desktop`, `daily_start`, `challenges` |
+| Returning | `ret_d1` (a device back on a later day), `ret_d7` (back a week or more later), each counted once per device |
+| End | `fin_p`, `fin_c`, `win_p`, `win_c`, `end_timeout`, `end_detained`, `pend_held`, `pend_anger`, `ring0` to `ring3` (barricade rings a protester had passed when the game ended), `daily_fin`, `challenge_wins` |
+| Features | `share_card`, `share_challenge`, `tut_done`, `tut_skip`, `lb_submits`, `daily_submits`, `google_links`, `profile_opens` |
+
+- The rules accept only `stats/global` and today's day document, only these keys, and only increases of 1 to 5 per write. Republish `firestore.rules` after pulling this update.
+- Numbers count devices and browsers, not people. A single hot document handles roughly one write per second, which is plenty for now; if the game gets very popular, switch the counters to sharded documents.
+- To add a counter: add the key to the lists in `firestore.rules`, call `trackEvent('key')` (or add it to `trackStart` / `trackEnd`), and show it in `stats.html`.

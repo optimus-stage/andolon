@@ -128,6 +128,7 @@ async function googleLink(){
     } else throw e;
   }
   try { localStorage.setItem('da_google', '1'); } catch (e) {}
+  trackEvent('google_links');
   await loadProfile();
   return how;
 }
@@ -219,7 +220,7 @@ function addLeaderboard(r, e, daily){
       if (daily){ await submitScore(r, name, sel.value, e); res = await submitDaily(r, name, sel.value, e, daily.streak); }   // a daily run also counts for the all-time board
       else res = await submitScore(r, name, sel.value, e);
       st.textContent = tr(daily ? "You are #{n} of {m} on today's board (your best today: {b})." : 'You are #{n} of {m} on the board (your best: {b}).', {n: res.place, m: res.total, b: loc(res.best)});
-      send.textContent = tr('Submitted ✓');
+      send.textContent = tr('Submitted ✓'); trackEvent(daily ? 'daily_submits' : 'lb_submits');
     } catch (er) { st.textContent = nameErrText(er); send.disabled = false; }
   };
 }
@@ -238,18 +239,46 @@ function addLeaderboard(r, e, daily){
   try { if (localStorage.getItem('da_google') || localStorage.getItem('da_nick')) loadProfile(); } catch (e) {}   // returning players: restore nickname and division
 })();
 
-// ---------- play counter: stats/global holds players (new devices), games (every start), games_protester, games_police ----------
-// Nothing personal is stored. View the numbers in the Firebase console under Firestore > stats > global.
-async function trackStart(r){
-  const viaChallenge = !!(game && game.challenge);
+// ---------- analytics counters: totals only, no personal data ----------
+// stats/global and stats/d<YYYYMMDD> (Bangladesh day) hold plain numbers: games started and finished, wins, where runs end, shares, returning players...
+// View them with stats.html or in the Firebase console under Firestore > stats. Counting must never get in the way of playing.
+async function statsAdd(obj){
   if (!LB_ON) return;
   try {
-    const first = !localStorage.getItem('da_counted');
-    const {fs, db} = await fbInit(), inc = {games: fs.increment(1)};
-    inc[r === 'police' ? 'games_police' : 'games_protester'] = fs.increment(1);
-    if (first) inc.players = fs.increment(1);
-    if (viaChallenge) inc.challenges = fs.increment(1);   // games started from a "Beat my score" link
-    await fs.setDoc(fs.doc(db, 'stats', 'global'), inc, {merge: true});
-    if (first) localStorage.setItem('da_counted', '1');
-  } catch (e) {}   // counting must never get in the way of playing
+    const {fs, db} = await fbInit(), inc = {};
+    for (const k in obj) if (obj[k] > 0) inc[k] = fs.increment(Math.min(5, obj[k]));
+    if (!Object.keys(inc).length) return;
+    const w = fs.writeBatch(db);
+    w.set(fs.doc(db, 'stats', 'global'), inc, {merge: true});
+    w.set(fs.doc(db, 'stats', dayKey()), inc, {merge: true});
+    await w.commit();
+  } catch (e) {}
+}
+const trackEvent = k => { const o = {}; o[k] = 1; return statsAdd(o); };
+function trackStart(r){
+  if (!LB_ON) return;
+  const o = {games: 1}; o[r === 'police' ? 'games_police' : 'games_protester'] = 1;
+  o[isBn() ? 'lang_bn' : 'lang_en'] = 1; o[IS_TOUCH ? 'dev_touch' : 'dev_desktop'] = 1;
+  if (game && game.challenge) o.challenges = 1;   // started from a "Beat my score" link
+  if (game && game.daily) o.daily_start = 1;
+  try {
+    if (!localStorage.getItem('da_counted')){ o.players = 1; localStorage.setItem('da_counted', '1'); }
+    // returning players: back on a later day (once per device), and back a week or more later (once per device)
+    const today = dayKey(); let first = localStorage.getItem('da_first');
+    if (!first){ first = today; localStorage.setItem('da_first', first); }
+    const days = Math.round((Date.UTC(+today.slice(1, 5), +today.slice(5, 7) - 1, +today.slice(7)) - Date.UTC(+first.slice(1, 5), +first.slice(5, 7) - 1, +first.slice(7))) / 864e5);
+    if (days >= 1 && !localStorage.getItem('da_r1')){ o.ret_d1 = 1; localStorage.setItem('da_r1', '1'); }
+    if (days >= 7 && !localStorage.getItem('da_r7')){ o.ret_d7 = 1; localStorage.setItem('da_r7', '1'); }
+  } catch (e) {}
+  return statsAdd(o);
+}
+// a finished game: how it ended, and how far a protester got (barricade rings passed), which shows where players give up
+function trackEnd(x){
+  if (!LB_ON) return;
+  const o = {};
+  if (x.role === 'police'){ o.fin_c = 1; if (x.won) o.win_c = 1; else o[x.why === 'anger' ? 'pend_anger' : 'pend_held'] = 1; }
+  else { o.fin_p = 1; if (x.won) o.win_p = 1; else o[x.outcome === 'detained' ? 'end_detained' : 'end_timeout'] = 1; o['ring' + Math.max(0, Math.min(3, x.rings || 0))] = 1; }
+  if (x.daily) o.daily_fin = 1;
+  if (x.challengeWon) o.challenge_wins = 1;
+  return statsAdd(o);
 }

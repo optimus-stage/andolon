@@ -24,6 +24,7 @@ function startChallenge(){
   start(true);
 }
 async function shareChallenge(o){
+  if (typeof trackEvent === 'function') trackEvent('share_challenge');
   const url = challengeLink(o), text = tr('I scored {s} as {r} in Andolon. Beat my score!', {s: loc(o.score), r: tr(o.role === 'police' ? 'Police' : 'Andolonkari')});
   if (navigator.share){ try { await navigator.share({title: 'Andolon', text, url}); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
   try { await navigator.clipboard.writeText(text + ' ' + url); toast(tr('Link copied. Paste it in a chat to challenge a friend.')); }

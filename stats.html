@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Andolon: Stats</title>
+<style>
+body{margin:0;background:#f6f1e3;color:#222;font:15px/1.5 system-ui,"Nirmala UI","Noto Sans Bengali",sans-serif}
+main{max-width:860px;margin:0 auto;padding:20px 16px 48px}
+h1{color:#0b6b3a;font-size:26px;margin:0 0 2px} h2{color:#0b6b3a;font-size:18px;margin:26px 0 8px}
+small,.note{color:#666;font-size:13px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.card{background:#fff;border-radius:10px;padding:10px 12px}
+.card b{display:block;font-size:24px;color:#0b6b3a} .card span{font-size:12px;color:#555}
+.bars div{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:13px}
+.bars label{width:190px;flex:none;color:#444} .bars i{display:block;height:14px;background:#0b6b3a;border-radius:3px;min-width:2px}
+.bars em{font-style:normal;color:#555;white-space:nowrap}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;font-size:13px}
+th,td{padding:6px 8px;text-align:right;border-bottom:1px solid #eee} th:first-child,td:first-child{text-align:left} th{background:#e4efe6;color:#1d3a27}
+#msg{margin:16px 0;color:#a32d2d}
+@media (max-width:560px){.bars label{width:120px}}
+</style>
+</head>
+<body><main>
+<h1>Andolon: Stats</h1>
+<small>Private: only the owner's Google account can read this. Totals only, no personal data. Numbers count browsers/devices, not people.</small>
+<div id="msg">Loading...</div>
+<div id="out" hidden>
+  <h2>Players and play</h2><div class="cards" id="cards"></div>
+  <h2>Where protesters' games end</h2><div class="bars" id="ends"></div>
+  <h2>How far protesters get (barricade rings passed)</h2><div class="bars" id="rings"></div>
+  <small class="note">A big drop after "0 rings" means many players quit at the first barricade, so that is where to tune the game or the tutorial.</small>
+  <h2>Police games</h2><div class="bars" id="police"></div>
+  <h2>Sharing and features</h2><div class="cards" id="feat"></div>
+  <h2>Who is playing</h2><div class="bars" id="who"></div>
+  <h2>Last 14 days</h2><div style="overflow-x:auto"><table id="days"></table></div>
+</div>
+</main>
+<script src="js/firebase-config.js"></script>
+<script type="module">
+// Private: the Firestore rules let only the owner's verified Google account read the stats. This page uses its own Firebase app instance,
+// so signing in here never changes the player identity the game itself uses in this browser.
+const OWNER = 'bizwithsabbir@gmail.com';
+const msg = document.getElementById('msg'), out = document.getElementById('out');
+if (!FIREBASE_CONFIG.apiKey){ msg.textContent = 'Firebase is not configured.'; }
+else {
+  const base = 'https://www.gstatic.com/firebasejs/10.12.2/';
+  const [app, auth, fs] = await Promise.all([import(base + 'firebase-app.js'), import(base + 'firebase-auth.js'), import(base + 'firebase-firestore.js')]);
+  const a = app.initializeApp(FIREBASE_CONFIG, 'stats'), au = auth.getAuth(a), db = fs.getFirestore(a);
+  const signIn = async () => { try { await auth.signInWithPopup(au, new auth.GoogleAuthProvider()); } catch (e) { msg.textContent = 'Sign-in did not finish. ' + (e && e.code || ''); } };
+  const showLogin = text => {
+    out.hidden = true; msg.hidden = false; msg.style.color = '#444';
+    msg.innerHTML = text + '<br><button id="si" style="margin-top:10px;padding:10px 18px;font-size:15px;border:0;border-radius:8px;background:#0b6b3a;color:#fff;cursor:pointer">Sign in with Google</button>';
+    document.getElementById('si').onclick = signIn;
+  };
+  auth.onAuthStateChanged(au, async user => {
+    if (!user) return showLogin('This page is private. Sign in with the owner Google account to see the stats.');
+    if (user.email !== OWNER){
+      msg.hidden = false; msg.style.color = '#a32d2d'; out.hidden = true;
+      msg.innerHTML = 'This page is private, and ' + (user.email || 'this account').replace(/[<>&]/g, '') + ' is not the owner account.<br><button id="so" style="margin-top:10px;padding:10px 18px;font-size:15px;border:0;border-radius:8px;background:#333;color:#fff;cursor:pointer">Sign out</button>';
+      document.getElementById('so').onclick = () => auth.signOut(au);
+      return;
+    }
+    msg.hidden = false; msg.style.color = '#666'; msg.textContent = 'Loading...';
+    try { await render(fs, db); msg.hidden = true; out.hidden = false; }
+    catch (e) { msg.style.color = '#a32d2d'; msg.textContent = 'Could not load the stats. ' + (e && e.message || ''); }
+  });
+}
+async function render(fs, db){
+  const keyOf = d => 'd' + d.getUTCFullYear() + String(d.getUTCMonth() + 1).padStart(2, '0') + String(d.getUTCDate()).padStart(2, '0');
+  const bd = new Date(Date.now() + 6 * 36e5), keys = [];
+  for (let i = 0; i < 14; i++) keys.push(keyOf(new Date(bd.getTime() - i * 864e5)));
+  const get = async id => { const s = await fs.getDoc(fs.doc(db, 'stats', id)); return s.exists() ? s.data() : {}; };
+  const [g, ...days] = await Promise.all([get('global'), ...keys.map(get)]);
+  const n = k => g[k] || 0, pct = (a, b) => b ? Math.round(a * 100 / b) + '%' : '-', f = v => v.toLocaleString('en-US');
+  const card = (v, l) => '<div class="card"><b>' + v + '</b><span>' + l + '</span></div>';
+  const bar = (l, v, tot) => '<div><label>' + l + '</label><i style="width:' + (tot ? Math.max(1, Math.round(v * 100 / tot)) * 3 : 2) + 'px"></i><em>' + f(v) + (tot ? ' (' + pct(v, tot) + ')' : '') + '</em></div>';
+  const fin = n('fin_p') + n('fin_c'), wins = n('win_p') + n('win_c');
+  document.getElementById('cards').innerHTML = [
+    card(f(n('players')), 'devices that played'), card(f(n('games')), 'games started'), card(f(fin), 'games finished'), card(pct(fin, n('games')), 'finish rate'),
+    card(pct(wins, fin), 'win rate'), card(pct(n('ret_d1'), n('players')), 'came back on a later day'), card(pct(n('ret_d7'), n('players')), 'back after a week or more'),
+    card(f(n('daily_start')), 'daily challenges started'), card(pct(n('daily_fin'), n('daily_start')), 'daily finish rate')].join('');
+  const fp = n('fin_p');
+  document.getElementById('ends').innerHTML = bar('Won (held the Minar)', n('win_p'), fp) + bar('Time ran out', n('end_timeout'), fp) + bar('Detained', n('end_detained'), fp);
+  document.getElementById('rings').innerHTML = [0, 1, 2, 3].map(i => bar(i + (i === 1 ? ' ring' : ' rings'), n('ring' + i), fp)).join('');
+  const fc = n('fin_c');
+  document.getElementById('police').innerHTML = bar('Won (order restored)', n('win_c'), fc) + bar('Minar was held', n('pend_held'), fc) + bar('Public anger too high', n('pend_anger'), fc);
+  document.getElementById('feat').innerHTML = [
+    card(f(n('share_card')), 'card shares tapped'), card(f(n('share_challenge')), 'challenge links sent'), card(f(n('challenges')), 'games from challenge links'), card(f(n('challenge_wins')), 'challenges beaten'),
+    card(pct(n('share_card') + n('share_challenge'), fin), 'shares per finished game'), card(f(n('tut_done')) + ' / ' + f(n('tut_skip')), 'tutorial finished / skipped'),
+    card(f(n('lb_submits') + n('daily_submits')), 'scores submitted'), card(f(n('google_links')), 'Google sign-ins'), card(f(n('profile_opens')), 'profile views')].join('');
+  const lang = n('lang_bn') + n('lang_en'), dev = n('dev_touch') + n('dev_desktop'), side = n('games_protester') + n('games_police');
+  document.getElementById('who').innerHTML = bar('Bangla', n('lang_bn'), lang) + bar('English', n('lang_en'), lang) + bar('Phone / touch', n('dev_touch'), dev) + bar('Computer', n('dev_desktop'), dev) +
+    bar('Played as Andolonkari', n('games_protester'), side) + bar('Played as Police', n('games_police'), side);
+  document.getElementById('days').innerHTML = '<tr><th>Day</th><th>New</th><th>Started</th><th>Finished</th><th>Wins</th><th>Daily</th><th>Shares</th></tr>' +
+    keys.map((k, i) => { const d = days[i], x = q => d[q] || 0; return '<tr><td>' + k.slice(7) + '/' + k.slice(5, 7) + '</td><td>' + f(x('players')) + '</td><td>' + f(x('games')) + '</td><td>' + f(x('fin_p') + x('fin_c')) + '</td><td>' + f(x('win_p') + x('win_c')) + '</td><td>' + f(x('daily_start')) + '</td><td>' + f(x('share_card') + x('share_challenge')) + '</td></tr>'; }).join('');
+}
+</script>
+</body>
+</html>
