@@ -17,20 +17,21 @@ function tutorialSteps(r){
 const tutSeen = r => { try { return !!localStorage.getItem('da_tut_' + r); } catch (e) { return false; } };
 function showTutorial(r, done){
   const steps = tutorialSteps(r), box = document.getElementById('tut'); let i = 0;
-  const finish = () => {
+  const finish = skipped => {
+    if (typeof trackEvent === 'function') trackEvent(skipped === true ? 'tut_skip' : 'tut_done');
     box.classList.remove('open'); document.removeEventListener('keydown', onKey);
     try { localStorage.setItem('da_tut_' + r, '1'); } catch (e) {}
     if (done) done();
   };
-  const onKey = e => { if (e.key === 'Escape') finish(); };
+  const onKey = e => { if (e.key === 'Escape') finish(true); };
   const render = () => {
     const s = steps[i], last = i === steps.length - 1;
     box.innerHTML = '<div class="tutcard ' + r + '"><div class="tuticon">' + s.icon + '</div><h2>' + s.title + '</h2><p>' + s.text + '</p>' +
       '<div class="tutdots">' + steps.map((_, k) => '<span' + (k === i ? ' class="on"' : '') + '></span>').join('') + '</div>' +
       '<button id="tutnext" type="button">' + tr(last ? (done ? "Let's go" : 'Got it') : 'Next') + '</button>' +
       (last ? '' : '<button id="tutskip" class="alt" type="button">' + tr('Skip') + '</button>') + '</div>';
-    document.getElementById('tutnext').onclick = () => { if (last) finish(); else { i++; render(); } };
-    const sk = document.getElementById('tutskip'); if (sk) sk.onclick = finish;
+    document.getElementById('tutnext').onclick = () => { if (last) finish(false); else { i++; render(); } };
+    const sk = document.getElementById('tutskip'); if (sk) sk.onclick = () => finish(true);
   };
   document.addEventListener('keydown', onKey);
   box.classList.add('open'); render();

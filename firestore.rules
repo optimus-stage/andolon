@@ -51,20 +51,21 @@ service cloud.firestore {
         && d.day is int && d.day >= 0 && d.day <= 1000
         && d.updatedAt == request.time;
     }
-    // play counters: any signed-in visitor may add 1 to a counter, nobody may lower or reset one
+    // analytics counters (totals only, no personal data): stats/global and one document per Bangladesh day (stats/d20261022).
+    // Any signed-in visitor may add 1 to 5 to a counter per write; nobody may lower or reset one.
     function bump(k) {
       return !request.resource.data.diff(resource.data).affectedKeys().hasAny([k])
-        || request.resource.data[k] == resource.data.get(k, 0) + 1;
+        || (request.resource.data[k] - resource.data.get(k, 0) >= 1 && request.resource.data[k] - resource.data.get(k, 0) <= 5);
     }
-    match /stats/global {
+    function first(k) { return request.resource.data.get(k, 1) >= 1 && request.resource.data.get(k, 1) <= 5; }
+    function statsKeys() { return request.resource.data.keys().hasOnly(['players', 'games', 'games_protester', 'games_police', 'challenges', 'lang_bn', 'lang_en', 'dev_touch', 'dev_desktop', 'daily_start', 'ret_d1', 'ret_d7', 'fin_p', 'fin_c', 'win_p', 'win_c', 'end_detained', 'end_timeout', 'pend_held', 'pend_anger', 'ring0', 'ring1', 'ring2', 'ring3', 'daily_fin', 'challenge_wins', 'share_card', 'share_challenge', 'tut_done', 'tut_skip', 'lb_submits', 'daily_submits', 'google_links', 'profile_opens']); }
+    function statsDoc(doc) { return doc == 'global' || doc == dayKey(bdTime()); }
+    match /stats/{doc} {
       allow read: if true;
-      allow create: if request.auth != null
-        && request.resource.data.keys().hasOnly(['players', 'games', 'games_protester', 'games_police', 'challenges'])
-        && request.resource.data.get('players', 1) == 1 && request.resource.data.get('games', 1) == 1
-        && request.resource.data.get('games_protester', 1) == 1 && request.resource.data.get('games_police', 1) == 1 && request.resource.data.get('challenges', 1) == 1;
-      allow update: if request.auth != null
-        && request.resource.data.keys().hasOnly(['players', 'games', 'games_protester', 'games_police', 'challenges'])
-        && bump('players') && bump('games') && bump('games_protester') && bump('games_police') && bump('challenges');
+      allow create: if request.auth != null && statsDoc(doc) && statsKeys()
+        && first('players') && first('games') && first('games_protester') && first('games_police') && first('challenges') && first('lang_bn') && first('lang_en') && first('dev_touch') && first('dev_desktop') && first('daily_start') && first('ret_d1') && first('ret_d7') && first('fin_p') && first('fin_c') && first('win_p') && first('win_c') && first('end_detained') && first('end_timeout') && first('pend_held') && first('pend_anger') && first('ring0') && first('ring1') && first('ring2') && first('ring3') && first('daily_fin') && first('challenge_wins') && first('share_card') && first('share_challenge') && first('tut_done') && first('tut_skip') && first('lb_submits') && first('daily_submits') && first('google_links') && first('profile_opens');
+      allow update: if request.auth != null && statsDoc(doc) && statsKeys()
+        && bump('players') && bump('games') && bump('games_protester') && bump('games_police') && bump('challenges') && bump('lang_bn') && bump('lang_en') && bump('dev_touch') && bump('dev_desktop') && bump('daily_start') && bump('ret_d1') && bump('ret_d7') && bump('fin_p') && bump('fin_c') && bump('win_p') && bump('win_c') && bump('end_detained') && bump('end_timeout') && bump('pend_held') && bump('pend_anger') && bump('ring0') && bump('ring1') && bump('ring2') && bump('ring3') && bump('daily_fin') && bump('challenge_wins') && bump('share_card') && bump('share_challenge') && bump('tut_done') && bump('tut_skip') && bump('lb_submits') && bump('daily_submits') && bump('google_links') && bump('profile_opens');
     }
     // one record per signed-in user: the nickname (changeable once every 7 days) and division
     match /players/{uid} {
