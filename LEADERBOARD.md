@@ -51,7 +51,7 @@ Each time someone starts a game, the page adds 1 to `stats/global` in Firestore:
 
 ## Analytics counters
 
-Totals only (no names, ids or per-player history), written to `stats/global` and to one document per Bangladesh day (`stats/d20261022`) in small batches (`statsAdd` in `js/leaderboard.js`). Only the owner can read them: the rules allow reading `stats` only for the verified Google account `techlearners44@gmail.com` (everyone can still add to the counters). Read them on **`/stats.html`** after signing in with that account (a live page with finish rate, win rate, where protesters' games end, barricade rings passed, return rate, shares, language and device split, and the last 14 days) or in the Firebase console under Firestore > stats.
+Totals only (no names, ids or per-player history), written to `stats/global` and to one document per Bangladesh day (`stats/d20261022`) in small batches (`statsAdd` in `js/leaderboard.js`). Only the owner can read them: the rules allow reading `stats` only for the verified Google account `bizwithsabbir@gmail.com` (everyone can still add to the counters). Read them on **`/stats.html`** after signing in with that account (a live page with finish rate, win rate, where protesters' games end, barricade rings passed, return rate, shares, language and device split, and the last 14 days) or in the Firebase console under Firestore > stats.
 
 | Group | Counters |
 |---|---|

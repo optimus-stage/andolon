@@ -59,7 +59,7 @@ service cloud.firestore {
     }
     function first(k) { return request.resource.data.get(k, 1) >= 1 && request.resource.data.get(k, 1) <= 5; }
     // only the owner's verified Google account may read the analytics; everybody can still add to the counters
-    function isOwner() { return request.auth != null && request.auth.token.email == 'techlearners44@gmail.com' && request.auth.token.email_verified == true; }
+    function isOwner() { return request.auth != null && request.auth.token.email == 'bizwithsabbir@gmail.com' && request.auth.token.email_verified == true; }
     function statsKeys() { return request.resource.data.keys().hasOnly(['players', 'games', 'games_protester', 'games_police', 'challenges', 'lang_bn', 'lang_en', 'dev_touch', 'dev_desktop', 'daily_start', 'ret_d1', 'ret_d7', 'fin_p', 'fin_c', 'win_p', 'win_c', 'end_detained', 'end_timeout', 'pend_held', 'pend_anger', 'ring0', 'ring1', 'ring2', 'ring3', 'daily_fin', 'challenge_wins', 'share_card', 'share_challenge', 'tut_done', 'tut_skip', 'lb_submits', 'daily_submits', 'google_links', 'profile_opens']); }
     function statsDoc(doc) { return doc == 'global' || doc == dayKey(bdTime()); }
     match /stats/{doc} {
