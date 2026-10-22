@@ -241,3 +241,8 @@ button.role small{font-size:12px !important;margin-top:2px !important}
 .avbtns button{margin:0;width:auto;flex:1}
 #avbox small{display:block;margin-top:8px;color:#555}
 .lbav{flex:none;width:64px;height:72px}
+
+/* iPhone: keep pop-ups (and their close buttons) below the status bar / notch and above the home bar */
+#about,#lb,#avedit{box-sizing:border-box;padding:calc(env(safe-area-inset-top) + 14px) env(safe-area-inset-right) calc(env(safe-area-inset-bottom) + 14px) env(safe-area-inset-left)}
+#tut{padding:calc(env(safe-area-inset-top) + 14px) calc(env(safe-area-inset-right) + 12px) calc(env(safe-area-inset-bottom) + 12px) calc(env(safe-area-inset-left) + 12px)}
+#mute{top:calc(10px + env(safe-area-inset-top))}
