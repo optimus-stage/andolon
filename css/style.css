@@ -138,3 +138,37 @@ select{width:100%;box-sizing:border-box;padding:10px;font-size:16px;border:1px s
 body.bn #ticker b{white-space:nowrap}
 body.bn #lblist li::before{content:counter(lb, bengali)}
 #lbreport{display:block;margin-top:14px;text-align:center;font-size:13px;color:#777}
+
+/* compact landing page: everything a bit smaller, safe-area aware, two columns on short landscape phones */
+#menu{box-sizing:border-box;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+#card{max-width:540px;padding:16px 18px 14px;border-radius:12px}
+#card h1{font-size:26px;padding:0 64px}
+#card p,#card li{font-size:15px;line-height:1.4}
+#card label{font-size:14px}
+#card input,#card select{padding:7px 10px;font-size:15px;margin-top:4px}
+#card button{padding:9px 16px;font-size:15px;margin:7px 6px 0 0}
+#card small{font-size:12px;margin-top:8px}
+#card .goal{font-size:15px;padding:8px 12px;margin-top:10px}
+#card details.full summary{font-size:15px;padding:4px 0}
+#card details.full li{font-size:14px}
+button.role{padding:8px 6px !important;font-size:16px !important}
+button.role small{font-size:12px !important;margin-top:2px !important}
+.langbtn{top:10px !important;right:12px !important;padding:5px 12px !important;font-size:13px !important}
+@media (max-width:640px){
+  #card{width:calc(100% - 20px);padding:14px 14px 12px}
+  #card h1{font-size:24px}
+  #card button{padding:11px 14px;font-size:16px;margin:7px 0 0}
+}
+@media (max-height:520px) and (orientation:landscape){
+  #card{max-width:860px;width:calc(100% - 20px);margin:6px auto;padding:8px 16px 8px;columns:2;column-gap:20px}
+  #card>*{break-inside:avoid}
+  #card h1{column-span:all;font-size:22px;padding:4px 64px 2px;line-height:1.25}
+  #card p,#card li{font-size:14px}
+  #card .intro{margin:4px 0 0}
+  #roles{margin:8px 0 2px}
+  #card button{padding:7px 12px;font-size:14px;width:auto;margin:6px 6px 0 0}
+  #card input,#card select{padding:5px 9px;font-size:14px}
+  #card .goal{font-size:13px;padding:6px 10px;margin-top:6px}
+  button.role{padding:5px 4px !important;font-size:15px !important}
+  #installtip{margin-top:6px}
+}
