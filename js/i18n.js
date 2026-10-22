@@ -19,7 +19,7 @@ const BN = {
   'Gender': 'লিঙ্গ', 'Skin tone': 'গায়ের রং', 'Hair': 'চুল', 'Hair colour': 'চুলের রং', 'Head': 'মাথা', 'Hijab colour': 'হিজাবের রং', 'Outfit': 'পোশাক', 'Outfit colour': 'পোশাকের রং',
   'Trousers colour': 'প্যান্টের রং', 'Lungi colour': 'লুঙ্গির রং', 'Accessory': 'আনুষঙ্গিক', 'Cap': 'টুপি', 'Uniform colour': 'ইউনিফর্মের রং', 'Rank badge': 'পদের ব্যাজ', 'Glasses': 'চশমা',
   'Male': 'পুরুষ', 'Female': 'নারী', 'Short': 'ছোট', 'Long': 'লম্বা', 'Bun': 'খোঁপা', 'Curly': 'কোঁকড়া', 'Bald': 'টাক', 'None': 'নেই', 'Prayer cap': 'নামাজের টুপি', 'Hijab': 'হিজাব', 'Headband': 'মাথার ফিতা',
-  'Shirt': 'শার্ট', 'Panjabi': 'পাঞ্জাবি', 'Lungi': 'লুঙ্গি', 'Saree': 'শাড়ি', 'Kameez': 'কামিজ', 'Flag': 'পতাকা', 'Mask': 'মাস্ক', 'Bag': 'ব্যাগ', 'Beret': 'বেরেট',
+  'Shirt': 'শার্ট', 'Panjabi': 'পাঞ্জাবি', 'Lungi': 'লুঙ্গি', 'Saree': 'শাড়ি', 'Kameez': 'কামিজ', 'Flag': 'পতাকা', 'Mask': 'মাস্ক', 'Bag': 'ব্যাগ', 'Beret': 'বেরেট', 'Headgear': 'মাথার পরিধান', 'Helmet': 'হেলমেট', 'Equipment': 'সরঞ্জাম', 'Stick': 'লাঠি', 'Gun': 'বন্দুক', 'Shield': 'ঢাল',
   '1 star': '১ তারা', '2 stars': '২ তারা', '3 stars': '৩ তারা', 'No': 'না', 'Yes': 'হ্যাঁ', 'Navy': 'নেভি', 'Khaki': 'খাকি', 'Olive': 'জলপাই', 'Black': 'কালো',
   'Officers keep their uniform; you choose the person and the details.': 'অফিসাররা ইউনিফর্ম পরেই থাকেন; আপনি ব্যক্তি ও খুঁটিনাটি বেছে নেন।',
   'Your look shows on the leaderboard and your share card. A photo you add to the card replaces it there.': 'আপনার চেহারা লিডারবোর্ডে ও শেয়ার কার্ডে দেখা যাবে। কার্ডে নিজের ছবি দিলে সেখানে ছবিটিই দেখাবে।',
