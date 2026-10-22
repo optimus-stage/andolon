@@ -18,7 +18,7 @@ function fbInit(){
 }
 const getDivision = () => { try { return localStorage.getItem('da_div') || ''; } catch (e) { return ''; } };
 const setDivision = d => { try { localStorage.setItem('da_div', d); } catch (e) {} };
-const divOptions = sel => '<option value="">Select your division</option>' + DIVISIONS.map(d => '<option' + (d === sel ? ' selected' : '') + '>' + d + '</option>').join('');
+const divOptions = sel => '<option value="">' + tr('Select your division') + '</option>' + DIVISIONS.map(d => '<option value="' + d + '"' + (d === sel ? ' selected' : '') + '>' + tr(d) + '</option>').join('');
 const boardName = r => 'lb_' + (r === 'police' ? 'police' : 'protester');
 
 // save the best score for this player and return their rank on the board
@@ -44,27 +44,27 @@ async function topScores(r){
 function openLeaderboard(startRole){
   let r = startRole || 'protester', div = '';
   const o = document.createElement('div'); o.id = 'lb';
-  o.innerHTML = '<div id="lbbox"><button id="lbx" aria-label="Close">&times;</button><h2>Leaderboard</h2>' +
-    '<div id="lbtabs"><button type="button" data-r="protester">Andolonkari</button><button type="button" data-r="police">Police</button></div>' +
-    '<select id="lbdiv"><option value="">All divisions</option>' + DIVISIONS.map(d => '<option>' + d + '</option>').join('') + '</select>' +
+  o.innerHTML = '<div id="lbbox"><button id="lbx" aria-label="' + tr('Close') + '">&times;</button><h2>' + tr('Leaderboard') + '</h2>' +
+    '<div id="lbtabs"><button type="button" data-r="protester">' + tr('Andolonkari') + '</button><button type="button" data-r="police">' + tr('Police') + '</button></div>' +
+    '<select id="lbdiv"><option value="">' + tr('All divisions') + '</option>' + DIVISIONS.map(d => '<option value="' + d + '">' + tr(d) + '</option>').join('') + '</select>' +
     '<div id="lbmsg"></div><ol id="lblist"></ol></div>';
   document.body.appendChild(o);
   const close = () => o.remove(); o.querySelector('#lbx').onclick = close; o.addEventListener('click', e => { if (e.target === o) close(); });
   const msg = o.querySelector('#lbmsg'), list = o.querySelector('#lblist');
   const load = async () => {
     o.querySelectorAll('#lbtabs button').forEach(b => b.classList.toggle('on', b.dataset.r === r));
-    list.textContent = ''; msg.textContent = 'Loading...';
+    list.textContent = ''; msg.textContent = tr('Loading...');
     try {
       const {uid, rows} = await topScores(r), shown = rows.filter(x => !div || x.division === div).slice(0, 20);
-      msg.textContent = shown.length ? '' : 'No scores yet. Be the first!';
+      msg.textContent = shown.length ? '' : tr('No scores yet. Be the first!');
       shown.forEach((x, i) => {
         const li = document.createElement('li'); if (x.uid === uid) li.className = 'me';
-        const n = document.createElement('b'); n.textContent = x.name;
-        const d = document.createElement('small'); d.textContent = x.division + ' · ' + x.rank;
-        const s = document.createElement('span'); s.textContent = x.score.toLocaleString('en-US');
+        const n = document.createElement('b'); n.textContent = dispName(x.name);
+        const d = document.createElement('small'); d.textContent = tr(x.division) + ' · ' + tr(x.rank);
+        const s = document.createElement('span'); s.textContent = loc(x.score);
         const w = document.createElement('div'); w.append(n, d); li.append(w, s); list.appendChild(li);
       });
-    } catch (e) { msg.textContent = 'Could not load the leaderboard. Check your connection and try again.'; }
+    } catch (e) { msg.textContent = tr('Could not load the leaderboard. Check your connection and try again.'); }
   };
   o.querySelectorAll('#lbtabs button').forEach(b => b.onclick = () => { r = b.dataset.r; load(); });
   o.querySelector('#lbdiv').onchange = e => { div = e.target.value; load(); };
@@ -75,19 +75,19 @@ function openLeaderboard(startRole){
 function addLeaderboard(r, e){
   const go = document.getElementById('go'); if (!go || !LB_ON) return;
   const w = document.createElement('div'); w.className = 'lbsubmit';
-  w.innerHTML = '<label>Division<select id="lbsel">' + divOptions(getDivision()) + '</select></label>' +
-    '<button type="button" id="lbsend">Submit score to leaderboard</button><button type="button" id="lbview" class="alt">View leaderboard</button><small id="lbstat">Submits your name, division and score. Your photo is never uploaded.</small>';
+  w.innerHTML = '<label>' + tr('Division') + '<select id="lbsel">' + divOptions(getDivision()) + '</select></label>' +
+    '<button type="button" id="lbsend">' + tr('Submit score to leaderboard') + '</button><button type="button" id="lbview" class="alt">' + tr('View leaderboard') + '</button><small id="lbstat">' + tr('Submits your name, division and score. Your photo is never uploaded.') + '</small>';
   go.before(w);
   const st = w.querySelector('#lbstat'), send = w.querySelector('#lbsend'), sel = w.querySelector('#lbsel');
   w.querySelector('#lbview').onclick = () => openLeaderboard(r);
   send.onclick = async () => {
-    if (!sel.value){ st.textContent = 'Please choose your division first.'; sel.focus(); return; }
-    setDivision(sel.value); send.disabled = true; st.textContent = 'Submitting...';
+    if (!sel.value){ st.textContent = tr('Please choose your division first.'); sel.focus(); return; }
+    setDivision(sel.value); send.disabled = true; st.textContent = tr('Submitting...');
     try {
       const res = await submitScore(r, lbName(), sel.value, e);
-      st.textContent = 'You are #' + res.place + ' of ' + res.total + ' on the board (your best: ' + res.best.toLocaleString('en-US') + ').';
-      send.textContent = 'Submitted ✓';
-    } catch (er) { st.textContent = 'Could not submit. Check your connection and try again.'; send.disabled = false; }
+      st.textContent = tr('You are #{n} of {m} on the board (your best: {b}).', {n: res.place, m: res.total, b: loc(res.best)});
+      send.textContent = tr('Submitted ✓');
+    } catch (er) { st.textContent = tr('Could not submit. Check your connection and try again.'); send.disabled = false; }
   };
 }
 
@@ -95,11 +95,11 @@ function addLeaderboard(r, e){
 (function(){
   if (!LB_ON) return;
   const nameLbl = document.getElementById('pname'); if (!nameLbl) return;
-  const l = document.createElement('label'); l.innerHTML = 'Your division (for the leaderboard) <select id="mdiv">' + divOptions(getDivision()) + '</select>';
+  const l = document.createElement('label'); l.id = 'mdivlbl'; l.innerHTML = tr('Your division (for the leaderboard)') + ' <select id="mdiv">' + divOptions(getDivision()) + '</select>';
   nameLbl.parentNode.after(l);
   l.querySelector('select').onchange = e => setDivision(e.target.value);
   const hb = document.getElementById('howbtn');
-  const b = document.createElement('button'); b.type = 'button'; b.className = 'alt'; b.id = 'lbbtn'; b.textContent = 'Leaderboard';
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'alt'; b.id = 'lbbtn'; b.textContent = tr('Leaderboard');
   b.onclick = () => openLeaderboard(role); if (hb) hb.after(b);
 })();
 

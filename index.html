@@ -11,20 +11,21 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Andolon">
 <link rel="apple-touch-icon" href="img/icon-192.png">
-<link rel="stylesheet" href="css/style.css?v=20">
+<link rel="stylesheet" href="css/style.css?v=22">
 </head>
 <body>
 <canvas id="c"></canvas>
 <button id="mute" aria-label="Toggle sound">🔊</button>
 <div id="ticker"><b>ব্রেকিং নিউজ</b><div id="tkwrap"><span id="tk"></span></div></div>
 <div id="menu"><div id="card">
+  <button id="langbtn" class="langbtn" type="button" aria-label="Language">বাংলা</button>
   <h1 style="text-align:center"><span>আন্দোলন</span></h1>
-  <p class="intro"><b>Andolon</b> is a single-player game. Choose your character and start.</p>
-  <div id="roles"><button id="role-prot" class="role sel" type="button">Andolonkari<small>Lead the march</small></button><button id="role-pol" class="role" type="button">Police<small>Hold the line</small></button></div>
-  <label>Your name <input id="pname" maxlength="24" placeholder="Protester"></label>
+  <p class="intro" data-t="intro"><b>Andolon</b> is a single-player game. Choose your character and start.</p>
+  <div id="roles"><button id="role-prot" class="role sel" type="button" data-t="roleprot">Andolonkari<small>Lead the march</small></button><button id="role-pol" class="role" type="button" data-t="rolepol">Police<small>Hold the line</small></button></div>
+  <label><span data-t="yourname">Your name</span> <input id="pname" maxlength="24" placeholder="Protester"></label>
   <button id="go">Start marching</button><button id="howbtn" class="alt" type="button">How to play</button>
-  <small id="installtip">Tip: for a bigger, full-screen game, add Andolon to your home screen (browser menu, then Install app or Add to Home screen).</small>
-  <div id="rules">
+  <small id="installtip" data-t="installtip">Tip: for a bigger, full-screen game, add Andolon to your home screen (browser menu, then Install app or Add to Home screen).</small>
+  <div id="rules" data-t="rules">
     <div class="goal"><b>Goal:</b> gather a crowd in white, get through the police barricades, and hold the <b>কেন্দ্রীয় শহীদ মিনার</b> (Central Shaheed Minar) with <b>15 people for 10 seconds</b>.</div>
     <details class="full"><summary>Full rules</summary>
     <ul>
@@ -37,7 +38,7 @@
       <li>You have <b>30 days</b> (about 4 minutes). Your score comes from crowd size, barricades passed, fights won and speed. Press <b>M</b> (or tap the speaker) to mute sound.</li>
     </ul></details>
   </div>
-  <div id="rules2" style="display:none">
+  <div id="rules2" style="display:none" data-t="rules2">
     <div class="goal police"><b>Goal:</b> stop the protester crowds. <b>Disperse 10 crowds</b> before one of them holds the <b>কেন্দ্রীয় শহীদ মিনার</b> (15 people for 10 seconds), and keep <b>public anger</b> below 100.</div>
     <details class="full"><summary>Full rules</summary>
     <ul>
@@ -50,16 +51,16 @@
       <li>Two crowds that meet join into a bigger one, so break them up early. Press <b>M</b> (or tap the speaker) to mute sound.</li>
     </ul></details>
   </div>
-  <small>Fictional game. Characters and events are not real people or incidents. Map is stylised.</small>
-  <a href="#" class="aboutlink">About & Disclaimer</a>
+  <small data-t="fictional">Fictional game. Characters and events are not real people or incidents. Map is stylised.</small>
+  <a href="#" class="aboutlink" data-t="aboutlink">About & Disclaimer</a>
 </div></div>
-<div id="rotate" role="alert"><div><span class="rotphone">📱</span><p>Please rotate your phone to play</p><small>Andolon is played in landscape</small></div></div>
+<div id="rotate" role="alert"><div data-t="rotate"><span class="rotphone">📱</span><p>Please rotate your phone to play</p><small>Andolon is played in landscape</small></div></div>
 <div id="tut" role="dialog" aria-modal="true" aria-label="How to play"></div>
 <div id="about" role="dialog" aria-modal="true" aria-labelledby="abouth"><div id="aboutbox">
   <button id="aboutx" aria-label="Close">&times;</button>
- <h2 id="abouth">About the Creator & Game</h2>
+ <h2 id="abouth" data-t="abouth">About the Creator & Game</h2>
 
-<p>Hi, I’m <b>Sabbir Ahmed</b>, a technology enthusiast with an academic background in Electrical and Electronic Engineering from IUT. I enjoy exploring new ideas and bringing them to life through creative projects.</p>
+<div data-t="about"><p>Hi, I’m <b>Sabbir Ahmed</b>, a technology enthusiast with an academic background in Electrical and Electronic Engineering from IUT. I enjoy exploring new ideas and bringing them to life through creative projects.</p>
 
 <p><b>Andolon</b> is an independently developed fictional game, created out of curiosity and inspired by this land’s long history of protest and revolution. It does not present or endorse any political, religious, social or ideological position, nor does it make factual claims about any real event, government, institution, party, group or individual. It is intended for entertainment and creative expression and should not be considered a news source or historical record.</p>
 
@@ -83,25 +84,28 @@
 
 <p>Contact: <a href="mailto:bizwithsabbir@gmail.com">bizwithsabbir@gmail.com</a></p>
 
+</div>
+
 <div id="supportslot"></div>
 
-<p><b>Thank you for playing Andolon. Enjoy the game and share it responsibly.</b></p>
+<p data-t="aboutthanks"><b>Thank you for playing Andolon. Enjoy the game and share it responsibly.</b></p>
 </div></div>
-<script src="js/chapters.js?v=32"></script>
-<script src="js/data.js?v=32"></script>
-<script src="js/core.js?v=32"></script>
-<script src="js/audio.js?v=32"></script>
-<script src="js/town.js?v=32"></script>
-<script src="js/state.js?v=32"></script>
-<script src="js/collision.js?v=32"></script>
-<script src="js/protester.js?v=32"></script>
-<script src="js/police.js?v=32"></script>
-<script src="js/combat.js?v=32"></script>
-<script src="js/render.js?v=32"></script>
-<script src="js/ui.js?v=32"></script>
-<script src="js/firebase-config.js?v=32"></script>
-<script src="js/leaderboard.js?v=32"></script>
-<script src="js/tutorial.js?v=32"></script>
-<script src="js/main.js?v=32"></script>
+<script src="js/chapters.js?v=33"></script>
+<script src="js/i18n.js?v=33"></script>
+<script src="js/data.js?v=33"></script>
+<script src="js/core.js?v=33"></script>
+<script src="js/audio.js?v=33"></script>
+<script src="js/town.js?v=33"></script>
+<script src="js/state.js?v=33"></script>
+<script src="js/collision.js?v=33"></script>
+<script src="js/protester.js?v=33"></script>
+<script src="js/police.js?v=33"></script>
+<script src="js/combat.js?v=33"></script>
+<script src="js/render.js?v=33"></script>
+<script src="js/ui.js?v=33"></script>
+<script src="js/firebase-config.js?v=33"></script>
+<script src="js/leaderboard.js?v=33"></script>
+<script src="js/tutorial.js?v=33"></script>
+<script src="js/main.js?v=33"></script>
 </body>
 </html>

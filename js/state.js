@@ -24,7 +24,7 @@ function newGame(){
   game = {t: 0, day: 1, hold: 0, started: true, spawnT: 4, rivalSpawnT: 20, stats: {recruits: 0, peak: 1, rings: 0, clashWins: 0, beaten: 0, cures: 0, teas: 0, stallT: 0}, mode: 'play', msg: '', msgT: 0, viralT: 40 + rand(0, 20), detainees: [], rescue: {}, shutT: 0, staticT: 0, shutLoseT: 0, drain: 0, boost: 0, flash: 0, van: null, arrest: null, contested: false};
   chant = {i: 0, timer: 3, phase: 0};
   for (let z = 0; z < 4; z++) for (let i = 0; i < 3; i++) mkRival(z, 60 + rand(0, 180));
-  if ('ontouchstart' in window || navigator.maxTouchPoints > 0) say('Touch and hold a direction on the round pad to walk. Lift to stop.', 6);
+  if ('ontouchstart' in window || navigator.maxTouchPoints > 0) say(tr('Touch and hold a direction on the round pad to walk. Lift to stop.'), 6);
 }
 // Each person gets a stable look: height, hair, head covering, outfit and legs. It is drawn by person() in render.js.
 function mkLook(){
@@ -80,6 +80,6 @@ function rivalFire(r){   // an armed crowd shoots: part of your crowd scatters
   const n = Math.min(followers.length, Math.ceil((followers.length + 1) * 0.25));
   for (let i = 0; i < n; i++){ const f = followers.pop(); f.cool = 6; f.rcool = 15; f.vx = rand(-90, 90); f.vy = rand(-90, 90); f.wt = 1; neutrals.push(f); }
   player.morale = Math.max(0, player.morale - 20);
-  say('Armed rivals fired! ' + (n ? n + ' people scattered. ' : '') + 'Get out of their range!', 3);
+  say(n ? tr('Armed rivals fired! {n} people scattered. Get out of their range!', {n}) : tr('Armed rivals fired! Get out of their range!'), 3);
 }
 

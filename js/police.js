@@ -18,7 +18,7 @@ function newPoliceGame(){
     anger: 0, lastForce: 0, smoke: 3, gun: 6, refSmoke: 18, refGun: 12, cdS: 0, cdG: 0, cdSm: 0, spawnT: 3, bystT: 4, reinT: 30, chantT: 6, cone: null, hit: null,
     stats: {dispersed: 0, squadPeak: 1, smokes: 0, shots: 0, strikes: 0}};
   for (let i = 0; i < 5; i++){ const p = spawnIn(2400, 2900); marchers.push(mkCrowd(p.x, p.y, 3, 10 + i * 3)); }
-  say(IS_TOUCH ? 'Use STRIKE, SMOKE and FIRE. Walk into officers to recruit them.' : 'Click or Space: strike. G: smoke. F: fire. Walk into officers to recruit them.', 6);
+  say(tr(IS_TOUCH ? 'Use STRIKE, SMOKE and FIRE. Walk into officers to recruit them.' : 'Click or Space: strike. G: smoke. F: fire. Walk into officers to recruit them.'), 6);
 }
 function mkCrowd(x, y, n, delay){
   const c = {x, y, members: [], delay, moving: false, hp: 2, smokeT: 0, recT: 0, stun: 0, holdT: 0};
@@ -37,7 +37,7 @@ function scatter(r, k, ox, oy){   // members run away and stay out of the march 
 function disperse(r){
   if (r.dead) return; r.dead = true;
   const nb = mkNeutral(r.x, r.y); nb.cool = 9; nb.rcool = 14; nb.vx = rand(-90, 90); nb.vy = rand(-90, 90); nb.wt = 1.5; neutrals.push(nb);
-  game.stats.dispersed++; sfxChime(); say('Crowd dispersed! ' + game.stats.dispersed + ' of ' + DISPERSE_GOAL, 2.5);
+  game.stats.dispersed++; sfxChime(); say(tr('Crowd dispersed! {a} of {b}', {a: game.stats.dispersed, b: DISPERSE_GOAL}), 2.5);
 }
 function canAct(){ return role === 'police' && game && game.started && game.mode === 'play'; }
 function doStrike(){
@@ -55,13 +55,13 @@ function doStrike(){
 }
 function doSmoke(){
   if (!canAct() || game.cdSm > 0) return;
-  if (game.smoke <= 0){ say('Out of smoke grenades. One comes back every few seconds.', 2); return; }
+  if (game.smoke <= 0){ say(tr('Out of smoke grenades. One comes back every few seconds.'), 2); return; }
   game.cdSm = 1.2; game.smoke--; game.stats.smokes++; addAnger(10); sfxGrenade();
   smokes.push({x: player.x + player.fx * 90, y: player.y + player.fy * 90, t: 0, life: 5.5, r: 110 + Math.min(40, followers.length * 4)});
 }
 function doGun(){
   if (!canAct() || game.cdG > 0) return;
-  if (game.gun <= 0){ say('Out of rounds. One comes back every few seconds.', 2); return; }
+  if (game.gun <= 0){ say(tr('Out of rounds. One comes back every few seconds.'), 2); return; }
   game.cdG = 0.45; game.gun--; game.stats.shots++; addAnger(12); sfxGunshot();
   const ang = Math.atan2(player.fy, player.fx);
   addFx(player.x + player.fx * 26, player.y + player.fy * 26 - 10, 'shot');
@@ -172,7 +172,7 @@ function updatePolice(dt){
     collide(p, 14);
     if (followers.length < SQUAD_MAX && dist(p, player) < 42){
       patrols.splice(i, 1); followers.push({x: p.x, y: p.y, skin: p.skin, swing: 0, police: true}); G.stats.squadPeak = Math.max(G.stats.squadPeak, followers.length + 1);
-      sfxJoin(); addFx(p.x, p.y, 'join'); say('An officer joins your squad (' + (followers.length + 1) + ')', 2);
+      sfxJoin(); addFx(p.x, p.y, 'join'); say(tr('An officer joins your squad ({n})', {n: followers.length + 1}), 2);
     }
   }
   G.reinT -= dt; if (G.reinT <= 0){ G.reinT = 30; if (patrols.length < 6) patrols.push(mkPatrol(Math.floor(Math.random() * 4))); }
@@ -208,40 +208,45 @@ function endPolice(won, why){
   if (won) tag = game.anger < 25 ? PTAGS.calm : game.t < 260 ? PTAGS.swift : st.squadPeak >= 10 ? PTAGS.full : st.smokes >= 5 ? PTAGS.smoke : PTAGS.steady;
   else tag = why === 'anger' ? PTAGS.overreach : st.squadPeak < 5 ? PTAGS.outnumbered : PTAGS.slow;
   const nxt = PRANKS.find(r => r.min > score);
-  const nextText = nxt ? ['NEXT: ' + nxt.metal.toUpperCase(), (nxt.min - score).toLocaleString('en-US') + ' pts'] : ['NEXT RANK', 'Maxed'];
   let best = 0, newBest = false; try { best = +localStorage.getItem('da_best_police') || 0; if (score > best){ newBest = best > 0; localStorage.setItem('da_best_police', String(score)); best = score; } } catch (e) {}
-  const cardInfo = {role: 'police', tier: rank, name: playerName, skin: player.skin, score, rankBn: rank.bn, tagBn: tag.bn, tagDesc: tag.desc, day: game.day, best, newBest, nextText,
-    stampLabel: won ? 'ORDER HELD' : why === 'anger' ? 'STOOD DOWN' : 'LINE BROKEN', stampSub: won ? 'SQUARE SECURED' : why === 'anger' ? 'TOO MUCH FORCE' : 'MINAR HELD',
-    stampCol: won ? '#1f4e79' : '#a32d2d', dayText: 'Andolon · Day ' + game.day,
-    row2Title: 'Crowds dispersed', row2Value: st.dispersed, row2Desc: 'Marches broken up before the Minar.', foot3: ['SQUAD PEAK', String(st.squadPeak)]};
-  const build = () => renderCard(won ? 'win' : 'lose', Object.assign({photo: playerPhoto}, cardInfo));
-  let canvas = build();
+  const mkInfo = () => ({role: 'police', tier: rank, name: playerName, skin: player.skin, score, rankBn: rank.bn, tagBn: tag.bn, tagDesc: tr(tag.desc), day: game.day, best, newBest,
+    nextText: nxt ? [tr('NEXT: {n}', {n: isBn() ? tr(nxt.metal) : nxt.metal.toUpperCase()}), tr('{n} pts', {n: loc(nxt.min - score)})] : [tr('NEXT RANK'), tr('Maxed')],
+    stampLabel: tr(won ? 'ORDER HELD' : why === 'anger' ? 'STOOD DOWN' : 'LINE BROKEN'), stampSub: tr(won ? 'SQUARE SECURED' : why === 'anger' ? 'TOO MUCH FORCE' : 'MINAR HELD'),
+    stampCol: won ? '#1f4e79' : '#a32d2d', dayText: tr('Andolon · Day {n}', {n: game.day}),
+    row2Title: tr('Crowds dispersed'), row2Value: st.dispersed, row2Desc: tr('Marches broken up before the Minar.'), foot3: [tr('SQUAD PEAK'), nd(st.squadPeak)]});
+  let canvas;
+  const build = () => renderCard(won ? 'win' : 'lose', Object.assign({photo: playerPhoto}, mkInfo()));
   const box = document.getElementById('card');
-  const head = won ? '<h1>Order <span>restored!</span></h1><p>Your squad dispersed <b>' + st.dispersed + '</b> crowds by <b>Day ' + game.day + '</b>.</p>'
-    : why === 'anger' ? '<h1>Stood <span>down</span></h1><p>Too much force: public anger reached its limit and you were pulled back.</p>'
-    : '<h1>The Minar <span>was held</span></h1><p>A crowd held the Shaheed Minar. Break up marches sooner next time.</p>';
-  box.innerHTML = head + '<img id="cardimg" alt="Photo card" src="' + canvas.toDataURL('image/png') + '">' +
-    '<label>Put your own photo on the card (optional)<input id="photo2" type="file" accept="image/*"></label>' +
-    '<button id="share">Share card</button><button id="dl" class="alt">' + (IS_TOUCH ? 'Save to Photos' : 'Download') + '</button><button id="go">Patrol again</button>' +
-    (IS_TOUCH ? '<small>Tip: tap Save to Photos, or press and hold the card, to keep it in your Gallery.</small><br>' : '') +
-    (playerPhoto ? '<button id="nophoto" class="alt">Use default avatar</button>' : '') +
-    supportHTML() + '<a href="#" class="aboutlink">About &amp; Disclaimer</a><br>' +
-    '<small>Your photo stays on your device. It is only drawn onto this card. Fictional game; characters and events are not real people or incidents.</small>';
-  const text = won ? 'I led the police squad in Andolon and dispersed ' + st.dispersed + ' crowds. ' + rank.en + ', ' + score.toLocaleString('en-US') + ' pts.'
-    : 'The crowds beat my police squad in Andolon. ' + score.toLocaleString('en-US') + ' pts. Can you do better?';
-  const refresh = () => { canvas = build(); document.getElementById('cardimg').src = canvas.toDataURL('image/png'); const b = document.getElementById('nophoto'); if (!b && playerPhoto){ const n = document.createElement('button'); n.id = 'nophoto'; n.className = 'alt'; n.textContent = 'Use default avatar'; n.onclick = () => { playerPhoto = null; n.remove(); refresh(); }; document.getElementById('go').after(n); } };
-  document.getElementById('photo2').onchange = e => loadPhoto(e.target.files[0], refresh);
-  const np = document.getElementById('nophoto'); if (np) np.onclick = () => { playerPhoto = null; np.remove(); refresh(); };
-  document.getElementById('share').onclick = () => shareCard(canvas, text);
-  document.getElementById('dl').onclick = () => downloadCard(canvas);
-  document.getElementById('go').onclick = start;
-  addSwitch();
-  addLeaderboard('police', {score, rank: rank.en, stat: st.dispersed, day: game.day});
+  const show = () => {
+    canvas = build();
+    const head = won ? '<h1>' + tr('Order <span>restored!</span>') + '</h1><p>' + tr('Your squad dispersed <b>{n}</b> crowds by <b>Day {d}</b>.', {n: st.dispersed, d: game.day}) + '</p>'
+      : why === 'anger' ? '<h1>' + tr('Stood <span>down</span>') + '</h1><p>' + tr('Too much force: public anger reached its limit and you were pulled back.') + '</p>'
+      : '<h1>' + tr('The Minar <span>was held</span>') + '</h1><p>' + tr('A crowd held the Shaheed Minar. Break up marches sooner next time.') + '</p>';
+    box.innerHTML = '<button id="langbtn" class="langbtn" type="button">' + (isBn() ? 'English' : 'বাংলা') + '</button>' + head + '<img id="cardimg" alt="Photo card" src="' + canvas.toDataURL('image/png') + '">' +
+      '<label>' + tr('Put your own photo on the card (optional)') + '<input id="photo2" type="file" accept="image/*"></label>' +
+      '<button id="share">' + tr('Share card') + '</button><button id="dl" class="alt">' + tr(IS_TOUCH ? 'Save to Photos' : 'Download') + '</button><button id="go">' + tr('Patrol again') + '</button>' +
+      (IS_TOUCH ? '<small>' + tr('Tip: tap Save to Photos, or press and hold the card, to keep it in your Gallery.') + '</small><br>' : '') +
+      (playerPhoto ? '<button id="nophoto" class="alt">' + tr('Use default avatar') + '</button>' : '') +
+      supportHTML() + '<a href="#" class="aboutlink">' + tr('About &amp; Disclaimer') + '</a><br>' +
+      '<small>' + tr('Your photo stays on your device. It is only drawn onto this card. Fictional game; characters and events are not real people or incidents.') + '</small>';
+    const text = won ? tr('I led the police squad in Andolon and dispersed {n} crowds. {r}, {s} pts.', {n: st.dispersed, r: isBn() ? rank.bn : rank.en, s: loc(score)})
+      : tr('The crowds beat my police squad in Andolon. {s} pts. Can you do better?', {s: loc(score)});
+    const refresh = () => { canvas = build(); document.getElementById('cardimg').src = canvas.toDataURL('image/png'); const b = document.getElementById('nophoto'); if (!b && playerPhoto){ const n = document.createElement('button'); n.id = 'nophoto'; n.className = 'alt'; n.textContent = tr('Use default avatar'); n.onclick = () => { playerPhoto = null; n.remove(); refresh(); }; document.getElementById('go').after(n); } };
+    document.getElementById('photo2').onchange = e => loadPhoto(e.target.files[0], refresh);
+    const np = document.getElementById('nophoto'); if (np) np.onclick = () => { playerPhoto = null; np.remove(); refresh(); };
+    document.getElementById('share').onclick = () => shareCard(canvas, text);
+    document.getElementById('dl').onclick = () => downloadCard(canvas);
+    document.getElementById('go').onclick = start;
+    document.getElementById('langbtn').onclick = () => { setLang(isBn() ? 'en' : 'bn'); show(); };
+    addSwitch();
+    addLeaderboard('police', {score, rank: rank.en, stat: st.dispersed, day: game.day});
+  };
+  show();
   document.getElementById('menu').style.display = 'flex';
 }
 function addSwitch(){   // button on the result screen to play the other side
   const go = document.getElementById('go'); if (!go) return;
-  const b = document.createElement('button'); b.className = 'alt'; b.textContent = role === 'police' ? 'Play as Andolonkari' : 'Play as Police';
+  const b = document.createElement('button'); b.className = 'alt'; b.textContent = tr(role === 'police' ? 'Play as Andolonkari' : 'Play as Police');
   b.onclick = () => { role = role === 'police' ? 'protester' : 'police'; try { localStorage.setItem('da_role', role); } catch (e) {} start(); };
   go.after(b);
 }

@@ -42,12 +42,12 @@ function renderCard(kind, info){
   g.textBaseline = 'alphabetic'; g.fillStyle = T.ink;
 
   // title row: name on the left, score on the right
-  g.textAlign = 'left'; fitText(g, info.name, 330, 46, 'bold', BN_FONT); g.fillText(info.name, 44, 76);
+  g.textAlign = 'left'; fitText(g, dispName(info.name), 330, 46, 'bold', BN_FONT); g.fillText(dispName(info.name), 44, 76);
   g.textAlign = 'right'; g.fillStyle = T.dot; g.strokeStyle = T.edge; g.lineWidth = 3; g.beginPath(); g.arc(W - 62, 60, 24, 0, 7); g.fill(); g.stroke();
   g.fillStyle = T.ink; starPath(g, W - 62, 61, 14); g.fill();
-  g.font = 'bold 46px system-ui'; g.fillText(info.score.toLocaleString('en-US'), W - 98, 76);
-  const sw = g.measureText(info.score.toLocaleString('en-US')).width;
-  g.font = 'bold 20px system-ui'; g.fillText('SCORE', W - 98 - sw - 10, 76);
+  g.font = 'bold 46px system-ui'; g.fillText(loc(info.score), W - 98, 76);
+  const sw = g.measureText(loc(info.score)).width;
+  g.font = 'bold 20px system-ui'; g.fillText(tr('SCORE'), W - 98 - sw - 10, 76);
 
   // art window: photo or avatar, with the stamp on top
   const AX = 36, AY = 100, AW = 648, AH = 440;
@@ -65,8 +65,8 @@ function renderCard(kind, info){
   else person(g, 0, AH - 100, {dress: WHITE, skin: info.skin, hat: 'band', scale: 9, flag: win, noBase: true});
   g.save(); g.translate(0, info.photo || tier ? AH - 90 : 80); g.rotate(-0.2);
   const col = info.stampCol || (win ? '#27500a' : info.station ? '#c8102e' : '#5f5e5a');
-  const label = info.stampLabel || (win ? 'VICTORY' : info.station ? 'DETAINED' : 'TIME UP');
-  const sub = info.stampSub || (win ? 'HELD THE MINAR' : info.station ? info.station.toUpperCase() : 'DAY ' + MAX_DAY + ' ENDED');
+  const label = info.stampLabel || tr(win ? 'VICTORY' : info.station ? 'DETAINED' : 'TIME UP');
+  const sub = info.stampSub || (win ? tr('HELD THE MINAR') : info.station ? (isBn() ? tr(info.station) : info.station.toUpperCase()) : tr('DAY {n} ENDED', {n: MAX_DAY}));
   g.textAlign = 'center'; fitText(g, label, 440, 76, 'bold', 'system-ui'); const lw = g.measureText(label).width;
   fitText(g, sub, 440, 30, 'bold', 'system-ui'); const sbw = g.measureText(sub).width, bw = Math.max(lw, sbw, 240) + 44;
   g.fillStyle = 'rgba(247,244,234,.8)'; g.strokeStyle = col; g.lineWidth = 8; g.globalAlpha = 0.92; g.fillRect(-bw / 2, -62, bw, 140); g.strokeRect(-bw / 2, -62, bw, 140);
@@ -77,8 +77,8 @@ function renderCard(kind, info){
 
   // rank strip
   g.fillStyle = tier ? lin(g, AX, 0, AX + AW, 0, [T.strip, tier.fr[0], T.strip]) : T.strip; g.fillRect(AX, AY + AH + 14, AW, 40);
-  g.fillStyle = T.ink; g.textAlign = 'left'; g.font = 'bold 24px ' + BN_FONT; g.fillText(tier ? info.rankBn + '  ·  ' + tier.metal.toUpperCase() : info.rankBn, AX + 14, AY + AH + 43);
-  g.textAlign = 'right'; g.font = 'italic 20px system-ui'; g.fillText(info.dayText || 'Andolon · Day ' + info.day + ' of ' + MAX_DAY, AX + AW - 14, AY + AH + 42);
+  g.fillStyle = T.ink; g.textAlign = 'left'; g.font = 'bold 24px ' + BN_FONT; g.fillText(tier ? info.rankBn + '  ·  ' + (isBn() ? tr(tier.metal) : tier.metal.toUpperCase()) : info.rankBn, AX + 14, AY + AH + 43);
+  g.textAlign = 'right'; g.font = 'italic 20px system-ui'; g.fillText(info.dayText || tr('Andolon · Day {n} of {m}', {n: info.day, m: MAX_DAY}), AX + AW - 14, AY + AH + 42);
 
   // two "attack" rows: special tag, peak crowd
   const BY = AY + AH + 68;
@@ -89,19 +89,19 @@ function renderCard(kind, info){
     if (icon === 'star'){ starPath(g, AX + 38, y + 1, 12); g.fill(); }
     else { g.beginPath(); g.arc(AX + 31, y - 4, 5, 0, 7); g.arc(AX + 45, y - 4, 5, 0, 7); g.fill(); g.beginPath(); g.arc(AX + 31, y + 14, 9, Math.PI, 0); g.arc(AX + 45, y + 14, 9, Math.PI, 0); g.fill(); }
     g.fillStyle = T.ink; g.textAlign = 'left'; fitText(g, title, 360, 30, 'bold', 'system-ui'); g.fillText(title, AX + 74, y + 10);
-    if (value != null){ g.textAlign = 'right'; g.font = 'bold 30px system-ui'; g.fillText(String(value), AX + AW - 24, y + 10); }
+    if (value != null){ g.textAlign = 'right'; g.font = 'bold 30px system-ui'; g.fillText(nd(value), AX + AW - 24, y + 10); }
     g.textAlign = 'left'; fitText(g, desc, AW - 100, 21, 'normal', 'system-ui'); g.fillText(desc, AX + 74, y + 42);
   };
   row(BY + 42, info.tagBn, null, info.tagDesc, 'star');
-  row(BY + 144, info.row2Title || 'Peak crowd', info.row2Value != null ? info.row2Value : info.peak, info.row2Desc || 'Most people marching with you at once.', 'crowd');
+  row(BY + 144, info.row2Title || tr('Peak crowd'), info.row2Value != null ? info.row2Value : info.peak, info.row2Desc || tr('Most people marching with you at once.'), 'crowd');
 
   // footer stats
   const FY = BY + 232 + 26, cw = AW / 3;
-  const foot = [[info.nextText[0], info.nextText[1]], [info.newBest ? 'NEW BEST' : 'BEST SCORE', info.best.toLocaleString('en-US')], info.foot3 || ['BARRICADES', info.rings + ' of ' + RINGS.length]];
+  const foot = [[info.nextText[0], info.nextText[1]], [tr(info.newBest ? 'NEW BEST' : 'BEST SCORE'), loc(info.best)], info.foot3 || [tr('BARRICADES'), tr('{a} of {b}', {a: info.rings, b: RINGS.length})]];
   g.textAlign = 'center';
   foot.forEach((f, i) => { const x = AX + cw * i + cw / 2; g.fillStyle = T.ink; g.font = '17px system-ui'; g.fillText(f[0], x, FY); g.font = 'bold 28px system-ui'; g.fillText(f[1], x, FY + 32); });
-  g.font = '16px system-ui'; g.textAlign = 'left'; g.fillText('Fictional game · Play Andolon' + (location.protocol.startsWith('http') ? ' · ' + location.host + location.pathname.replace(/index\.html$/, '').replace(/\/$/, '') : ''), AX, H - 22);
-  g.textAlign = 'right'; g.fillText(String(info.day).padStart(3, '0') + '/' + String(MAX_DAY).padStart(3, '0'), AX + AW, H - 22);
+  g.font = '16px system-ui'; g.textAlign = 'left'; g.fillText(tr('Fictional game · Play Andolon') + (location.protocol.startsWith('http') ? ' · ' + location.host + location.pathname.replace(/index\.html$/, '').replace(/\/$/, '') : ''), AX, H - 22);
+  g.textAlign = 'right'; g.fillText(nd(String(info.day).padStart(3, '0') + '/' + String(MAX_DAY).padStart(3, '0')), AX + AW, H - 22);
   return c;
 }
 const cardBlob = canvas => new Promise(r => canvas.toBlob(r, 'image/png'));
@@ -132,12 +132,12 @@ async function downloadCard(canvas, blob){
     saveOverlay(canvas); return;
   }
   fileDownload(blob);   // Android Chrome and desktop: a real download, which lands in Downloads and shows up in Gallery / Photos
-  if (IS_TOUCH){ toast('Card saved to your Downloads. Open Gallery or Google Photos and look in the Downloads folder.'); setTimeout(() => saveOverlay(canvas, true), 600); }
+  if (IS_TOUCH){ toast(tr('Card saved to your Downloads. Open Gallery or Google Photos and look in the Downloads folder.')); setTimeout(() => saveOverlay(canvas, true), 600); }
 }
 function saveOverlay(canvas, androidExtra){
   const o = document.createElement('div');
   o.style.cssText = 'position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:12px;color:#fff;font:16px system-ui;text-align:center';
-  o.innerHTML = '<div>' + (androidExtra ? 'Saved! If you do not see it in Gallery, press and hold the card and tap <b>Download image</b>.' : 'Press and hold the card, then tap <b>Save to Photos</b> (or Save Image).') + '</div><img alt="Your card" style="max-width:100%;max-height:70vh;border-radius:10px" src="' + canvas.toDataURL('image/png') + '"><button style="padding:10px 24px;font-size:16px;border-radius:8px;border:0">Close</button>';
+  o.innerHTML = '<div>' + tr(androidExtra ? 'Saved! If you do not see it in Gallery, press and hold the card and tap <b>Download image</b>.' : 'Press and hold the card, then tap <b>Save to Photos</b> (or Save Image).') + '</div><img alt="' + tr('Your card') + '" style="max-width:100%;max-height:70vh;border-radius:10px" src="' + canvas.toDataURL('image/png') + '"><button style="padding:10px 24px;font-size:16px;border-radius:8px;border:0">' + tr('Close') + '</button>';
   o.querySelector('button').onclick = () => o.remove();
   document.body.appendChild(o);
 }
@@ -192,35 +192,41 @@ function end(won, info){
   const tag = outcome === 'timeout' ? pickRoast() : pickTag(won, outcome);
   const tagBn = tag.bn || tag.tag, tagDesc = tag.desc;
   const nxt = RANKS.find(r => r.min > score);
-  const nextText = nxt ? ['NEXT: ' + nxt.bn, (nxt.min - score).toLocaleString('en-US') + ' pts'] : ['NEXT RANK', 'Maxed'];
+  const nextText = nxt ? ['NEXT: ' + nxt.bn, loc((nxt.min - score)) + ' pts'] : ['NEXT RANK', 'Maxed'];
   let best = 0, newBest = false; try { best = +localStorage.getItem('da_best') || 0; if (score > best){ newBest = best > 0; localStorage.setItem('da_best', String(score)); best = score; } } catch (e) {}
-  const cardInfo = {name: playerName, skin: player.skin, station: info.station, timeout: !!info.timeout, score, rankBn: rank.bn, tagBn, tagDesc, peak: st.peak, rings: st.rings, day: game.day, best, newBest, nextText};
-  const build = () => renderCard(won ? 'win' : 'lose', Object.assign({photo: playerPhoto}, cardInfo));
-  let canvas = build();
+  const mkInfo = () => ({name: playerName, skin: player.skin, station: info.station, timeout: !!info.timeout, score, rankBn: rank.bn, tagBn, tagDesc: tr(tag.desc), peak: st.peak, rings: st.rings, day: game.day, best, newBest,
+    nextText: nxt ? [tr('NEXT: {n}', {n: nxt.bn}), tr('{n} pts', {n: loc(nxt.min - score)})] : [tr('NEXT RANK'), tr('Maxed')]});
+  let canvas;
+  const build = () => renderCard(won ? 'win' : 'lose', Object.assign({photo: playerPhoto}, mkInfo()));
   const box = document.getElementById('card');
-  let head;
-  if (won) head = '<h1>Shaheed Minar <span>held!</span></h1><p>Your crowd of <b>' + crowd + '</b> held the square on <b>Day ' + game.day + '</b>.</p>';
-  else if (outcome === 'timeout') head = '<h1>Day ' + MAX_DAY + ' <span>is over</span></h1><p>You are a <b>' + tagBn + '</b>. ' + tagDesc + '</p>';
-  else if (info.aynaghor) head = '<h1>Taken to <span>Aynaghor</span></h1><p>The police van took you to Aynaghor. The game is over.</p>';
-  else head = '<h1>Detained at <span>' + info.station + '</span></h1><p>You were caught by the police and taken by van. The game is over.</p>';
-  box.innerHTML = head + '<img id="cardimg" alt="Photo card" src="' + canvas.toDataURL('image/png') + '">' +
-    '<label>Put your own photo on the card (optional)<input id="photo2" type="file" accept="image/*"></label>' +
-    '<button id="share">Share card</button><button id="dl" class="alt">' + (IS_TOUCH ? 'Save to Photos' : 'Download') + '</button><button id="go">March again</button>' +
-    (IS_TOUCH ? '<small>Tip: tap Save to Photos, or press and hold the card, to keep it in your Gallery.</small><br>' : '') +
-    (playerPhoto ? '<button id="nophoto" class="alt">Use default avatar</button>' : '') +
-    supportHTML() + '<a href="#" class="aboutlink">About &amp; Disclaimer</a><br>' +
-    '<small>Your photo stays on your device. It is only drawn onto this card. Fictional game; characters and events are not real people or incidents.</small>';
-  const text = won ? 'I held the Central Shaheed Minar in Andolon! ' + rank.en + ', ' + score.toLocaleString('en-US') + ' pts.'
-    : outcome === 'timeout' ? 'Andolon called me "' + tagBn + '". Can you do better?'
-    : 'I was detained at ' + info.station + ' in Andolon. ' + score.toLocaleString('en-US') + ' pts.';
-  const refresh = () => { canvas = build(); document.getElementById('cardimg').src = canvas.toDataURL('image/png'); const b = document.getElementById('nophoto'); if (!b && playerPhoto){ const n = document.createElement('button'); n.id = 'nophoto'; n.className = 'alt'; n.textContent = 'Use default avatar'; n.onclick = () => { playerPhoto = null; n.remove(); refresh(); }; document.getElementById('go').after(n); } };
-  document.getElementById('photo2').onchange = e => loadPhoto(e.target.files[0], refresh);
-  const np = document.getElementById('nophoto'); if (np) np.onclick = () => { playerPhoto = null; np.remove(); refresh(); };
-  document.getElementById('share').onclick = () => shareCard(canvas, text);
-  document.getElementById('dl').onclick = () => downloadCard(canvas);
-  document.getElementById('go').onclick = start;
-  addSwitch();
-  addLeaderboard('protester', {score, rank: rank.en, stat: st.peak, day: game.day});
+  const show = () => {
+    canvas = build();
+    let head;
+    if (won) head = '<h1>' + tr('Shaheed Minar <span>held!</span>') + '</h1><p>' + tr('Your crowd of <b>{n}</b> held the square on <b>Day {d}</b>.', {n: crowd, d: game.day}) + '</p>';
+    else if (outcome === 'timeout') head = '<h1>' + tr('Day {n} <span>is over</span>', {n: MAX_DAY}) + '</h1><p>' + tr('You are a <b>{t}</b>. {d}', {t: tagBn, d: tr(tag.desc)}) + '</p>';
+    else if (info.aynaghor) head = '<h1>' + tr('Taken to <span>Aynaghor</span>') + '</h1><p>' + tr('The police van took you to Aynaghor. The game is over.') + '</p>';
+    else head = '<h1>' + tr('Detained at <span>{s}</span>', {s: tr(info.station)}) + '</h1><p>' + tr('You were caught by the police and taken by van. The game is over.') + '</p>';
+    box.innerHTML = '<button id="langbtn" class="langbtn" type="button">' + (isBn() ? 'English' : 'বাংলা') + '</button>' + head + '<img id="cardimg" alt="Photo card" src="' + canvas.toDataURL('image/png') + '">' +
+      '<label>' + tr('Put your own photo on the card (optional)') + '<input id="photo2" type="file" accept="image/*"></label>' +
+      '<button id="share">' + tr('Share card') + '</button><button id="dl" class="alt">' + tr(IS_TOUCH ? 'Save to Photos' : 'Download') + '</button><button id="go">' + tr('March again') + '</button>' +
+      (IS_TOUCH ? '<small>' + tr('Tip: tap Save to Photos, or press and hold the card, to keep it in your Gallery.') + '</small><br>' : '') +
+      (playerPhoto ? '<button id="nophoto" class="alt">' + tr('Use default avatar') + '</button>' : '') +
+      supportHTML() + '<a href="#" class="aboutlink">' + tr('About &amp; Disclaimer') + '</a><br>' +
+      '<small>' + tr('Your photo stays on your device. It is only drawn onto this card. Fictional game; characters and events are not real people or incidents.') + '</small>';
+    const text = won ? tr('I held the Central Shaheed Minar in Andolon! {r}, {s} pts.', {r: isBn() ? rank.bn : rank.en, s: loc(score)})
+      : outcome === 'timeout' ? tr('Andolon called me "{t}". Can you do better?', {t: tagBn})
+      : tr('I was detained at {st} in Andolon. {s} pts.', {st: tr(info.station), s: loc(score)});
+    const refresh = () => { canvas = build(); document.getElementById('cardimg').src = canvas.toDataURL('image/png'); const b = document.getElementById('nophoto'); if (!b && playerPhoto){ const n = document.createElement('button'); n.id = 'nophoto'; n.className = 'alt'; n.textContent = tr('Use default avatar'); n.onclick = () => { playerPhoto = null; n.remove(); refresh(); }; document.getElementById('go').after(n); } };
+    document.getElementById('photo2').onchange = e => loadPhoto(e.target.files[0], refresh);
+    const np = document.getElementById('nophoto'); if (np) np.onclick = () => { playerPhoto = null; np.remove(); refresh(); };
+    document.getElementById('share').onclick = () => shareCard(canvas, text);
+    document.getElementById('dl').onclick = () => downloadCard(canvas);
+    document.getElementById('go').onclick = start;
+    document.getElementById('langbtn').onclick = () => { setLang(isBn() ? 'en' : 'bn'); show(); };
+    addSwitch();
+    addLeaderboard('protester', {score, rank: rank.en, stat: st.peak, day: game.day});
+  };
+  show();
   document.getElementById('menu').style.display = 'flex';
 }
 
