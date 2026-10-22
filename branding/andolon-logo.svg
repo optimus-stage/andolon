@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0.8" stop-color="#ffb938" stop-opacity=".35"/><stop offset="1" stop-color="#ffb938" stop-opacity="0"/></radialGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0f1a2b"/><stop offset="1" stop-color="#25415f"/></linearGradient>
+    <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#ffd166"/><stop offset="1" stop-color="#f4a62a"/></radialGradient>
+    <!-- one protester in the game's own style; drawn in game units (head r5, body 12 wide) -->
+    <g id="person">
+      <rect x="-4" y="3" width="3" height="7" fill="#2b2b2b"/><rect x="1" y="3" width="3" height="7" fill="#2b2b2b"/>
+      <rect x="-8" y="-6" width="2.5" height="8" fill="currentColor"/><rect x="5.5" y="-6" width="2.5" height="8" fill="currentColor"/>
+      <rect x="-6" y="-7" width="12" height="12" rx="3" fill="currentColor" stroke="#00000030" stroke-width=".45"/>
+      <circle cx="0" cy="-12" r="5" fill="var(--skin,#d9a679)"/>
+      <path d="M-5 -14 A5 5 0 0 1 5 -14 Z" fill="#1b1210"/>
+      <rect x="-5" y="-15" width="10" height="2.5" fill="#d62839"/>
+    </g>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <circle cx="512" cy="455" r="350" fill="url(#glow)"/>
+  <circle cx="512" cy="455" r="290" fill="url(#sun)"/>
+  <!-- ground shadow -->
+  <ellipse cx="512" cy="738" rx="400" ry="22" fill="#000" opacity=".28"/>
+  <!-- crowd behind -->
+  <g transform="translate(205 628) scale(10)" color="#e8e1c8" style="--skin:#8d5a3b"><use href="#person"/></g>
+  <g transform="translate(819 628) scale(10)" color="#dfe8ee" style="--skin:#f1c9a5"><use href="#person"/></g>
+  <g transform="translate(335 598) scale(13)" color="#f2f2ee" style="--skin:#b97d56"><use href="#person"/></g>
+  <g transform="translate(689 598) scale(13)" color="#f2d6a0" style="--skin:#d9a679"><use href="#person"/></g>
+  <!-- leader with a raised fist -->
+  <g transform="translate(512 532) scale(19)" color="#fbfbf7" style="--skin:#d9a679">
+    <g transform="translate(5.2 -5.2) rotate(-155)"><rect x="-1.6" y="-1" width="3.2" height="10.5" rx="1.4" fill="#fbfbf7" stroke="#00000030" stroke-width=".4"/><circle cx="0" cy="10.6" r="2.2" fill="#d9a679" stroke="#00000030" stroke-width=".4"/></g>
+    <use href="#person"/>
+  </g>
+  <text x="512" y="858" text-anchor="middle" font-family="'Noto Sans Bengali','Nirmala UI','Kalpurush',sans-serif" font-weight="700" font-size="148" fill="#ffffff">আন্দোলন</text>
+  <text x="512" y="918" text-anchor="middle" font-family="'Inter','Segoe UI',Arial,sans-serif" font-weight="700" font-size="40" letter-spacing="14" fill="#f6b93b">ANDOLON</text>
+</svg>
