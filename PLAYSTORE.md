@@ -28,7 +28,7 @@ Without it the app opens with a browser address bar.
 - **Data safety form**: collected data = nickname and in-app score/progress, shared publicly on the leaderboard; anonymous user ID (Firebase); optional Google sign-in (email and name, used only to sign in, not shown). No ads, no location, no contacts. Data can be deleted on request (email in the policy).
 - **Content rating questionnaire**: fictional, cartoon, non-graphic conflict involving police and crowds; stick/gunfire sound effects. Answer honestly. Mention that the game is fictional and not tied to real events.
 - **User-generated content**: leaderboard names are public; the leaderboard has a "Report an inappropriate name" link and the policy explains removal.
-- Store listing: short and full description, 512 px icon, feature graphic (1024x500), phone screenshots (landscape).
+- Store listing: short and full description, 512 px icon, feature graphic (1024x500), phone screenshots (vertical is the default; add horizontal ones if you like).
 
 ## 5. Updating later
 - Game changes: merge to `main` as usual; nothing to upload to Play.

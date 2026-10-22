@@ -89,6 +89,7 @@ const BN = {
   'Link copied. Paste it in a chat to challenge a friend.': 'লিংক কপি হয়েছে। বন্ধুকে চ্যালেঞ্জ করতে চ্যাটে পেস্ট করুন।',
   'Challenge Accepted': 'চ্যালেঞ্জ গ্রহণ', "Play a friend's challenge link.": 'বন্ধুর চ্যালেঞ্জ লিংকে খেলুন।',
   'Challenge Won': 'চ্যালেঞ্জ জয়', "Beat a friend's score.": 'বন্ধুর স্কোর ছাড়িয়ে যান।',
+  'Play style': 'খেলার ধরন', 'Vertical': 'খাড়া', 'Horizontal': 'আড়াআড়ি',
   'Close': 'বন্ধ করুন', 'Report an inappropriate name': 'অনুপযুক্ত নাম জানান',
   'Barishal': 'বরিশাল', 'Chattogram': 'চট্টগ্রাম', 'Dhaka': 'ঢাকা', 'Khulna': 'খুলনা', 'Mymensingh': 'ময়মনসিংহ', 'Rajshahi': 'রাজশাহী', 'Rangpur': 'রংপুর', 'Sylhet': 'সিলেট', 'Outside Bangladesh': 'বাংলাদেশের বাইরে',
   'Get game updates on WhatsApp': 'হোয়াটসঅ্যাপে গেমের আপডেট পান',
@@ -260,7 +261,7 @@ const BNH = {
     '</ul></details>',
   fictional: 'কাল্পনিক গেম। চরিত্র ও ঘটনা বাস্তব মানুষ বা ঘটনা নয়। মানচিত্র শৈলীবদ্ধ।',
   aboutlink: 'পরিচিতি ও দাবিত্যাগ',
-  rotate: '<span class="rotphone">📱</span><p>খেলতে ফোনটি ঘোরান</p><small>আন্দোলন ল্যান্ডস্কেপে খেলতে হয়</small>',
+  rotate: '<span class="rotphone">📱</span><p>ফোনটি আড়াআড়ি করুন</p><small>আপনি আড়াআড়ি খেলা বেছেছেন।</small><button type="button" id="rotportrait">বরং খাড়া খেলুন</button>',
   abouth: 'নির্মাতা ও গেম সম্পর্কে',
   about: '<p>আমি <b>সাব্বির আহমেদ</b>, প্রযুক্তিপ্রেমী; আইইউটি থেকে ইলেকট্রিক্যাল অ্যান্ড ইলেকট্রনিক ইঞ্জিনিয়ারিংয়ে পড়েছি। নতুন নতুন ধারণা নিয়ে ভাবতে এবং সৃজনশীল প্রকল্পের মাধ্যমে সেগুলো বাস্তবে রূপ দিতে আমার ভালো লাগে।</p>' +
     '<p><b>আন্দোলন</b> একটি স্বাধীনভাবে তৈরি কাল্পনিক গেম, যা কৌতূহল থেকে এবং এই ভূখণ্ডের প্রতিবাদ ও বিপ্লবের দীর্ঘ ইতিহাস থেকে অনুপ্রাণিত। এটি কোনো রাজনৈতিক, ধর্মীয়, সামাজিক বা মতাদর্শিক অবস্থানকে তুলে ধরে না বা সমর্থন করে না, এবং কোনো বাস্তব ঘটনা, সরকার, প্রতিষ্ঠান, দল, গোষ্ঠী বা ব্যক্তি সম্পর্কে তথ্যগত দাবিও করে না। এটি বিনোদন ও সৃজনশীল প্রকাশের জন্য তৈরি, একে সংবাদসূত্র বা ঐতিহাসিক দলিল হিসেবে গণ্য করা উচিত নয়।</p>' +
@@ -296,6 +297,7 @@ function applyLang(){
   if (typeof refreshDaily === 'function') refreshDaily();
   if (typeof refreshProfileBtn === 'function') refreshProfileBtn();
   if (typeof showChallengeBanner === 'function') showChallengeBanner();
+  if (typeof refreshOrient === 'function') refreshOrient();
   const slot = document.getElementById('supportslot'); if (slot && typeof supportHTML === 'function') slot.innerHTML = supportHTML();
 }
 function setLang(l){
