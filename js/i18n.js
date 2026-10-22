@@ -28,7 +28,7 @@ const BN = {
   'Could not submit. Check your connection and try again.': 'জমা দেওয়া যায়নি। ইন্টারনেট সংযোগ দেখে আবার চেষ্টা করুন।',
   'Loading...': 'লোড হচ্ছে...', 'No scores yet. Be the first!': 'এখনো কোনো স্কোর নেই। প্রথম হোন!',
   'Could not load the leaderboard. Check your connection and try again.': 'লিডারবোর্ড লোড করা যায়নি। ইন্টারনেট সংযোগ দেখে আবার চেষ্টা করুন।',
-  'Close': 'বন্ধ করুন',
+  'Close': 'বন্ধ করুন', 'Report an inappropriate name': 'অনুপযুক্ত নাম জানান',
   'Barishal': 'বরিশাল', 'Chattogram': 'চট্টগ্রাম', 'Dhaka': 'ঢাকা', 'Khulna': 'খুলনা', 'Mymensingh': 'ময়মনসিংহ', 'Rajshahi': 'রাজশাহী', 'Rangpur': 'রংপুর', 'Sylhet': 'সিলেট', 'Outside Bangladesh': 'বাংলাদেশের বাইরে',
   'Get game updates on WhatsApp': 'হোয়াটসঅ্যাপে গেমের আপডেট পান',
   'New updates are coming. Join the WhatsApp group to hear first': 'নতুন আপডেট আসছে। সবার আগে জানতে হোয়াটসঅ্যাপ গ্রুপে যোগ দিন',
@@ -212,7 +212,7 @@ const BNH = {
     '<p>আপনি কার্ড শেয়ার করলে কী এবং কার সঙ্গে শেয়ার করবেন তা আপনার নিয়ন্ত্রণে। অনুগ্রহ করে শুধু নিজের বা অনুমতিপ্রাপ্ত ছবি ব্যবহার করুন।</p>' +
     '<h3>হালনাগাদ ও যোগাযোগ</h3>' +
     '<p>এই দাবিত্যাগ সময়ে সময়ে পরিবর্তিত হতে পারে। কোনো বিষয়বস্তু অনুপযুক্ত বা ক্ষতিকর মনে হলে নির্মাতার সঙ্গে যোগাযোগ করুন, যাতে দ্রুত তা পর্যালোচনা করা যায়।</p>' +
-    '<p>যোগাযোগ: <a href="mailto:bizwithsabbir@gmail.com">bizwithsabbir@gmail.com</a></p>',
+    '<p>যোগাযোগ: <a href="mailto:bizwithsabbir@gmail.com">bizwithsabbir@gmail.com</a> · <a href="privacy.html" target="_blank" rel="noopener">গোপনীয়তা নীতি</a></p>',
   aboutthanks: '<b>আন্দোলন খেলার জন্য ধন্যবাদ। খেলা উপভোগ করুন এবং দায়িত্বশীলভাবে শেয়ার করুন।</b>',
 };
 
