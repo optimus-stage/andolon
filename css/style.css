@@ -185,3 +185,22 @@ button.role small{font-size:12px !important;margin-top:2px !important}
 #lbmode button{margin:0;width:auto;padding:8px;background:#e6e1d0;color:#222;font-weight:700}
 #lbmode button.on{background:#b58900;color:#fff}
 #lbreset{font-size:12px;color:#7a6320;margin:2px 0 6px;text-align:center;min-height:14px}
+
+/* profile and achievements */
+.achnew{margin:10px 0;padding:8px 12px;background:#fff3c4;border:2px solid #e9c64a;border-radius:12px;color:#5a4300;font-size:15px}
+.achnew div{margin-top:5px} .achnew small{display:block;margin:0 0 0 24px;color:#7a6320;font-size:12px}
+#lb.profile #lbbox{max-width:560px}
+.profsub{color:#555;font-size:14px;margin:-4px 0 10px}
+.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+.statgrid div{background:#fff;border-radius:8px;padding:6px 10px;display:flex;justify-content:space-between;gap:8px;font-size:13px;align-items:center}
+.statgrid span{color:#555} .statgrid b{color:#0b6b3a;font-size:15px;white-space:nowrap}
+#lbbox h3{margin:14px 0 6px;font-size:18px;color:#0b6b3a} #lbbox h3 small{font-weight:400;color:#777;font-size:13px;margin:0}
+.achlist{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ach{display:flex;gap:8px;align-items:flex-start;padding:7px 8px;background:#ece7d4;border-radius:8px;opacity:.7}
+.ach.got{background:#fff3c4;border:1px solid #e9c64a;opacity:1}
+.achicon{font-size:22px;line-height:1.1;flex:none}
+.ach b{display:block;font-size:13px;color:#222} .ach small{display:block;margin:1px 0 0;font-size:11px;color:#666}
+.achbar{display:block;height:5px;background:#d8d2bc;border-radius:3px;margin-top:4px;overflow:hidden}
+.achbar u{display:block;height:100%;background:#0b6b3a}
+#profsync{margin-top:12px;text-align:center} #profsync small{display:block;margin:4px 0;font-size:12px}
+@media (max-width:640px){.achlist,.statgrid{grid-template-columns:1fr}}

@@ -26,6 +26,18 @@ service cloud.firestore {
         && d.streak is int && d.streak >= 0 && d.streak <= 1000
         && d.updatedAt == request.time;
     }
+    // lifetime profile (private to the owner): counters only ever go up, achievements are a short list of ids
+    function numOk(n, k) { return !(k in n) || (n[k] is int && n[k] >= 0 && n[k] <= 1000000000); }
+    function validProfile(d) {
+      return d.keys().hasOnly(['n', 'ach', 'updatedAt'])
+        && d.n is map && d.n.keys().hasOnly(['games', 'wins', 'winsP', 'winsPol', 'secs', 'recruits', 'peak', 'bestP', 'bestPol', 'dispersed', 'breaks', 'clashes', 'detained', 'beaten', 'cures', 'teas', 'dailies', 'bestStreak', 'squadPeak', 'smokes'])
+        && numOk(d.n, 'games') && numOk(d.n, 'wins') && numOk(d.n, 'winsP') && numOk(d.n, 'winsPol') && numOk(d.n, 'secs') && numOk(d.n, 'recruits') && numOk(d.n, 'peak') && numOk(d.n, 'bestP') && numOk(d.n, 'bestPol') && numOk(d.n, 'dispersed') && numOk(d.n, 'breaks') && numOk(d.n, 'clashes') && numOk(d.n, 'detained') && numOk(d.n, 'beaten') && numOk(d.n, 'cures') && numOk(d.n, 'teas') && numOk(d.n, 'dailies') && numOk(d.n, 'bestStreak') && numOk(d.n, 'squadPeak') && numOk(d.n, 'smokes')
+        && d.ach is list && d.ach.size() <= 40
+        && d.updatedAt == request.time;
+    }
+    function nonDecreasing(a, b) {
+      return a.n.get('games', 0) >= b.n.get('games', 0) && a.n.get('wins', 0) >= b.n.get('wins', 0) && a.n.get('winsP', 0) >= b.n.get('winsP', 0) && a.n.get('winsPol', 0) >= b.n.get('winsPol', 0) && a.n.get('secs', 0) >= b.n.get('secs', 0) && a.n.get('recruits', 0) >= b.n.get('recruits', 0) && a.n.get('peak', 0) >= b.n.get('peak', 0) && a.n.get('bestP', 0) >= b.n.get('bestP', 0) && a.n.get('bestPol', 0) >= b.n.get('bestPol', 0) && a.n.get('dispersed', 0) >= b.n.get('dispersed', 0) && a.n.get('breaks', 0) >= b.n.get('breaks', 0) && a.n.get('clashes', 0) >= b.n.get('clashes', 0) && a.n.get('detained', 0) >= b.n.get('detained', 0) && a.n.get('beaten', 0) >= b.n.get('beaten', 0) && a.n.get('cures', 0) >= b.n.get('cures', 0) && a.n.get('teas', 0) >= b.n.get('teas', 0) && a.n.get('dailies', 0) >= b.n.get('dailies', 0) && a.n.get('bestStreak', 0) >= b.n.get('bestStreak', 0) && a.n.get('squadPeak', 0) >= b.n.get('squadPeak', 0) && a.n.get('smokes', 0) >= b.n.get('smokes', 0);
+    }
     function nameDoc(n) { return /databases/$(database)/documents/names/$(n.lower()); }
     function playerDoc(uid) { return /databases/$(database)/documents/players/$(uid); }
     function validDoc(d, uid) {
@@ -91,6 +103,11 @@ service cloud.firestore {
       allow update: if role in ['protester', 'police'] && request.auth != null && request.auth.uid == uid && validDay(day) && validDaily(request.resource.data, uid)
         && request.resource.data.score >= resource.data.score;
       allow delete: if role in ['protester', 'police'] && request.auth != null && request.auth.uid == uid;
+    }
+    match /profiles/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && request.auth.uid == uid && validProfile(request.resource.data);
+      allow update: if request.auth != null && request.auth.uid == uid && validProfile(request.resource.data) && nonDecreasing(request.resource.data, resource.data);
     }
     match /{board}/{uid} {
       allow read: if board in ['lb_protester', 'lb_police'];

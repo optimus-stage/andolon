@@ -8,7 +8,7 @@ function doBreak(){
   sfxWhack();
   if (followers.length < g.need){ say(tr('This police barricade needs {n} people to break. You have {m}.', {n: g.need, m: followers.length})); return; }
   g.hits -= 1; g.shake = 0.25; addFx(g.x, g.y, 'dust');
-  if (g.hits <= 0){ g.opening = true; say(tr('The police barricade gives way. Keep moving!')); }
+  if (g.hits <= 0){ g.opening = true; game.stats.breaks++; say(tr('The police barricade gives way. Keep moving!')); }
   else say(tr(g.hits > 1 ? '{n} more strikes to break it.' : '{n} more strike to break it.', {n: g.hits}), 1.5);
 }
 function update(dt){
