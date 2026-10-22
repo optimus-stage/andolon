@@ -11,7 +11,8 @@ function person(c, x, y, o){
     c.fillStyle = L.lungi; c.fillRect(-5.5, 3, 11, 6.5); c.fillStyle = 'rgba(255,255,255,.35)'; c.fillRect(-5.5, 5.5, 11, 1);
     c.fillStyle = '#2b2b2b'; c.fillRect(-4 + sw, 9, 3, 1.6); c.fillRect(1 - sw, 9, 3, 1.6);
   } else if (outfit === 'saree'){
-    c.fillStyle = o.dress; c.beginPath(); c.moveTo(-6, 2); c.lineTo(6, 2); c.lineTo(7.5 + sw * 0.15, 10); c.lineTo(-7.5 + sw * 0.15, 10); c.closePath(); c.fill();
+    const top = L.g === 1 ? 3 : 6;   // a woman's saree starts at a slim waist
+    c.fillStyle = o.dress; c.beginPath(); c.moveTo(-top, L.g === 1 ? 0 : 2); c.lineTo(top, L.g === 1 ? 0 : 2); c.lineTo(7.5 + sw * 0.15, 10); c.lineTo(-7.5 + sw * 0.15, 10); c.closePath(); c.fill();
     c.fillStyle = 'rgba(0,0,0,.14)'; c.fillRect(-7, 8.2, 14, 1.8);
   } else {
     c.fillStyle = o.legs || (L ? L.legs : '#2b2b2b'); c.fillRect(-4 + sw, 3, 3, 7); c.fillRect(1 - sw, 3, 3, 7);
@@ -21,10 +22,13 @@ function person(c, x, y, o){
   // body
   const bw = L && L.g === 1 ? 5.2 : 6, ax = 6 - bw;   // a slightly narrower build for women
   c.fillStyle = o.dress; c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 1;
-  c.beginPath(); c.roundRect(-bw, -7 + bob, bw * 2, outfit === 'panjabi' || outfit === 'kameez' ? 16 : 12, 3); c.fill(); c.stroke();
+  if (L && L.g === 1){   // women: shoulders, a slim waist, then hips (a kameez flares out below the waist)
+    const hem = outfit === 'kameez' ? 9 : 5, hw = outfit === 'kameez' ? 6 : 4.8; c.lineJoin = 'round';
+    c.beginPath(); c.moveTo(-4.6, -7 + bob); c.lineTo(4.6, -7 + bob); c.lineTo(5.4, -4 + bob); c.lineTo(2.6, 0.5 + bob); c.lineTo(hw, hem + bob); c.lineTo(-hw, hem + bob); c.lineTo(-2.6, 0.5 + bob); c.lineTo(-5.4, -4 + bob); c.closePath(); c.fill(); c.stroke(); c.lineJoin = 'miter';
+  } else { c.beginPath(); c.roundRect(-bw, -7 + bob, bw * 2, outfit === 'panjabi' || outfit === 'kameez' ? 16 : 12, 3); c.fill(); c.stroke(); }
   c.fillStyle = o.dress; c.fillRect(-8 + ax, -6 + bob, 2.5, 8); c.fillRect(5.5 - ax, -6 + bob, 2.5, 8);
   if (o.badge){ c.fillStyle = '#f0c419'; for (let i = 0; i < o.badge; i++){ c.beginPath(); c.arc(2.6, -4.2 + i * 2.6 + bob, 0.95, 0, 6.28); c.fill(); } }   // rank stars on the chest
-  if (outfit === 'saree'){ c.fillStyle = 'rgba(0,0,0,.16)'; c.beginPath(); c.moveTo(-6, -7 + bob); c.lineTo(6, 3 + bob); c.lineTo(6, 5 + bob); c.lineTo(-6, -4 + bob); c.closePath(); c.fill(); }
+  if (outfit === 'saree'){ c.fillStyle = 'rgba(0,0,0,.16)'; c.beginPath(); if (L.g === 1){ c.moveTo(-4.6, -7 + bob); c.lineTo(2.6, 0.5 + bob); c.lineTo(2.8, 3 + bob); c.lineTo(-5.4, -4 + bob); } else { c.moveTo(-6, -7 + bob); c.lineTo(6, 3 + bob); c.lineTo(6, 5 + bob); c.lineTo(-6, -4 + bob); } c.closePath(); c.fill(); }
   if (L && L.bag){ c.fillStyle = '#6b4a2a'; c.fillRect(-9.5, -1 + bob, 4, 6); c.fillRect(-7.5, -6 + bob, 1, 5); }
   // head
   if (L && L.head === 'hijab' && !o.hat){
@@ -36,7 +40,7 @@ function person(c, x, y, o){
   if (L && L.glasses){ c.strokeStyle = '#111'; c.lineWidth = 0.7; c.beginPath(); c.arc(-2.1, -12.2 + bob, 1.4, 0, 6.28); c.moveTo(3.5, -12.2 + bob); c.arc(2.1, -12.2 + bob, 1.4, 0, 6.28); c.moveTo(-0.5, -12.2 + bob); c.lineTo(0.5, -12.2 + bob); c.stroke(); }
   if (L && L.mask){ c.fillStyle = '#dfe3e6'; c.beginPath(); c.roundRect(-4.3, -11 + bob, 8.6, 4.6, 1.8); c.fill(); }
   if (o.hat === 'helmet'){
-    c.fillStyle = '#1a1a1a'; c.beginPath(); c.arc(0, -13 + bob, 5.8, Math.PI, 0); c.fill(); c.fillRect(-6, -13 + bob, 12, 2.5);
+    c.fillStyle = o.capC || '#1a1a1a'; c.beginPath(); c.arc(0, -13 + bob, 5.8, Math.PI, 0); c.fill(); c.fillRect(-6, -13 + bob, 12, 2.5);
     c.fillStyle = 'rgba(180,200,220,.6)'; c.fillRect(-4, -11 + bob, 8, 2);
   } else if (o.hat === 'cap'){
     c.fillStyle = o.capC || '#12306b'; c.beginPath(); c.arc(0, -13 + bob, 5.5, Math.PI, 0); c.fill(); c.fillRect(-1, -13 + bob, 8, 2);
@@ -66,6 +70,16 @@ function person(c, x, y, o){
     c.save(); c.translate(7, -3 + bob); c.rotate(ang);
     c.fillStyle = '#8b5a2b'; c.fillRect(0, -1.5, 17, 3); c.fillStyle = '#5a3a1a'; c.fillRect(12, -1.5, 5, 3);
     c.restore();
+  }
+  if (o.gun){   // police rifle, held across the body
+    c.fillStyle = '#2a2a2e'; c.fillRect(3, -4.4 + bob, 16, 2.6); c.fillRect(1.2, -3.6 + bob, 4.4, 4.8); c.fillRect(8, -2 + bob, 1.8, 3.4);
+    c.fillStyle = '#6b6b72'; c.fillRect(15.4, -5.4 + bob, 2.6, 1.2); c.fillStyle = '#8a8a92'; c.fillRect(10, -3.9 + bob, 5, 0.8);
+  }
+  if (o.shield){   // riot shield; pushed forward when striking
+    const push = (o.swing || 0) * 4;
+    c.fillStyle = 'rgba(170,205,235,.6)'; c.strokeStyle = '#e9f2fa'; c.lineWidth = 1;
+    c.beginPath(); c.roundRect(4.5 + push, -13 + bob, 9.5, 24, 3); c.fill(); c.stroke();
+    c.fillStyle = 'rgba(255,255,255,.55)'; c.fillRect(6 + push, -10 + bob, 2, 15);
   }
   c.restore();
 }

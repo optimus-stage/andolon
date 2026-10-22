@@ -12,13 +12,16 @@ const AV_OUTFIT_N = ['Shirt', 'Panjabi', 'Lungi', 'Saree', 'Kameez'];
 const AV_DRESSC = [WHITE, '#c8102e', '#0b6b3a', '#2f6fd0', '#e0a96a', '#232323', '#7a3b7a', '#f0c419'];
 const AV_LEGC = ['#2b2b2b', '#3a4a6a', '#4a3a2a', '#2f6fd0', '#2e7d5b', '#8a2f3f'];
 const AV_ACC_N = ['None', 'Flag', 'Glasses', 'Mask', 'Bag'];
+const AV_CP_N = ['Cap', 'Beret', 'None', 'Helmet'];   // saved numbers keep their meaning: 0 cap, 1 beret; 2 none and 3 helmet were added later
+const AV_CP_HAT = ['cap', 'beret', null, 'helmet'];
+const AV_W_N = ['Stick', 'Gun', 'Shield'];
 const AV_UNI = [{n: 'Navy', dress: BLUE, legs: '#14284f', cap: '#12306b'}, {n: 'Khaki', dress: '#b59f6a', legs: '#6a5a34', cap: '#6a5a34'},
   {n: 'Olive', dress: '#5f7a3a', legs: '#2f3f1c', cap: '#2f3f1c'}, {n: 'Black', dress: '#2b2b30', legs: '#111111', cap: '#111111'}];
 // what each gender can pick (numbers index the lists above)
 const AV_ALLOW = {h: [[0, 3, 4], [1, 2, 0]], hd: [[0, 1, 3], [0, 2, 3]], o: [[0, 1, 2], [0, 3, 4]]};
-const AV_KEYS = {protester: ['g', 's', 'h', 'hc', 'hd', 'hj', 'o', 'dc', 'lc', 'a'], police: ['g', 's', 'h', 'hc', 'cp', 'uc', 'b', 'a']};
-const AV_MAX = {protester: {g: 2, s: 4, h: 5, hc: 6, hd: 4, hj: 6, o: 5, dc: 8, lc: 6, a: 5}, police: {g: 2, s: 4, h: 5, hc: 6, cp: 2, uc: 4, b: 4, a: 2}};
-const AV_DEFAULT = {protester: {g: 0, s: 1, h: 0, hc: 0, hd: 3, hj: 0, o: 0, dc: 0, lc: 0, a: 1}, police: {g: 0, s: 1, h: 0, hc: 0, cp: 0, uc: 0, b: 0, a: 0}};
+const AV_KEYS = {protester: ['g', 's', 'h', 'hc', 'hd', 'hj', 'o', 'dc', 'lc', 'a'], police: ['g', 's', 'h', 'hc', 'cp', 'uc', 'b', 'a', 'w']};
+const AV_MAX = {protester: {g: 2, s: 4, h: 5, hc: 6, hd: 4, hj: 6, o: 5, dc: 8, lc: 6, a: 5}, police: {g: 2, s: 4, h: 5, hc: 6, cp: 4, uc: 4, b: 4, a: 2, w: 3}};
+const AV_DEFAULT = {protester: {g: 0, s: 1, h: 0, hc: 0, hd: 3, hj: 0, o: 0, dc: 0, lc: 0, a: 1}, police: {g: 0, s: 1, h: 0, hc: 0, cp: 0, uc: 0, b: 0, a: 0, w: 0}};
 const avRole = r => r === 'police' ? 'police' : 'protester';
 
 function avFix(a, r){   // keep every value in range, and only the choices that suit the gender
@@ -59,7 +62,7 @@ function avatarProps(a, r){
   r = avRole(r); const L = {h: 1, g: a.g, hair: AV_HAIR[a.h], hc: AV_HAIRC[a.hc], head: null, hj: AV_HJ[0], outfit: 'shirt', legs: AV_LEGC[0], lungi: AV_LEGC[0], bag: false};
   if (r === 'police'){
     const u = AV_UNI[a.uc]; L.glasses = a.a === 1;
-    return {skin: SKINS[a.s], dress: u.dress, legs: u.legs, hat: a.cp ? 'beret' : 'cap', capC: u.cap, badge: a.b, hairBack: true, look: L};
+    return {skin: SKINS[a.s], dress: u.dress, legs: u.legs, hat: AV_CP_HAT[a.cp], capC: u.cap, badge: a.b, hairBack: true, stick: a.w === 0, gun: a.w === 1, shield: a.w === 2, look: L};
   }
   const hd = AV_HEAD[a.hd]; L.head = hd === 'band' ? null : hd; L.hj = AV_HJ[a.hj]; L.outfit = AV_OUTFIT[a.o]; L.legs = L.lungi = AV_LEGC[a.lc];
   L.bag = a.a === 4; L.glasses = a.a === 2; L.mask = a.a === 3;
@@ -87,7 +90,7 @@ function avRows(r, a){   // the option rows to show for this side and this gende
   const chips = (k, label, vals, names) => ({k, label, chips: vals.map(v => [v, names[v]])});
   const sw = (k, label, names) => ({k, label, sw: avSwatches[k](), names});
   const base = [chips('g', 'Gender', [0, 1], ['Male', 'Female']), sw('s', 'Skin tone'), chips('h', 'Hair', allow('h'), AV_HAIR_N), sw('hc', 'Hair colour')];
-  if (r === 'police') return base.concat([chips('cp', 'Cap', [0, 1], ['Cap', 'Beret']), sw('uc', 'Uniform colour', AV_UNI.map(u => u.n)), chips('b', 'Rank badge', [0, 1, 2, 3], ['None', '1 star', '2 stars', '3 stars']), chips('a', 'Glasses', [0, 1], ['No', 'Yes'])]);
+  if (r === 'police') return base.concat([chips('cp', 'Headgear', [2, 0, 1, 3], AV_CP_N), sw('uc', 'Uniform colour', AV_UNI.map(u => u.n)), chips('b', 'Rank badge', [0, 1, 2, 3], ['None', '1 star', '2 stars', '3 stars']), chips('a', 'Glasses', [0, 1], ['No', 'Yes']), chips('w', 'Equipment', [0, 1, 2], AV_W_N)]);
   return base.concat([chips('hd', 'Head', allow('hd'), AV_HEAD_N)], a.hd === 2 ? [sw('hj', 'Hijab colour')] : [], [chips('o', 'Outfit', allow('o'), AV_OUTFIT_N), sw('dc', 'Outfit colour')],
     a.o === 3 ? [] : [sw('lc', a.o === 2 ? 'Lungi colour' : 'Trousers colour')], [chips('a', 'Accessory', [0, 1, 2, 3, 4], AV_ACC_N)]);
 }
