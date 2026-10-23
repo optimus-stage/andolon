@@ -10,7 +10,7 @@ Open `index.html` in a browser (no build, no server needed). To share online, up
 - `css/style.css`: styles
 - `js/chapters.js`: one object per chapter: balance numbers (rings, crowd sizes, day length, rivals), map content (police stations, hospitals, landmarks, river), chants and news headlines. Add a chapter here; play one with `?chapter=<id>`
 - `js/data.js`: data shared by every chapter (score weights, ranks, tags, roasts, police ranks, names, support links) and the globals built from the active chapter
-- `js/core.js`, `audio.js`, `town.js`, `state.js`, `collision.js`, `protester.js`, `police.js`, `combat.js`, `render.js`, `ui.js`, `avatar.js`, `main.js`: the game code, loaded in this order by `index.html` (they share one global scope)
+- `js/core.js`, `audio.js`, `town.js`, `state.js`, `collision.js`, `protester.js`, `police.js`, `combat.js`, `render.js`, `ui.js`, `avatar.js`, `access.js`, `main.js`: the game code, loaded in this order by `index.html` (they share one global scope)
 
 ## Rules
 - Walk with the mouse (or touch and hold on a phone). Recruit bystanders and they join your crowd in white. Your name shows above your head.
@@ -37,6 +37,12 @@ Open `index.html` in a browser (no build, no server needed). To share online, up
 - The avatar is drawn by `person()` in `js/render.js` from the options in `js/avatar.js`. It shows in the game, on the share card (a photo you add to the card replaces it), and on the leaderboard rows. Photos are never uploaded.
 - An avatar is stored as a short string of option numbers (for example `0.1.0.0.3.0.0.0.0.1`), so adding an option means extending the lists at the top of `js/avatar.js` and the Bangla names in `js/i18n.js`. Keep the order of existing values, because saved avatars use the numbers.
 - Avatar choices never use the seeded game RNG, so daily and friend challenges stay identical for everyone.
+
+## Accessibility
+- **Keyboard:** W A S D or the arrow keys walk (Space strikes; police also use G for smoke and F for warning shots). They only act while a game is running, so typing in the name box is unaffected. `steerKeys()` in `js/access.js` aims the player the same way the touch pad does and stops when the keys are released.
+- **Reduced motion** (menu > Accessibility): no red screen flashes, no barricade shake, a steady police-van light, a still news ticker and no menu animations. It starts on if the device asks for reduced motion.
+- **Text size** (Normal, Large, Extra large): every font size in `css/style.css` gets a larger copy, built automatically from the stylesheet, so new CSS scales too. The in-game panel (`hudScale()`) is drawn bigger, within what fits the screen.
+- The settings are saved on the device (`da_a11y`).
 
 ## Link preview (sharing)
 - `index.html` carries Open Graph and Twitter card tags, so a shared link shows a card with a title, description and the picture `img/og-image.jpg` (1200x630) on Facebook, WhatsApp, Messenger, Telegram and X.

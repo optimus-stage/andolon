@@ -92,7 +92,7 @@ function drawVan(c, v){
   c.fillStyle = '#9fd3f5'; c.fillRect(18, -11, 14, 11);
   c.fillStyle = '#222'; c.font = 'bold 9px system-ui'; c.textAlign = 'center'; c.fillText(tr('POLICE'), -6, 0);
   c.fillStyle = '#111'; c.beginPath(); c.arc(-22, 16, 6, 0, 6.28); c.arc(22, 16, 6, 0, 6.28); c.fill();
-  const flash = Math.floor((game ? game.t : 0) * 6) % 2;
+  const flash = A11Y.rm ? 0 : Math.floor((game ? game.t : 0) * 6) % 2;   // the van's red/blue light stays steady with reduced motion
   c.fillStyle = flash ? '#e53935' : '#1e88e5'; c.fillRect(-12, -19, 10, 5);
   c.fillStyle = flash ? '#1e88e5' : '#e53935'; c.fillRect(2, -19, 10, 5);
   c.restore();
@@ -251,7 +251,7 @@ function drawBarricades(c, v){
   gates.forEach(g => {
     if (!v(g)) return;
     const rx = Math.cos(g.ang), ry = Math.sin(g.ang), tx = -ry, ty = rx, a = 1 - g.open * 0.85, ang = g.ang + Math.PI / 2;
-    const j = g.shake > 0 ? (Math.random() - 0.5) * 6 : 0;   // rattles when struck
+    const j = g.shake > 0 && !A11Y.rm ? (Math.random() - 0.5) * 6 : 0;   // rattles when struck
     for (const o of [-75, -25, 25, 75]) drawBar(c, g.x + tx * o + rx * j, g.y + ty * o + ry * j, ang, a);
     for (const o of [-50, 0, 50]) drawBar(c, g.x + tx * o - rx * 18 + rx * j, g.y + ty * o - ry * 18 + ry * j, ang, a);
     const lp = polar(g.ang, g.r + 72);
@@ -463,7 +463,7 @@ function dailyBadge(c, y){   // small gold tag while a daily challenge run is on
   c.fillStyle = '#3a2a00'; c.textAlign = 'left'; c.fillText(t, 18, y + 16);
 }
 function drawHUDPolice(){
-  const k = Math.max(0.6, Math.min(1, innerWidth / 760, innerHeight / 540)), vw = innerWidth / k, vh = innerHeight / k, G = game, st = G.stats;
+  const k = hudScale(), vw = innerWidth / k, vh = innerHeight / k, G = game, st = G.stats;
   const barY = vw < 800 ? Math.round(vh * 0.62) : 20;
   ctx.save(); ctx.scale(k, k); ctx.textAlign = 'left';
   ctx.fillStyle = 'rgba(0,0,0,.68)'; ctx.fillRect(10, 10, 300, 38);
@@ -510,7 +510,7 @@ function drawHUDPolice(){
 function drawHUD(){
   if (role === 'police'){ drawHUDPolice(); return; }
   // draw the HUD on a virtual screen that shrinks on small displays so nothing overlaps
-  const k = Math.max(0.6, Math.min(1, innerWidth / 760, innerHeight / 540)), vw = innerWidth / k, vh = innerHeight / k;
+  const k = hudScale(), vw = innerWidth / k, vh = innerHeight / k;
   const barY = vw < 800 ? Math.round(vh * 0.62) : 20, bannerY = vw < 800 ? Math.round(vh * 0.5) : 70;
   ctx.save(); ctx.scale(k, k);
   ctx.textAlign = 'left';
@@ -591,7 +591,7 @@ function drawHUD(){
     if (rel){ ctx.strokeStyle = '#1b8a3e'; ctx.lineWidth = 5; ctx.strokeRect(x + 2.5, y + 2.5, 95, 103); ctx.fillStyle = 'rgba(27,138,62,.18)'; ctx.fillRect(x + 6, y + 6, 88, 66); }
     ctx.restore();
   });
-  if (game.flash > 0){ ctx.fillStyle = 'rgba(200,0,0,' + (game.flash * 0.9) + ')'; ctx.fillRect(0, 0, vw, vh); }
+  if (game.flash > 0 && !A11Y.rm){ ctx.fillStyle = 'rgba(200,0,0,' + (game.flash * 0.9) + ')'; ctx.fillRect(0, 0, vw, vh); }
   ctx.restore();
 }
 

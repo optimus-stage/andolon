@@ -26,6 +26,7 @@ function update(dt){
 
   // player
   game.boost = Math.max(0, game.boost - dt);
+  steerKeys();   // WASD / arrow keys (access.js)
   if (pad.id !== null && (pad.ux || pad.uy)){ mouse.x = (player.x + pad.ux * 200 - cam.x) * Z; mouse.y = (player.y + pad.uy * 200 - cam.y) * Z; }   // pad: head exactly the way the thumb points
   const mw = {x: mouse.x / Z + cam.x, y: mouse.y / Z + cam.y};
   const dx = mw.x - player.x, dy = mw.y - player.y, d = Math.hypot(dx, dy);

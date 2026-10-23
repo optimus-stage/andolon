@@ -246,3 +246,16 @@ button.role small{font-size:12px !important;margin-top:2px !important}
 #about,#lb,#avedit{box-sizing:border-box;padding:calc(env(safe-area-inset-top) + 14px) env(safe-area-inset-right) calc(env(safe-area-inset-bottom) + 14px) env(safe-area-inset-left)}
 #tut{padding:calc(env(safe-area-inset-top) + 14px) calc(env(safe-area-inset-right) + 12px) calc(env(safe-area-inset-bottom) + 12px) calc(env(safe-area-inset-left) + 12px)}
 #mute{top:calc(10px + env(safe-area-inset-top))}
+
+/* accessibility */
+#a11y{margin:10px 0 4px;padding:6px 12px;background:#e9edf3;border-radius:10px}
+#a11y summary{cursor:pointer;font-weight:700;color:#1b2f4a;font-size:16px;padding:4px 0}
+#a11y .arow{margin:8px 0}
+#a11y .arow>span{display:block;font-size:13px;font-weight:700;margin-bottom:4px}
+#a11y .arow>div{display:flex;flex-wrap:wrap;gap:6px}
+#a11y .atsb{margin:0;width:auto}
+#card #a11y label.asw{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;color:#1b2f4a}
+#card #a11y input[type=checkbox]{width:24px;height:24px;margin:0;padding:0;flex:none}
+#a11y small{display:block;margin-top:4px;color:#445}
+body.rm #tk{animation:none}
+body.rm .tuticon,body.rm .rotphone{animation:none}
