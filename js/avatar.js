@@ -70,7 +70,7 @@ function avatarProps(a, r){
 }
 const avatarPropsFor = (str, r) => avatarProps(avDecode(str, r), r);
 function applyAvatar(p, r){   // put the chosen avatar on the player (called when a game is set up)
-  const pr = avatarProps(getAvatar(r), r); p.skin = pr.skin; p.avp = pr;
+  const pr = avatarProps(getAvatar(r), r); p.skin = pr.skin; if (avRole(r) === 'protester' && typeof activeBanner === 'function') pr.banner = activeBanner(); p.avp = pr;
 }
 
 // draw an avatar into a canvas (menu preview, editor, leaderboard rows). w and h are the canvas's CSS size: a canvas that is not in the page yet
@@ -141,6 +141,7 @@ function avatarButton(cls){   // a "Customize avatar" button with a live thumbna
 function paintAvatarButton(b){ b.textContent = tr('Customize avatar'); }
 function refreshAvatarUI(){
   const c = document.getElementById('avprev'); if (c) drawAvatar(c, avStr(role), role, 2.6, null, 100, 104);
+  const bn = document.getElementById('bnbtn'); if (bn){ bn.style.display = role === 'police' ? 'none' : ''; bn.textContent = tr('Banner') + (activeBanner() ? ' ✓' : ''); }
   const t = document.getElementById('avtitle'); if (t) t.textContent = tr(role === 'police' ? 'Your officer' : 'Your protester');
   for (let i = avatarButtons.length - 1; i >= 0; i--){ if (!avatarButtons[i].isConnected && avatarButtons[i].dataset.menu !== '1') avatarButtons.splice(i, 1); else paintAvatarButton(avatarButtons[i]); }
 }
@@ -149,5 +150,6 @@ function refreshAvatarUI(){
   const row = document.createElement('div'); row.id = 'avatarrow';
   row.innerHTML = '<canvas id="avprev" width="100" height="104" aria-hidden="true"></canvas><div><b id="avtitle"></b></div>';
   const b = avatarButton('alt'); b.id = 'avbtn'; b.dataset.menu = '1'; row.lastChild.appendChild(b);
+  const bb = document.createElement('button'); bb.type = 'button'; bb.className = 'alt'; bb.id = 'bnbtn'; bb.onclick = () => openBannerEditor(); row.lastChild.appendChild(bb);
   roles.after(row); refreshAvatarUI();
 })();

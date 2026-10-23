@@ -61,7 +61,7 @@ function renderCard(kind, info){
     const im = info.photo, k = Math.max(AW / im.width, AH / im.height), dw = im.width * k, dh = im.height * k;
     if (!win) g.filter = 'grayscale(0.7)';
     g.drawImage(im, (AW - dw) / 2 - AW / 2, (AH - dh) / 2, dw, dh); g.filter = 'none';
-  } else person(g, 0, AH - 100, Object.assign({scale: 9, noBase: true, stick: pol}, avatarProps(getAvatar(pol ? 'police' : 'protester'), pol ? 'police' : 'protester')));   // your avatar, unless you added a photo
+  } else person(g, 0, AH - 100, Object.assign({scale: 9, noBase: true, stick: pol}, Object.assign(avatarProps(getAvatar(pol ? 'police' : 'protester'), pol ? 'police' : 'protester'), pol ? {} : {banner: activeBanner()})));   // your avatar, unless you added a photo
   g.save(); g.translate(0, info.photo || tier ? AH - 90 : 80); g.rotate(-0.2);
   const col = info.stampCol || (win ? '#27500a' : info.station ? '#c8102e' : '#5f5e5a');
   const label = info.stampLabel || tr(win ? 'VICTORY' : info.station ? 'DETAINED' : 'TIME UP');

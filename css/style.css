@@ -224,6 +224,9 @@ button.role small{font-size:12px !important;margin-top:2px !important}
 #avatarrow b{display:block;color:#1d3a27;font-size:16px}
 #avprev{flex:none;width:100px;height:104px;background:#f6f1e3;border-radius:8px}
 #avatarrow button{margin-top:6px}
+#avatarrow button+button{margin-left:6px}
+#avbig{max-width:100%;height:auto!important}
+#bntext{box-sizing:border-box;width:100%;padding:9px 10px;font-size:16px;border:2px solid #cfc8ae;border-radius:8px;background:#fff;color:#222}
 #avedit{position:fixed;inset:0;z-index:66;display:flex;background:rgba(10,20,15,.88);overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
 #avbox{position:relative;background:#f6f1e3;color:#222;max-width:520px;width:calc(100% - 24px);margin:auto;padding:18px 16px 14px;border-radius:14px;box-shadow:0 10px 40px #0008}
 #avbox h2{margin:0 0 6px;font-size:22px;color:#0b6b3a;text-align:center}
