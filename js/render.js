@@ -60,7 +60,8 @@ function person(c, x, y, o){
       if (L.hair === 'curly'){ for (let k = -1; k <= 1; k++){ c.beginPath(); c.arc(k * 3.3, -17.6 + bob + Math.abs(k) * 1.2, 2.3, 0, 6.28); c.fill(); } }
     }
   } else { c.fillStyle = '#2a1a10'; c.beginPath(); c.arc(0, -14 + bob, 5, Math.PI, 0); c.fill(); }
-  if (o.flag){  // Bangladesh flag: green field, red disc (only protesters carry it)
+  if (o.banner) drawBannerGfx(c, o.banner, bob);   // the leader's own banner (banner.js) replaces the small flag
+  else if (o.flag){  // Bangladesh flag: green field, red disc (only protesters carry it)
     c.fillStyle = '#6b4a2a'; c.fillRect(7, -26 + bob, 1.6, 22);
     c.fillStyle = '#0b6b3a'; c.fillRect(8.6, -26 + bob, 11, 8);
     c.fillStyle = '#c8102e'; c.beginPath(); c.arc(13.6, -22 + bob, 2.6, 0, 6.28); c.fill();

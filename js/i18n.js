@@ -19,6 +19,7 @@ const BN = {
   'No screen flashes or shaking, and the news ticker stays still.': 'পর্দায় ঝলক বা কাঁপুনি থাকবে না, আর খবরের লেখা স্থির থাকবে।',
   'Keyboard: walk with W A S D or the arrow keys. Strike with Space. Police: G for smoke, F for warning shots.': 'কিবোর্ড: W A S D বা তীর চিহ্নের কী দিয়ে হাঁটুন। আঘাত করতে স্পেস চাপুন। পুলিশ: ধোঁয়ার জন্য G, সতর্ক গুলির জন্য F।',
   // avatar editor
+  'Banner': 'ব্যানার', 'Your banner': 'আপনার ব্যানার', 'Show banner': 'ব্যানার দেখান', 'Yes': 'হ্যাঁ', 'No': 'না', 'Cloth shape': 'কাপড়ের ধরন', 'Cloth colour': 'কাপড়ের রং', 'Flag': 'পতাকা', 'Pennant': 'তিনকোনা নিশান', 'Pole': 'দণ্ড', 'Bamboo': 'বাঁশ', 'Metal': 'ধাতু', 'Dark wood': 'গাঢ় কাঠ', 'Trim': 'কিনারা', 'Border': 'পাড়', 'Tassels': 'ঝালর', 'Slogan': 'স্লোগান', 'Up to {n} characters': 'সর্বোচ্চ {n} অক্ষর', 'The banner is carried by you in the game and shows on your share card. It stays on this device.': 'খেলায় ব্যানারটি আপনি বহন করেন এবং এটি আপনার শেয়ার কার্ডে দেখায়। এটি শুধু এই ডিভাইসে থাকে।',
   'Customize avatar': 'চরিত্র সাজান', 'Your protester': 'আপনার আন্দোলনকারী', 'Your officer': 'আপনার অফিসার', 'Randomise': 'এলোমেলো', 'Reset': 'রিসেট', 'Done': 'সম্পন্ন',
   'Gender': 'লিঙ্গ', 'Skin tone': 'গায়ের রং', 'Hair': 'চুল', 'Hair colour': 'চুলের রং', 'Head': 'মাথা', 'Hijab colour': 'হিজাবের রং', 'Outfit': 'পোশাক', 'Outfit colour': 'পোশাকের রং',
   'Trousers colour': 'প্যান্টের রং', 'Lungi colour': 'লুঙ্গির রং', 'Accessory': 'আনুষঙ্গিক', 'Cap': 'টুপি', 'Uniform colour': 'ইউনিফর্মের রং', 'Rank badge': 'পদের ব্যাজ', 'Glasses': 'চশমা',
