@@ -38,6 +38,11 @@ Open `index.html` in a browser (no build, no server needed). To share online, up
 - An avatar is stored as a short string of option numbers (for example `0.1.0.0.3.0.0.0.0.1`), so adding an option means extending the lists at the top of `js/avatar.js` and the Bangla names in `js/i18n.js`. Keep the order of existing values, because saved avatars use the numbers.
 - Avatar choices never use the seeded game RNG, so daily and friend challenges stay identical for everyone.
 
+## Link preview (sharing)
+- `index.html` carries Open Graph and Twitter card tags, so a shared link shows a card with a title, description and the picture `img/og-image.jpg` (1200x630) on Facebook, WhatsApp, Messenger, Telegram and X.
+- The page address and the image address must be full URLs. They are `https://optimus-stage.github.io/andolon/` in three places in `index.html` (canonical, `og:url`, `og:image`, `twitter:image`); change them if the game moves.
+- Facebook keeps an old copy of a link's preview. After changing the tags or the picture, open the link in the Sharing Debugger (https://developers.facebook.com/tools/debug/) and press "Scrape Again".
+
 ## Hunting rivals and rescues
 - Rival crowds (about 12, three per zone) now chase you when you are close in the same zone. They are slower than you, so run early. They still recruit bystanders, and equal-sized crowds go to the protesters.
 - About 1 in 4 rival crowds is **armed** (red ring and ARMED label). Within range and with no building in the way they give a short warning (!) and fire: a quarter of your crowd scatters and you lose morale.
