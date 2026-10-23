@@ -36,11 +36,14 @@ function setOrient(o){
   applyOrientation(); refreshOrient();
 }
 const orientRows = [];
+function fillOrient(r){
+  r.querySelector('span').textContent = tr('Play style');
+  r.querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.o === ORIENT); b.textContent = (b.dataset.o === 'portrait' ? '▯ ' : '▭ ') + tr(b.dataset.o === 'portrait' ? 'Vertical' : 'Horizontal'); });
+}
 function refreshOrient(){
   for (let i = orientRows.length - 1; i >= 0; i--){
     const r = orientRows[i]; if (!r.isConnected){ orientRows.splice(i, 1); continue; }
-    r.querySelector('span').textContent = tr('Play style');
-    r.querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.o === ORIENT); b.textContent = (b.dataset.o === 'portrait' ? '▯ ' : '▭ ') + tr(b.dataset.o === 'portrait' ? 'Vertical' : 'Horizontal'); });
+    fillOrient(r);
   }
 }
 function orientRow(){   // touch screens only: a computer cannot be turned
@@ -48,7 +51,7 @@ function orientRow(){   // touch screens only: a computer cannot be turned
   r.innerHTML = '<span></span><button type="button" data-o="portrait"></button><button type="button" data-o="landscape"></button>';
   r.querySelectorAll('button').forEach(b => { b.onclick = () => setOrient(b.dataset.o); });
   if (!IS_TOUCH) r.style.display = 'none';
-  orientRows.push(r); refreshOrient();
+  orientRows.push(r); fillOrient(r);   // fill it now: the row is not in the page yet, so refreshOrient() would skip it
   return r;
 }
 document.addEventListener('click', e => { if (e.target && e.target.id === 'rotportrait') setOrient('portrait'); });
@@ -155,7 +158,7 @@ function drawActions(){
     const held = b.id === 'strike' && input.strike, cnt = b.id === 'smoke' ? game.smoke : b.id === 'gun' ? game.gun : null;
     ctx.fillStyle = held ? 'rgba(255,255,255,.5)' : role === 'police' ? 'rgba(20,40,80,.55)' : 'rgba(120,40,20,.6)'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 6.283); ctx.fill();
     ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 2; ctx.stroke();
-    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = 'bold ' + (b.r > 35 ? 14 : 11) + 'px system-ui'; ctx.fillText(b.t, b.x, b.y + (cnt === null ? 5 : 0));
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = 'bold ' + Math.round((b.r > 35 ? 14 : 11) * Math.min(1.2, TEXT_SCALES[A11Y.ts])) + 'px system-ui'; ctx.fillText(b.t, b.x, b.y + (cnt === null ? 5 : 0));
     if (cnt !== null){ ctx.font = 'bold 13px system-ui'; ctx.fillStyle = cnt ? '#ffd54f' : '#ff8a80'; ctx.fillText(String(cnt), b.x, b.y + 15); }
   }
 }

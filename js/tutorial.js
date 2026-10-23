@@ -2,13 +2,13 @@
 function tutorialSteps(r){
   const touch = IS_TOUCH;
   if (r === 'police') return [
-    {icon: '\u{1F3C3}', title: tr('You are fast'), text: tr(touch ? 'Hold the round pad to move.' : 'Move the mouse to walk.') + tr(' You are faster than any crowd and can run through barricades.')},
+    {icon: '\u{1F3C3}', title: tr('You are fast'), text: tr(touch ? 'Hold the round pad to move.' : 'Move the mouse, or use W A S D or the arrow keys, to walk.') + tr(' You are faster than any crowd and can run through barricades.')},
     {icon: '\u{1F46E}', title: tr('Build your squad'), text: tr('Walk into the blue officers on the streets to add them to your squad (up to 14). A bigger squad scatters more people.')},
     {icon: '\u{1F4A8}', title: tr('Break up the crowds'), text: tr(touch ? 'Tap STRIKE, SMOKE or FIRE. Nobody is hurt, people just run away.' : 'Click or Space to strike, G for smoke, F for warning shots. Nobody is hurt, people just run away.')},
     {icon: '\u{1F3DB}️', title: tr('Protect the Minar'), text: tr('Disperse {n} crowds before one holds the Shaheed Minar. Using force raises public anger, and at 100 you lose.', {n: DISPERSE_GOAL})},
   ];
   return [
-    {icon: '\u{1F6B6}', title: tr('Walk and gather'), text: tr(touch ? 'Hold the round pad to walk.' : 'Move the mouse to walk.') + tr(' Walk into bystanders to bring them along.')},
+    {icon: '\u{1F6B6}', title: tr('Walk and gather'), text: tr(touch ? 'Hold the round pad to walk.' : 'Move the mouse, or use W A S D or the arrow keys, to walk.') + tr(' Walk into bystanders to bring them along.')},
     {icon: '\u{1F6A7}', title: tr('Pass the barricades'), text: tr(touch ? 'Bricks and barriers block the road. With enough people ({list}) stand at a checkpoint and tap STRIKE a few times to break it.' : 'Bricks and barriers block the road. With enough people ({list}) stand at a checkpoint and click or press Space a few times to break it.', {list: GATE_NEEDS.slice().reverse().join(', ')})},
     {icon: '\u{1F6E1}️', title: tr('Stay safe'), text: tr('Police sticks cost morale. Heal at hospitals or biryani stalls. If your morale runs out you will be detained.')},
     {icon: '\u{1F3DB}️', title: tr('Hold the Minar'), text: tr('Reach the Shaheed Minar with {a} people and hold it for {b} seconds. You have {c} days, about 4 minutes.', {a: NEED_CROWD, b: NEED_HOLD, c: MAX_DAY})},

@@ -150,6 +150,7 @@ function updatePolice(dt){
   if (G.anger >= 100){ endPolice(false, 'anger'); return; }
 
   // you: faster than any crowd
+  steerKeys();   // WASD / arrow keys (access.js)
   if (pad.id !== null && (pad.ux || pad.uy)){ mouse.x = (player.x + pad.ux * 200 - cam.x) * Z; mouse.y = (player.y + pad.uy * 200 - cam.y) * Z; }
   const mw = {x: mouse.x / Z + cam.x, y: mouse.y / Z + cam.y}, dx = mw.x - player.x, dy = mw.y - player.y, d = Math.hypot(dx, dy);
   const speed = Math.max(170, P_SPEED - followers.length * 3);

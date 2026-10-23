@@ -14,6 +14,10 @@ const loc = n => { const s = Number(n).toLocaleString('en-US'); return LANG === 
 const nd = v => LANG === 'bn' ? bnDigits(v) : String(v);
 
 const BN = {
+  // accessibility
+  'Accessibility': 'সহজে ব্যবহার', 'Text size': 'লেখার আকার', 'Normal': 'স্বাভাবিক', 'Large': 'বড়', 'Extra large': 'আরও বড়', 'Reduced motion': 'কম নড়াচড়া',
+  'No screen flashes or shaking, and the news ticker stays still.': 'পর্দায় ঝলক বা কাঁপুনি থাকবে না, আর খবরের লেখা স্থির থাকবে।',
+  'Keyboard: walk with W A S D or the arrow keys. Strike with Space. Police: G for smoke, F for warning shots.': 'কিবোর্ড: W A S D বা তীর চিহ্নের কী দিয়ে হাঁটুন। আঘাত করতে স্পেস চাপুন। পুলিশ: ধোঁয়ার জন্য G, সতর্ক গুলির জন্য F।',
   // avatar editor
   'Customize avatar': 'চরিত্র সাজান', 'Your protester': 'আপনার আন্দোলনকারী', 'Your officer': 'আপনার অফিসার', 'Randomise': 'এলোমেলো', 'Reset': 'রিসেট', 'Done': 'সম্পন্ন',
   'Gender': 'লিঙ্গ', 'Skin tone': 'গায়ের রং', 'Hair': 'চুল', 'Hair colour': 'চুলের রং', 'Head': 'মাথা', 'Hijab colour': 'হিজাবের রং', 'Outfit': 'পোশাক', 'Outfit colour': 'পোশাকের রং',
@@ -110,7 +114,7 @@ const BN = {
 
   // --- how-to-play cards ---
   'You are fast': 'আপনি দ্রুত',
-  'Hold the round pad to move.': 'নড়তে গোল প্যাড চেপে ধরুন।', 'Move the mouse to walk.': 'হাঁটতে মাউস নাড়ান।',
+  'Hold the round pad to move.': 'নড়তে গোল প্যাড চেপে ধরুন।', 'Move the mouse to walk.': 'হাঁটতে মাউস নাড়ান।', 'Move the mouse, or use W A S D or the arrow keys, to walk.': 'হাঁটতে মাউস নাড়ান, অথবা W A S D বা তীর চিহ্নের কী ব্যবহার করুন।',
   ' You are faster than any crowd and can run through barricades.': ' আপনি যেকোনো জনতার চেয়ে দ্রুত এবং ব্যারিকেডের ভেতর দিয়ে ছুটতে পারেন।',
   'Build your squad': 'আপনার দল গড়ুন',
   'Walk into the blue officers on the streets to add them to your squad (up to 14). A bigger squad scatters more people.': 'রাস্তার নীল পোশাকের অফিসারদের কাছে গেলে তারা আপনার দলে যোগ দেবে (সর্বোচ্চ ১৪ জন)। দল বড় হলে বেশি মানুষ ছত্রভঙ্গ হয়।',
@@ -249,7 +253,7 @@ const BNH = {
   installtip: 'টিপস: বড় ও ফুল-স্ক্রিন গেমের জন্য আন্দোলনকে হোম স্ক্রিনে যোগ করুন (ব্রাউজার মেনু থেকে Install app বা Add to Home screen)।',
   rules: '<div class="goal"><b>লক্ষ্য:</b> সাদা পোশাকে একটি জনতা গড়ে তুলুন, পুলিশের ব্যারিকেড ভেঙে এগিয়ে যান এবং <b>১৫ জন নিয়ে ১০ সেকেন্ড</b> ধরে <b>কেন্দ্রীয় শহীদ মিনার</b> দখলে রাখুন।</div>' +
     '<details class="full"><summary>সম্পূর্ণ নিয়ম</summary><ul>' +
-    '<li><b>মাউস নাড়িয়ে</b> হাঁটুন। ফোনে নিচে বাঁ দিকের গোল প্যাডে দিক ধরে রাখুন। পথচারীদের কাছে গেলে তারা সঙ্গে যোগ দেবে।</li>' +
+    '<li><b>মাউস নাড়িয়ে</b> অথবা <b>W A S D</b> বা তীর চিহ্নের কী দিয়ে হাঁটুন। ফোনে নিচে বাঁ দিকের গোল প্যাডে দিক ধরে রাখুন। পথচারীদের কাছে গেলে তারা সঙ্গে যোগ দেবে।</li>' +
     '<li><b>পুলিশ ব্যারিকেড</b> (বাইরের বলয়ে ৬টি, ভেতরের প্রতিটি বলয়ে ২টি) ভাঙতে যথেষ্ট লোক লাগে: প্রথমে ৬, তারপর ১৪, তারপর ২৫ জন। ব্যারিকেডের কাছে গিয়ে কয়েকবার <b>স্ট্রাইক</b> করুন (ফোনে STRIKE বোতাম, কম্পিউটারে ক্লিক বা স্পেস)। শুধু দাঁড়িয়ে থাকলে হবে না।</li>' +
     '<li><b>পুলিশ (নীল)</b> লাঠি হাতে থাকে। প্রতিটি আঘাতে মনোবল কমে। মনোবল প্রায় শেষ হলে আঘাত করলে পুলিশের গাড়ি আপনাকে থানা বা আয়নাঘরে নিয়ে যাবে এবং খেলা শেষ হবে।</li>' +
     '<li><b>হাসপাতাল</b> মার খাওয়ার পর মনোবল ফিরিয়ে দেয়। <b>বিরিয়ানি</b> স্টলেও মনোবল ফেরে, আর <b>মামার টঙের চা</b> দ্রুত চাঙ্গা করে।</li>' +
@@ -260,7 +264,7 @@ const BNH = {
   rules2: '<div class="goal police"><b>লক্ষ্য:</b> আন্দোলনকারী জনতাকে থামান। কোনো জনতা <b>কেন্দ্রীয় শহীদ মিনার</b> (১৫ জন, ১০ সেকেন্ড) দখলে রাখার আগেই <b>১০টি জনতা ছত্রভঙ্গ করুন</b>, আর <b>জনরোষ</b> ১০০-র নিচে রাখুন।</div>' +
     '<details class="full"><summary>সম্পূর্ণ নিয়ম</summary><ul>' +
     '<li>আন্দোলনকারীরা কম্পিউটার-চালিত। তারা মানুষ জড়ো করে মিনারের দিকে এগোয়। <b>আপনি যেকোনো জনতার চেয়ে দ্রুত</b> এবং ব্যারিকেডের ভেতর দিয়ে হাঁটতে পারেন, তাই তাদের ধাওয়া করুন।</li>' +
-    '<li><b>মাউস নাড়িয়ে</b> হাঁটুন। ফোনে নিচে বাঁ দিকের গোল প্যাড ব্যবহার করুন; STRIKE, SMOKE ও FIRE ডান দিকে।</li>' +
+    '<li><b>মাউস নাড়িয়ে</b> অথবা <b>W A S D</b> বা তীর চিহ্নের কী দিয়ে হাঁটুন। ফোনে নিচে বাঁ দিকের গোল প্যাড ব্যবহার করুন; STRIKE, SMOKE ও FIRE ডান দিকে।</li>' +
     '<li><b>অফিসার নিন:</b> রাস্তার নীল পোশাকের অফিসারদের কাছে গেলে তারা আপনার দলে যোগ দেবে (সর্বোচ্চ ১৪ জন)। দল বড় হলে প্রতি আঘাতে বেশি মানুষ ছত্রভঙ্গ হয়।</li>' +
     '<li><b>স্ট্রাইক</b> (ক্লিক বা স্পেস, বা STRIKE বোতাম) কাছের মানুষদের ছত্রভঙ্গ করে। <b>ধোঁয়ার গ্রেনেড</b> (G বা SMOKE) এমন মেঘ তৈরি করে যা জনতাকে ধীর করে ভেঙে দেয়। <b>সতর্কতামূলক গুলি</b> (F বা FIRE) সামনের মানুষদের ছত্রভঙ্গ করে। কেউ আহত হয় না: মানুষ শুধু পালিয়ে যায়। ধোঁয়া ও গুলি সময়ের সঙ্গে ফিরে আসে।</li>' +
     '<li>কোনো জনতায় কেউ না থাকলে আরও কয়েকটি আঘাতে বা কয়েক সেকেন্ড ধোঁয়ায় সেটি ছত্রভঙ্গ হয়ে যায়।</li>' +
@@ -305,6 +309,7 @@ function applyLang(){
   if (typeof refreshDaily === 'function') refreshDaily();
   if (typeof refreshProfileBtn === 'function') refreshProfileBtn();
   if (typeof refreshAvatarUI === 'function') refreshAvatarUI();
+  if (typeof refreshA11yUI === 'function') refreshA11yUI();
   if (typeof showChallengeBanner === 'function') showChallengeBanner();
   if (typeof refreshOrient === 'function') refreshOrient();
   const slot = document.getElementById('supportslot'); if (slot && typeof supportHTML === 'function') slot.innerHTML = supportHTML();
