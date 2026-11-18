@@ -103,7 +103,7 @@ const BN = {
   'Challenge Accepted': 'চ্যালেঞ্জ গ্রহণ', "Play a friend's challenge link.": 'বন্ধুর চ্যালেঞ্জ লিংকে খেলুন।',
   'Challenge Won': 'চ্যালেঞ্জ জয়', "Beat a friend's score.": 'বন্ধুর স্কোর ছাড়িয়ে যান।',
   'Play style': 'খেলার ধরন', 'Vertical': 'খাড়া', 'Horizontal': 'আড়াআড়ি',
-  'Close': 'বন্ধ করুন', 'Paused': 'বিরতি', 'Resume': 'চালিয়ে যান', 'Quit to menu': 'মেনুতে ফিরুন', 'Tap again to quit': 'ছাড়তে আবার চাপুন', 'Pause': 'বিরতি', 'Press Esc to resume': 'চালিয়ে যেতে Esc চাপুন', 'Report an inappropriate name': 'অনুপযুক্ত নাম জানান',
+  'Close': 'বন্ধ করুন', 'Paused': 'বিরতি', 'Go to home': 'হোমে যান', 'Resume': 'চালিয়ে যান', 'Quit to menu': 'মেনুতে ফিরুন', 'Tap again to quit': 'ছাড়তে আবার চাপুন', 'Pause': 'বিরতি', 'Press Esc to resume': 'চালিয়ে যেতে Esc চাপুন', 'Report an inappropriate name': 'অনুপযুক্ত নাম জানান',
   'Barishal': 'বরিশাল', 'Chattogram': 'চট্টগ্রাম', 'Dhaka': 'ঢাকা', 'Khulna': 'খুলনা', 'Mymensingh': 'ময়মনসিংহ', 'Rajshahi': 'রাজশাহী', 'Rangpur': 'রংপুর', 'Sylhet': 'সিলেট', 'Outside Bangladesh': 'বাংলাদেশের বাইরে',
   'Get game updates on WhatsApp': 'হোয়াটসঅ্যাপে গেমের আপডেট পান',
   'New updates are coming. Join the WhatsApp group to hear first': 'নতুন আপডেট আসছে। সবার আগে জানতে হোয়াটসঅ্যাপ গ্রুপে যোগ দিন',

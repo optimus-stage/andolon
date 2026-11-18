@@ -234,7 +234,7 @@ function endPolice(won, why){
       : '<h1>' + tr('The Minar <span>was held</span>') + '</h1><p>' + tr('A crowd held the Shaheed Minar. Break up marches sooner next time.') + '</p>';
     box.innerHTML = '<button id="langbtn" class="langbtn" type="button">' + (isBn() ? 'English' : 'বাংলা') + '</button>' + dChip() + (chRes ? chRes.html : '') + head + achHTML(newAch) + '<img id="cardimg" alt="Photo card" src="' + canvas.toDataURL('image/png') + '">' +
       '<label>' + tr('Put your own photo on the card (optional)') + '<input id="photo2" type="file" accept="image/*"></label>' +
-      '<button id="share">' + tr('Share card') + '</button><button id="dl" class="alt">' + tr(IS_TOUCH ? 'Save to Photos' : 'Download') + '</button><button id="chbtn" class="alt">' + tr('Challenge a friend') + '</button><button id="go">' + tr(ch ? 'Try the challenge again' : dLeft > 0 ? 'Try again ({n} left)' : 'Patrol again', {n: dLeft}) + '</button>' +
+      '<button id="share">' + tr('Share card') + '</button><button id="dl" class="alt">' + tr(IS_TOUCH ? 'Save to Photos' : 'Download') + '</button><button id="chbtn" class="alt">' + tr('Challenge a friend') + '</button><button id="go">' + tr('Go to home') + '</button>' +
       (IS_TOUCH ? '<small>' + tr('Tip: tap Save to Photos, or press and hold the card, to keep it in your Gallery.') + '</small><br>' : '') +
       (playerPhoto ? '<button id="nophoto" class="alt">' + tr('Use default avatar') + '</button>' : '') +
       supportHTML() + '<a href="#" class="aboutlink">' + tr('About &amp; Disclaimer') + '</a><br>' +
@@ -246,7 +246,7 @@ function endPolice(won, why){
     const np = document.getElementById('nophoto'); if (np) np.onclick = () => { playerPhoto = null; np.remove(); refresh(); };
     document.getElementById('share').onclick = () => shareCard(canvas, text + '\n' + challengeLink({role: 'police', seed, score, name: playerName, twist: runTwist}));
     document.getElementById('dl').onclick = () => downloadCard(canvas);
-    document.getElementById('go').onclick = ch ? startChallenge : dLeft > 0 ? startDaily : start;
+    document.getElementById('go').onclick = () => location.reload();   // back to the main page
     document.getElementById('chbtn').onclick = () => shareChallenge({role: 'police', seed, score, name: playerName, twist: runTwist});
     document.getElementById('langbtn').onclick = () => { setLang(isBn() ? 'en' : 'bn'); show(); };
     addSwitch();
@@ -255,12 +255,9 @@ function endPolice(won, why){
   show();
   document.getElementById('menu').style.display = 'flex';
 }
-function addSwitch(){   // button on the result screen to play the other side
-  const go = document.getElementById('go'); if (!go) return;
-  const b = document.createElement('button'); b.className = 'alt'; b.textContent = tr(role === 'police' ? 'Play as Andolonkari' : 'Play as Police');
-  b.onclick = () => { role = role === 'police' ? 'protester' : 'police'; try { localStorage.setItem('da_role', role); } catch (e) {} start(); };
+function addSwitch(){   // result screen: just the profile button, after Go to home
+  const go = document.getElementById('go'); if (!go) return; go.dataset.keep = '1';
   const pb = document.createElement('button'); pb.className = 'alt'; pb.textContent = tr('My profile'); pb.onclick = openProfile;
-  const ab = avatarButton('alt');
-  go.after(b); b.after(pb); pb.after(ab); ab.after(orientRow());
+  go.after(pb);
 }
 

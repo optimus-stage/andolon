@@ -215,7 +215,7 @@ function end(won, info){
     else head = '<h1>' + tr('Detained at <span>{s}</span>', {s: tr(info.station)}) + '</h1><p>' + tr('You were caught by the police and taken by van. The game is over.') + '</p>';
     box.innerHTML = '<button id="langbtn" class="langbtn" type="button">' + (isBn() ? 'English' : 'বাংলা') + '</button>' + dChip() + (chRes ? chRes.html : '') + head + achHTML(newAch) + '<img id="cardimg" alt="Photo card" src="' + canvas.toDataURL('image/png') + '">' +
       '<label>' + tr('Put your own photo on the card (optional)') + '<input id="photo2" type="file" accept="image/*"></label>' +
-      '<button id="share">' + tr('Share card') + '</button><button id="dl" class="alt">' + tr(IS_TOUCH ? 'Save to Photos' : 'Download') + '</button><button id="chbtn" class="alt">' + tr('Challenge a friend') + '</button><button id="go">' + tr(ch ? 'Try the challenge again' : dLeft > 0 ? 'Try again ({n} left)' : 'March again', {n: dLeft}) + '</button>' +
+      '<button id="share">' + tr('Share card') + '</button><button id="dl" class="alt">' + tr(IS_TOUCH ? 'Save to Photos' : 'Download') + '</button><button id="chbtn" class="alt">' + tr('Challenge a friend') + '</button><button id="go">' + tr('Go to home') + '</button>' +
       (IS_TOUCH ? '<small>' + tr('Tip: tap Save to Photos, or press and hold the card, to keep it in your Gallery.') + '</small><br>' : '') +
       (playerPhoto ? '<button id="nophoto" class="alt">' + tr('Use default avatar') + '</button>' : '') +
       supportHTML() + '<a href="#" class="aboutlink">' + tr('About &amp; Disclaimer') + '</a><br>' +
@@ -228,7 +228,7 @@ function end(won, info){
     const np = document.getElementById('nophoto'); if (np) np.onclick = () => { playerPhoto = null; np.remove(); refresh(); };
     document.getElementById('share').onclick = () => shareCard(canvas, text + '\n' + challengeLink({role: 'protester', seed, score, name: playerName, twist: runTwist}));
     document.getElementById('dl').onclick = () => downloadCard(canvas);
-    document.getElementById('go').onclick = ch ? startChallenge : dLeft > 0 ? startDaily : start;
+    document.getElementById('go').onclick = () => location.reload();   // back to the main page
     document.getElementById('chbtn').onclick = () => shareChallenge({role: 'protester', seed, score, name: playerName, twist: runTwist});
     document.getElementById('langbtn').onclick = () => { setLang(isBn() ? 'en' : 'bn'); show(); };
     addSwitch();
