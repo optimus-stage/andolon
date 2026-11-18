@@ -11,8 +11,8 @@ function person(c, x, y, o){
     c.fillStyle = L.lungi; c.fillRect(-5.5, 3, 11, 6.5); c.fillStyle = 'rgba(255,255,255,.35)'; c.fillRect(-5.5, 5.5, 11, 1);
     c.fillStyle = '#2b2b2b'; c.fillRect(-4 + sw, 9, 3, 1.6); c.fillRect(1 - sw, 9, 3, 1.6);
   } else if (outfit === 'saree'){
-    const top = L.g === 1 ? 3 : 6;   // a woman's saree starts at a slim waist
-    c.fillStyle = o.dress; c.beginPath(); c.moveTo(-top, L.g === 1 ? 0 : 2); c.lineTo(top, L.g === 1 ? 0 : 2); c.lineTo(7.5 + sw * 0.15, 10); c.lineTo(-7.5 + sw * 0.15, 10); c.closePath(); c.fill();
+    const top = L.g === 1 ? 5.2 : 6;   // same straight cut as the male build, a little slimmer
+    c.fillStyle = o.dress; c.beginPath(); c.moveTo(-top, 2); c.lineTo(top, 2); c.lineTo(7.5 + sw * 0.15, 10); c.lineTo(-7.5 + sw * 0.15, 10); c.closePath(); c.fill();
     c.fillStyle = 'rgba(0,0,0,.14)'; c.fillRect(-7, 8.2, 14, 1.8);
   } else {
     c.fillStyle = o.legs || (L ? L.legs : '#2b2b2b'); c.fillRect(-4 + sw, 3, 3, 7); c.fillRect(1 - sw, 3, 3, 7);
@@ -20,15 +20,12 @@ function person(c, x, y, o){
   // hair behind the head
   if (L && (!o.hat || o.hairBack) && L.hair === 'long' && L.head !== 'hijab'){ c.fillStyle = L.hc; c.fillRect(-5.4, -14 + bob, 10.8, 10); }
   // body
-  const bw = L && L.g === 1 ? 5.2 : 6, ax = 6 - bw;   // a slightly narrower build for women
+  const bw = L && L.g === 1 ? 5.2 : 6, ax = 6 - bw;   // the male body shape, a bit slimmer for women
   c.fillStyle = o.dress; c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 1;
-  if (L && L.g === 1){   // women: shoulders, a slim waist, then hips (a kameez flares out below the waist)
-    const hem = outfit === 'kameez' ? 9 : 5, hw = outfit === 'kameez' ? 6 : 4.8; c.lineJoin = 'round';
-    c.beginPath(); c.moveTo(-4.6, -7 + bob); c.lineTo(4.6, -7 + bob); c.lineTo(5.4, -4 + bob); c.lineTo(2.6, 0.5 + bob); c.lineTo(hw, hem + bob); c.lineTo(-hw, hem + bob); c.lineTo(-2.6, 0.5 + bob); c.lineTo(-5.4, -4 + bob); c.closePath(); c.fill(); c.stroke(); c.lineJoin = 'miter';
-  } else { c.beginPath(); c.roundRect(-bw, -7 + bob, bw * 2, outfit === 'panjabi' || outfit === 'kameez' ? 16 : 12, 3); c.fill(); c.stroke(); }
+  { c.beginPath(); c.roundRect(-bw, -7 + bob, bw * 2, outfit === 'panjabi' || outfit === 'kameez' ? 16 : 12, 3); c.fill(); c.stroke(); }
   c.fillStyle = o.dress; c.fillRect(-8 + ax, -6 + bob, 2.5, 8); c.fillRect(5.5 - ax, -6 + bob, 2.5, 8);
   if (o.badge){ c.fillStyle = '#f0c419'; for (let i = 0; i < o.badge; i++){ c.beginPath(); c.arc(2.6, -4.2 + i * 2.6 + bob, 0.95, 0, 6.28); c.fill(); } }   // rank stars on the chest
-  if (outfit === 'saree'){ c.fillStyle = 'rgba(0,0,0,.16)'; c.beginPath(); if (L.g === 1){ c.moveTo(-4.6, -7 + bob); c.lineTo(2.6, 0.5 + bob); c.lineTo(2.8, 3 + bob); c.lineTo(-5.4, -4 + bob); } else { c.moveTo(-6, -7 + bob); c.lineTo(6, 3 + bob); c.lineTo(6, 5 + bob); c.lineTo(-6, -4 + bob); } c.closePath(); c.fill(); }
+  if (outfit === 'saree'){ c.fillStyle = 'rgba(0,0,0,.16)'; c.beginPath(); c.moveTo(-bw, -7 + bob); c.lineTo(bw, 3 + bob); c.lineTo(bw, 5 + bob); c.lineTo(-bw, -4 + bob); c.closePath(); c.fill(); }
   if (L && L.bag){ c.fillStyle = '#6b4a2a'; c.fillRect(-9.5, -1 + bob, 4, 6); c.fillRect(-7.5, -6 + bob, 1, 5); }
   // head
   if (L && L.head === 'hijab' && !o.hat){
