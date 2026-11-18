@@ -44,5 +44,15 @@ addEventListener('keydown', e => {
 });
 document.addEventListener('visibilitychange', () => { if (document.hidden) pauseGame(); });
 addEventListener('pagehide', pauseGame);
+// sound and pause sit side by side at the top middle; on a small screen they squeeze into the gap between the score bar (left) and the map (right)
+let lastLay = '';
+function layoutTopButtons(){
+  const k = hudScale(), hudR = 310 * k, mapL = innerWidth - (role === 'police' ? 164 : 204) * k, gap = 6, pad = 6;
+  const bs = Math.round(Math.max(30, Math.min(44, (mapL - hudR - 2 * pad - gap) / 2))), w = bs * 2 + gap;
+  const left = Math.round(Math.max(hudR + pad, Math.min(innerWidth / 2 - w / 2, mapL - pad - w)));
+  const key = bs + ',' + left; if (key === lastLay) return; lastLay = key;
+  const st = document.documentElement.style; st.setProperty('--bs', bs + 'px'); st.setProperty('--pl', left + 'px'); st.setProperty('--ml', (left + bs + gap) + 'px');
+}
+addEventListener('resize', layoutTopButtons);
 // the pause button shows only on touch screens, and only while a game is on
-setInterval(() => { document.body.classList.toggle('canpause', IS_TOUCH && playing() && !paused); }, 250);
+setInterval(() => { layoutTopButtons(); document.body.classList.toggle('canpause', IS_TOUCH && playing() && !paused); }, 250);
