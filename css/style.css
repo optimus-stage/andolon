@@ -270,3 +270,13 @@ body.rm .tuticon,body.rm .rotphone{animation:none}
   #card #go{padding:20px 16px;font-size:24px}
   #card #howbtn,#card #lbbtn,#card #profbtn0{width:auto;display:inline-block;padding:7px 12px;font-size:14px;margin:6px 6px 0 0}
 }
+/* pause */
+#pausebtn{display:none;position:fixed;left:10px;top:calc(10px + env(safe-area-inset-top));width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;border:0;font-size:18px;padding:0;margin:0;cursor:pointer;z-index:30}
+body.canpause #pausebtn{display:block}
+#pause{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;background:rgba(10,20,15,.82);padding:20px;box-sizing:border-box}
+#pause.open{display:flex}
+#pause .pbox{background:#f6f1e3;border-radius:14px;padding:22px 26px;width:min(320px,100%);text-align:center;box-shadow:0 10px 40px #0008}
+#pause h2{margin:0 0 6px;color:#0b6b3a;font-size:30px}
+#pause button{display:block;width:100%;margin:12px 0 0;padding:16px;font-size:20px}
+#pause #pquit{padding:10px;font-size:15px}
+#pause small{margin-top:14px}

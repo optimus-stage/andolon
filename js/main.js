@@ -7,7 +7,7 @@ function frame(ts){
   // only if the player chose horizontal play and holds the phone upright: ask them to turn it (or switch to vertical), and pause meanwhile
   const needRotate = IS_TOUCH && ORIENT === 'landscape' && !!(game && game.started) && innerHeight > innerWidth;
   if (needRotate !== rotShown){ rotShown = needRotate; document.getElementById('rotate').classList.toggle('open', needRotate); }
-  if (game && game.started && !rotShown) update(dt);
+  if (game && game.started && !rotShown && !paused) update(dt);
   if (game) draw();
   requestAnimationFrame(frame);
 }
@@ -87,10 +87,10 @@ if (document.getElementById('role-prot')){
 }
 const photoEl = document.getElementById('photo'); if (photoEl) photoEl.onchange = e => loadPhoto(e.target.files[0]);   // the photo is chosen on the final card
 cv.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
-cv.addEventListener('mousedown', e => { if (e.button !== 0) return; if (role === 'police'){ input.strike = true; doStrike(); } else doBreak(); });
+cv.addEventListener('mousedown', e => { if (e.button !== 0 || paused) return; if (role === 'police'){ input.strike = true; doStrike(); } else doBreak(); });
 addEventListener('mouseup', () => { input.strike = false; });
 addEventListener('keydown', e => {
-  if (!game || !game.started) return;
+  if (!game || !game.started || paused) return;
   if (role !== 'police'){ if (e.code === 'Space'){ e.preventDefault(); doBreak(); } return; }
   if (e.code === 'Space'){ e.preventDefault(); input.strike = true; doStrike(); }
   else if (e.key === 'g' || e.key === 'G') doSmoke();
@@ -119,6 +119,7 @@ const actGeom = () => { const H = innerHeight, W = innerWidth;
   }
   if (role !== 'police') return [{id: 'strike', x: W - 64, y: H - 96, r: 42, t: tr('STRIKE')}]; return [{id: 'strike', x: W - 64, y: H - 96, r: 42, t: tr('STRIKE')}, {id: 'smoke', x: W - 150, y: H - 70, r: 30, t: tr('SMOKE')}, {id: 'gun', x: W - 146, y: H - 142, r: 30, t: tr('FIRE')}]; };
 const touchGo = e => {
+  if (paused) return;
   for (const t of e.changedTouches){
     if (e.type === 'touchstart'){
       const a = actGeom().find(b => Math.hypot(t.clientX - b.x, t.clientY - b.y) < b.r + 10);
